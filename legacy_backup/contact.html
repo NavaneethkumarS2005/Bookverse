@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Contact Us | BookVerse</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+  <script defer src="contact.js"></script>
+</head>
+
+<body>
+
+  <nav class="navbar glass">
+    <div class="container navbar-inner">
+      <div class="logo">BookVerse</div>
+      <button type="button" id="hamburger" class="hamburger">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="Marketplace.html">Marketplace</a></li>
+        <li><a href="Categories.html">Categories</a></li>
+        <li><a href="Community.html">Community</a></li>
+        <li><a href="contact.html" aria-current="page">Contact</a></li>
+        <li><a href="login.html" class="btn-nav">Login / Join</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <header class="hero"
+    style="min-height: 40vh; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('images/vintage-books-thrift-shop-arrangement.jpg'); background-size: cover; background-position: center;">
+    <div class="container hero-inner" style="display: block; text-align: center;">
+      <div class="hero-text animate-fade-in" style="margin: auto;">
+        <h1>Get in <span class="text-gradient">Touch</span></h1>
+        <p style="margin-inline: auto;">Have a question about an order or a listing? We're here to help.</p>
+      </div>
+    </div>
+  </header>
+
+  <section class="section">
+    <div class="container form-container">
+
+      <div style="width: 100%;">
+        <div id="popup" class="hidden toast-popup">
+        </div>
+
+        <form id="contactForm" class="glass" style="padding: 40px; border-radius: 20px;">
+          <div class="form-group">
+            <label class="form-label">Name</label>
+            <input type="text" id="name" class="form-input" placeholder="Your Name" required>
+            <small class="error-msg"></small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email</label>
+            <input type="email" id="email" class="form-input" placeholder="your@email.com" required>
+            <small class="error-msg"></small>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Message</label>
+            <textarea id="message" class="form-textarea" placeholder="How can we help?" required></textarea>
+            <small class="error-msg"></small>
+          </div>
+          <button type="submit" class="btn btn-primary" style="width: 100%;">Send Message</button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-note">
+        <p>© <span id="year"></span> BookVerse. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Your Books | BookVerse</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="script.js"></script>
+    <style>
+        /* Specific styles for Your Books page */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+        }
+
+        .empty-icon {
+            font-size: 4rem;
+            opacity: 0.3;
+            margin-bottom: 20px;
+            display: block;
+        }
+    </style>
+</head>
+
+<body class="dark">
+
+    <!-- ================= NAVBAR ================= -->
+    <nav class="navbar glass">
+        <div class="container navbar-inner">
+            <div class="logo">BookVerse</div>
+
+            <button type="button" id="hamburger" class="hamburger" aria-label="Toggle navigation">
+                ☰
+            </button>
+
+            <ul class="nav-links" id="navLinks">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="Marketplace.html">Marketplace</a></li>
+                <li><a href="Categories.html">Categories</a></li>
+                <li><a href="Community.html">Community</a></li>
+                <li><a href="contact.html">Contact</a></li>
+                <li><a href="cart.html" aria-current="page" class="active">Your Books</a></li>
+                <li><a href="login.html" class="btn-nav">Login / Join</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <!-- ================= HERO ================= -->
+    <header class="hero" style="min-height: 40vh; padding-bottom: 40px;">
+        <div class="container hero-inner"
+            style="display: flex; align-items: center; justify-content: space-between; gap: 40px;">
+            <div class="hero-text animate-fade-in" style="flex: 1;">
+                <h1>
+                    Your <span class="text-gradient">Collection</span>
+                </h1>
+                <p>
+                    Manage the books you've selected.
+                </p>
+            </div>
+            <div class="hero-image animate-fade-in" style="flex: 1; max-width: 500px;">
+                <img src="images/paper-ladder-old-yellow-book.jpg" alt="Book Collection"
+                    style="width: 100%; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.3);">
+            </div>
+        </div>
+    </header>
+
+    <!-- ================= COLLECTION GRID ================= -->
+    <section class="section">
+        <div class="container">
+
+            <div id="collection-container" class="cards-grid">
+                <!-- Javascript will populate this -->
+            </div>
+
+        </div>
+    </section>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-note">
+                <p>© <span id="year"></span> BookVerse. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Categories | BookVerse</title>
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+</head>
+
+<body class="dark">
+
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar glass">
+    <div class="container navbar-inner">
+      <div class="logo">BookVerse</div>
+      <button type="button" id="hamburger" class="hamburger">☰</button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="Marketplace.html">Marketplace</a></li>
+        <li><a href="Categories.html" aria-current="page">Categories</a></li>
+        <li><a href="Community.html">Community</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="login.html" class="btn-nav">Login / Join</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="hero"
+    style="min-height: 40vh; padding-bottom: 20px; background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), url('images/genres.jpeg'); background-size: cover; background-position: center;">
+    <div class="container hero-inner">
+      <div class="hero-text animate-fade-in" style="margin: auto; text-align: center;">
+        <h1>Browse by <span class="text-gradient">Category</span></h1>
+        <p>Find your next read from our diverse collection of genres.</p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= CATEGORIES ================= -->
+  <section class="section">
+    <div class="container">
+
+      <!-- Fiction -->
+      <div style="margin-bottom: 60px;">
+        <h2 style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">FICTION</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/fantasy_cover.png" alt="Fantasy"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Fantasy</h3>
+            <p>Epic worlds and magical adventures.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/scifi_cover.png" alt="Sci-Fi"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Sci-Fi</h3>
+            <p>Future tech, space travel, and aliens.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/romance_cover.png" alt="Romance"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Romance</h3>
+            <p>Love stories that warm the heart.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/mystery_cover.png" alt="Mystery"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Mystery</h3>
+            <p>Intriguing puzzles and whodunits.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/horror_cover.png" alt="Horror"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Horror</h3>
+            <p>Spine-chilling tales and scares.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/thriller_cover.png" alt="Thriller"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Thriller</h3>
+            <p>Fast-paced suspense and tension.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/historical_cover.png" alt="Historical"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Historical</h3>
+            <p>Stories set in fascinating past eras.</p>
+          </a>
+        </div>
+      </div>
+
+      <!-- Nonfiction -->
+      <div>
+        <h2 style="margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">NON - FICTION
+        </h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 20px;">
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/biography_cover.png" alt="Biography"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Biography</h3>
+            <p>Real lives, inspiring journeys.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/history_cover.png" alt="History"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>History</h3>
+            <p>Explore the events that shaped us.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/selfhelp_cover.png" alt="Self-Help"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Self-Help</h3>
+            <p>Books for personal growth and success.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/cookbooks_cover.png" alt="Cookbooks"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Cookbooks</h3>
+            <p>Delicious recipes and culinary guides.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/business_cover.png" alt="Business"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Business</h3>
+            <p>Insights on leadership and finance.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/science_cover.png" alt="Science"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Science</h3>
+            <p>Discover the wonders of the universe.</p>
+          </a>
+          <a href="#" class="card" style="text-align: center; text-decoration: none; color: inherit;">
+            <img src="images/arts_cover.png" alt="Arts"
+              style="width: 100%; height: 120px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;">
+            <h3>Arts</h3>
+            <p>Creativity, painting, and design.</p>
+          </a>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-note">
+        <p>© <span id="year"></span> BookVerse. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>

@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <!-- SEO -->
+  <title>BookVerse | Premium Book Marketplace</title>
+  <meta name="description"
+    content="A premium marketplace to buy, sell, and discover books. Join our community of book lovers." />
+  <!-- Styles -->
+  <link rel="stylesheet" href="style.css" />
+  <!-- Scripts -->
+  <script defer src="script.js"></script>
+</head>
+
+<body>
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar glass">
+    <div class="container navbar-inner">
+      <div class="logo">BookVerse</div>
+      <button type="button" id="hamburger" class="hamburger" aria-label="Toggle navigation">
+        ☰
+      </button>
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html" aria-current="page">Home</a></li>
+        <li><a href="Marketplace.html">Marketplace</a></li>
+        <li><a href="Categories.html">Categories</a></li>
+        <li><a href="Community.html">Community</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="cart.html">Your Books</a></li>
+        <li><a href="login.html" class="btn-nav">Login / Join</a></li>
+      </ul>
+    </div>
+  </nav>
+  <!-- ================= HERO ================= -->
+  <header class="hero">
+    <div class="container hero-inner">
+      <div class="hero-text animate-fade-in">
+        <h1>
+          Discover Your Next <span class="text-gradient">Literary Adventure</span>
+        </h1>
+        <p>
+          The premier marketplace to buy and sell books. From rare collectibles to
+          modern bestsellers, connect with a community of readers and collectors.
+        </p>
+        <div class="hero-actions">
+          <a href="Marketplace.html" class="btn btn-primary">Buy Books</a>
+          <a href="Marketplace.html#sell" class="btn btn-secondary">Sell a Book</a>
+        </div>
+      </div>
+      <div class="hero-image animate-fade-in">
+        <!-- Using a placeholder image that fits a book theme better if available, keeping existing structural style -->
+        <div class="book-stack-visual"
+          style="position: relative; width: 100%; height: 400px; display: flex; align-items: center; justify-content: center;">
+          <!-- We will replace the image source with something generic or keep abstract -->
+          <img src="images/future library.jpeg" alt="Library of the Future"
+            style="width: 100%; height: 100%; object-fit: cover; border-radius: 20px; opacity: 0.9;" loading="lazy" />
+          <div
+            style="position: absolute; inset: 0; background: linear-gradient(to top, var(--bg-main), transparent); pointer-events: none;">
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+  <!-- ================= FEATURED BOOKS (Was Why Project) ================= -->
+  <section class="section">
+    <div class="container section-inner">
+      <div class="section-image">
+        <img src="images/reading corner.jpeg" alt="Reading Corner" loading="lazy"
+          style="width: 100%; border-radius: 16px;" />
+      </div>
+      <div class="section-text">
+        <h2>Curated Collections</h2>
+        <p>
+          Our editors hand-pick the finest stories from around the globe. Whether you're
+          looking for gripping thrillers, expanding your mind with non-fiction, or
+          escaping into fantasy worlds, we have something for everyone.
+        </p>
+        <a href="why-project.html" class="link-arrow">Read our mission &rarr;</a>
+      </div>
+    </div>
+
+    <!-- Dynamic Books Section (Added for fallback) -->
+    <div class="container" style="margin-top: 60px;">
+      <h2 style="text-align: center; margin-bottom: 30px;">Featured Books</h2>
+      <div id="book-grid" class="cards-grid">
+        <!-- Books will be injected here by script.js -->
+        <div style="text-align: center; width: 100%; grid-column: 1/-1;">Loading books...</div>
+      </div>
+    </div>
+  </section>
+  <!-- ================= CATEGORIES (Was Skills) ================= -->
+  <section class="section alt">
+    <div class="container section-inner">
+      <div class="section-text">
+        <h2>Explore Genres</h2>
+        <p>
+          Dive into our extensive catalog organized by genre and interest.
+        </p>
+        <ul
+          style="margin-bottom: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; color: var(--text-muted);">
+          <li>✓ Fiction & Literature</li>
+          <li>✓ Sci-Fi & Fantasy</li>
+          <li>✓ Science & Tech</li>
+          <li>✓ History & Biography</li>
+        </ul>
+        <a href="Categories.html" class="link-arrow">Browse all categories &rarr;</a>
+      </div>
+      <div class="section-image">
+        <img src="images/genres.jpeg" alt="Book Genres" loading="lazy" style="width: 100%; border-radius: 16px;" />
+      </div>
+    </div>
+  </section>
+  <!-- ================= CTA ================= -->
+  <section class="cta">
+    <div class="container">
+      <h2>Join the BookVerse</h2>
+      <p>
+        Sign up today to start your collection or declutter your shelf.
+      </p>
+      <a href="login.html" class="btn btn-primary">Get Started</a>
+    </div>
+  </section>
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-links">
+        <a href="#">About Us</a>
+        <a href="#">Terms</a>
+        <a href="#">Privacy</a>
+        <a href="https://instagram.com/" target="_blank">Instagram</a>
+        <a href="https://twitter.com/" target="_blank">Twitter</a>
+        <a href="mailto:support@bookverse.com">Support</a>
+      </div>
+      <div class="footer-note">
+        <p>&copy; <span id="year"></span> BookVerse. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

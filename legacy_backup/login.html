@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login / Sign Up | BookVerse</title>
+    <link rel="stylesheet" href="style.css">
+    <script defer src="script.js"></script>
+</head>
+
+<body>
+
+    <nav class="navbar glass">
+        <div class="container navbar-inner">
+            <div class="logo">BookVerse</div>
+            <a href="index.html" style="color: var(--text-muted)">Back to Home</a>
+        </div>
+    </nav>
+
+    <div class="hero"
+        style="min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('images/future library.jpeg'); background-size: cover; background-position: center;">
+
+        <div class="glass"
+            style="padding: 40px; border-radius: 20px; width: 100%; max-width: 400px; border: 1px solid var(--border);">
+
+            <!-- Toggle Tabs -->
+            <div
+                style="display: flex; gap: 20px; margin-bottom: 30px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+                <button id="tab-login" class="btn-text active"
+                    style="color: #fff; background: none; border: none; font-size: 1.1rem; cursor: pointer; font-weight: 700;">Login</button>
+                <button id="tab-signup" class="btn-text"
+                    style="color: var(--text-muted); background: none; border: none; font-size: 1.1rem; cursor: pointer;">Sign
+                    Up</button>
+            </div>
+
+            <!-- Login Form -->
+            <form id="login-form" class="auth-form">
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="login-email" class="form-input" placeholder="reader@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="login-password" class="form-input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Log In</button>
+            </form>
+
+            <!-- Signup Form -->
+            <form id="signup-form" class="auth-form" style="display: none;">
+                <div class="form-group">
+                    <label class="form-label">Full Name</label>
+                    <input type="text" id="signup-name" class="form-input" placeholder="Your Name" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Email</label>
+                    <input type="email" id="signup-email" class="form-input" placeholder="reader@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label">Password</label>
+                    <input type="password" id="signup-password" class="form-input" placeholder="Create a password"
+                        required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Create Account</button>
+            </form>
+
+        </div>
+
+    </div>
+
+    <script>
+        // Tab Switching
+        const tabLogin = document.getElementById('tab-login');
+        const tabSignup = document.getElementById('tab-signup');
+        const formLogin = document.getElementById('login-form');
+        const formSignup = document.getElementById('signup-form');
+
+        function switchTab(isLogin) {
+            if (isLogin) {
+                tabLogin.classList.add('active');
+                tabLogin.style.color = '#fff';
+                tabSignup.classList.remove('active');
+                tabSignup.style.color = 'var(--text-muted)';
+                formLogin.style.display = 'block';
+                formSignup.style.display = 'none';
+            } else {
+                tabSignup.classList.add('active');
+                tabSignup.style.color = '#fff';
+                tabLogin.classList.remove('active');
+                tabLogin.style.color = 'var(--text-muted)';
+                formSignup.style.display = 'block';
+                formLogin.style.display = 'none';
+            }
+        }
+
+        tabLogin.addEventListener('click', () => switchTab(true));
+        tabSignup.addEventListener('click', () => switchTab(false));
+
+        // API Configuration (Change this in production)
+        const API_URL = "http://localhost:5000/api/auth";
+
+        // Login Handler
+        formLogin.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('login-email').value;
+            const password = document.getElementById('login-password').value;
+            const btn = formLogin.querySelector('button');
+
+            btn.textContent = "Logging in...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("Login Successful! Welcome back.");
+                    // Store user data if needed
+                    localStorage.setItem('user', JSON.stringify(data.user));
+                    window.location.href = "Marketplace.html";
+                } else {
+                    alert(data.message || "Login failed");
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Server error. Is the backend running?");
+            } finally {
+                btn.textContent = "Log In";
+                btn.disabled = false;
+            }
+        });
+
+        // Signup Handler
+        formSignup.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const name = document.getElementById('signup-name').value;
+            const email = document.getElementById('signup-email').value;
+            const password = document.getElementById('signup-password').value;
+            const btn = formSignup.querySelector('button');
+
+            btn.textContent = "Creating Account...";
+            btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/register`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ name, email, password })
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    alert("Account created! Please log in.");
+                    switchTab(true); // Switch to login tab
+                } else {
+                    // Check for duplicate key error
+                    if (data.error && data.error.includes('E11000')) {
+                        alert("Email already registered! Please log in.");
+                    } else {
+                        alert(data.message + "\n" + (data.error || ""));
+                    }
+                }
+            } catch (err) {
+                console.error(err);
+                alert("Server error. Is the backend running?");
+            } finally {
+                btn.textContent = "Create Account";
+                btn.disabled = false;
+            }
+        });
+    </script>
+</body>
+
+</html>

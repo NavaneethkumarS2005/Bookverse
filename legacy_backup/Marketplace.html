@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Marketplace | BookVerse</title>
+
+  <link rel="stylesheet" href="style.css">
+  <script defer src="script.js"></script>
+</head>
+
+<body class="dark">
+
+  <!-- ================= NAVBAR ================= -->
+  <nav class="navbar glass">
+    <div class="container navbar-inner">
+      <div class="logo">BookVerse</div>
+
+      <button type="button" id="hamburger" class="hamburger" aria-label="Toggle navigation">
+        ☰
+      </button>
+
+      <ul class="nav-links" id="navLinks">
+        <li><a href="index.html">Home</a></li>
+        <li><a href="Marketplace.html" aria-current="page">Marketplace</a></li>
+        <li><a href="Categories.html">Categories</a></li>
+        <li><a href="Community.html">Community</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li><a href="cart.html">Your Books</a></li>
+        <li><a href="login.html" class="btn-nav">Login / Join</a></li>
+      </ul>
+    </div>
+  </nav>
+
+  <!-- ================= HERO ================= -->
+  <header class="hero"
+    style="min-height: 40vh; padding-bottom: 40px; background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('images/future library.jpeg'); background-size: cover; background-position: center;">
+    <div class="container hero-inner">
+      <div class="hero-text animate-fade-in" style="margin: auto; text-align: center;">
+        <h1>
+          Explore <span class="text-gradient">The Marketplace</span>
+        </h1>
+        <p style="margin-inline: auto;">
+          Browse thousands of titles from our community. Find rare first editions,
+          textbooks, and bestsellers at unbeatable prices.
+        </p>
+      </div>
+    </div>
+  </header>
+
+  <!-- ================= CARDS GRID (Books) ================= -->
+  <section class="section">
+    <div class="container">
+
+      <!-- Layout Wrapper: Sidebar + Grid -->
+      <div class="marketplace-layout" style="display: flex; gap: 30px; align-items: flex-start;">
+
+        <!-- Sidebar -->
+        <aside class="sidebar glass"
+          style="width: 250px; flex-shrink: 0; padding: 20px; border-radius: 12px; position: sticky; top: 100px;">
+          <h3 style="margin-bottom: 16px; font-size: 1.2rem;">Filters</h3>
+
+          <!-- Category Filter -->
+          <div style="margin-bottom: 24px;">
+            <h4 style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.9rem;">Categories</h4>
+            <div style="display: flex; flex-direction: column; gap: 8px;">
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="category" value="Fiction"> Fiction
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="category" value="Non-Fiction"> Non-Fiction
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="category" value="Sci-Fi"> Sci-Fi
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="category" value="Fantasy"> Fantasy
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="category" value="History"> History
+              </label>
+              <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+                <input type="checkbox" name="category" value="Classic"> Classic
+              </label>
+            </div>
+          </div>
+
+          <!-- Price Filter -->
+          <div>
+            <h4 style="margin-bottom: 12px; color: var(--text-muted); font-size: 0.9rem;">Price Range</h4>
+            <input type="range" id="priceRange" min="0" max="5000" step="100" value="5000"
+              style="width: 100%; cursor: pointer;">
+            <div
+              style="display: flex; justify-content: space-between; margin-top: 8px; font-size: 0.9rem; color: var(--text-muted);">
+              <span>₹0</span>
+              <span id="priceVal">₹5000</span>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main style="flex-grow: 1;">
+
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+            <h2>Featured Books</h2>
+            <div class="search-bar" style="position: relative;">
+              <input type="text" placeholder="Search title or author..."
+                style="padding: 10px 16px; border-radius: 20px; border: 1px solid var(--border); background: var(--bg-card); color: #fff; width: 250px;">
+            </div>
+          </div>
+
+          <!-- This grid will be populated by script.js -->
+          <div class="cards-grid" id="book-grid" style="grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));">
+            <!-- Javascript renders items here -->
+          </div>
+        </main>
+
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= SELL SECTION ================= -->
+  <section class="section alt" id="sell">
+    <div class="container section-inner">
+
+      <div class="section-image animate-fade-in">
+        <div class="glass"
+          style="padding: 30px; border-radius: 20px; background: linear-gradient(rgba(22, 27, 34, 0.85), rgba(22, 27, 34, 0.85)), url('images/reading corner.jpeg'); background-size: cover; background-position: center;">
+          <h3 style="margin-bottom: 20px;">List a Book for Sale</h3>
+          <form id="sell-form">
+            <div class="form-group">
+              <label class="form-label">Book Title</label>
+              <input type="text" id="sell-title" class="form-input" placeholder="e.g. The Hobbit" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Author</label>
+              <input type="text" id="sell-author" class="form-input" placeholder="e.g. J.R.R. Tolkien" required>
+            </div>
+            <div class="form-group">
+              <label class="form-label">Price (₹)</label>
+              <input type="number" id="sell-price" class="form-input" placeholder="999" required>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width: 100%;">List It</button>
+          </form>
+        </div>
+      </div>
+
+      <div class="section-text animate-fade-in">
+        <h2>Sell Your <span class="text-gradient">Used Books</span></h2>
+        <p>
+          Give your pre-loved books a new home. Listing is free and easy.
+          Connect with other readers and earn cash for your next literary purchase.
+        </p>
+        <ul style="margin-bottom: 24px; color: var(--text-muted);">
+          <li style="margin-bottom: 10px;">✓ No listing fees</li>
+          <li style="margin-bottom: 10px;">✓ Instant reach to thousands of readers</li>
+          <li>✓ Secure transactions</li>
+        </ul>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ================= CTA ================= -->
+  <section class="cta">
+    <div class="container">
+      <h2>Looking for something specific?</h2>
+      <p>Check out our categorized collections.</p>
+      <a href="Categories.html" class="btn btn-secondary">Browse Categories</a>
+    </div>
+  </section>
+
+  <!-- ================= FOOTER ================= -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-note">
+        <p>© <span id="year"></span> BookVerse. All rights reserved.</p>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+</html>
