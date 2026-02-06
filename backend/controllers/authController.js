@@ -14,7 +14,8 @@ exports.register = async (req, res) => {
         await user.save();
 
         // Send Welcome Email
-        await sendEmail(email, "Welcome to BookVerse! 📚", welcomeTemplate(name));
+        // Send Welcome Email (Async - don't wait)
+        sendEmail(email, "Welcome to BookVerse! 📚", welcomeTemplate(name)).catch(err => console.error("Email fail:", err));
 
         res.status(201).json({ message: 'User registered successfully' });
     } catch (err) {
@@ -67,7 +68,7 @@ exports.forgotPassword = async (req, res) => {
         const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
         const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-        await sendEmail(user.email, "Password Reset - BookVerse", passwordResetTemplate(resetUrl));
+        sendEmail(user.email, "Password Reset - BookVerse", passwordResetTemplate(resetUrl)).catch(err => console.error("Email fail:", err));
 
         res.json({ message: 'Password reset link sent to email' });
     } catch (err) {
