@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard';
 
+import { API_URL } from '../config';
+
 const Home = () => {
     const [featuredBooks, setFeaturedBooks] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -10,7 +12,7 @@ const Home = () => {
     useEffect(() => {
         const fetchBooks = async () => {
             try {
-                const res = await axios.get('http://localhost:5000/api/books');
+                const res = await axios.get(`${API_URL}/api/books`);
                 // Display top 4 books as featured
                 setFeaturedBooks(res.data.slice(0, 4));
             } catch (err) {
