@@ -8,8 +8,7 @@ const userSchema = new mongoose.Schema({
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
     resetPasswordToken: { type: String },
-    resetPasswordExpires: { type: Date },
-    wishlist: [{ type: Number }] // Stores Book IDs
+    resetPasswordExpires: { type: Date }
 });
 
 // Pre-save hook to hash password

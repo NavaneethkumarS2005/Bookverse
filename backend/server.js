@@ -18,7 +18,6 @@ const contactRoutes = require('./routes/contact');
 const reviewRoutes = require('./routes/reviews');
 const phonePeRoutes = require('./routes/phonepe');
 const adminRoutes = require('./routes/admin');
-const wishlistRoutes = require('./routes/wishlist');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -58,7 +57,6 @@ app.use('/api/reviews', reviewRoutes);
 app.use('/api/upload', uploadRoutes); // Replaces inline /api/upload
 app.use('/api/phonepe', phonePeRoutes);
 app.use('/api/admin', adminRoutes);
-app.use('/api/wishlist', wishlistRoutes);
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
