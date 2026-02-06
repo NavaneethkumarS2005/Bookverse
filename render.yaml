@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: bookverse-backend
+    env: node
+    plan: free
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: MONGO_URI
+        sync: false
+      - key: CLIENT_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
