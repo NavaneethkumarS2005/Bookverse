@@ -16,6 +16,7 @@ const orderRoutes = require('./routes/orders');
 const paymentRoutes = require('./routes/payment');
 const contactRoutes = require('./routes/contact');
 const reviewRoutes = require('./routes/reviews');
+const uploadRoutes = require('./routes/upload');
 const phonePeRoutes = require('./routes/phonepe');
 const adminRoutes = require('./routes/admin');
 
