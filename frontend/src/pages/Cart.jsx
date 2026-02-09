@@ -63,7 +63,12 @@ const Cart = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    items: cart.map(item => ({ id: item.id, quantity: item.quantity || 1 }))
+                    items: cart.map(item => ({
+                        bookId: item.id,
+                        title: item.title,
+                        price: item.price,
+                        quantity: item.quantity || 1
+                    }))
                 })
             });
 
@@ -302,7 +307,12 @@ const Cart = () => {
                                         <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night', labels: 'floating' } }}>
                                             <CheckoutForm
                                                 clientSecret={clientSecret}
-                                                cartItems={cart.map(item => ({ id: item.id, quantity: item.quantity || 1 }))}
+                                                cartItems={cart.map(item => ({
+                                                    bookId: item.id,
+                                                    title: item.title,
+                                                    price: item.price,
+                                                    quantity: item.quantity || 1
+                                                }))}
                                                 onSuccess={handleStripeSuccess}
                                                 onCancel={() => setClientSecret('')}
                                             />

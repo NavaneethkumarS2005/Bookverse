@@ -10,8 +10,8 @@ const SALT_KEY = "96434309-7796-489d-8924-ab56988a6076";
 const SALT_INDEX = 1;
 const PHONEPE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-const PROD_BACKEND_URL = "https://bookverse-km6b.onrender.com";
-const PROD_CLIENT_URL = "https://bookverse-livid.vercel.app";
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
 
 // 1. INITIATE PAYMENT
 const Order = require('../models/Order');
@@ -48,9 +48,9 @@ router.post('/pay', auth, async (req, res) => {
             merchantTransactionId: merchantTransactionId,
             merchantUserId: userId,
             amount: Math.round(amount * 100), // Convert to Paise
-            redirectUrl: `${PROD_BACKEND_URL}/api/phonepe/callback`,
+            redirectUrl: `${BACKEND_URL}/api/phonepe/callback`,
             redirectMode: "POST",
-            callbackUrl: `${PROD_BACKEND_URL}/api/phonepe/callback`,
+            callbackUrl: `${BACKEND_URL}/api/phonepe/callback`,
             mobileNumber: shippingDetails?.phone || "9999999999",
             paymentInstrument: {
                 type: "PAY_PAGE"
@@ -105,19 +105,19 @@ router.post('/callback', async (req, res) => {
                 { paymentId: merchantTransactionId },
                 { status: 'Paid' }
             );
-            res.redirect(`${PROD_CLIENT_URL}/orders?status=success`);
+            res.redirect(`${CLIENT_URL}/orders?status=success`);
         } else {
             // Update Order to Failed
             await Order.findOneAndUpdate(
                 { paymentId: merchantTransactionId },
                 { status: 'Failed' }
             );
-            res.redirect(`${PROD_CLIENT_URL}/cart?status=failure`);
+            res.redirect(`${CLIENT_URL}/cart?status=failure`);
         }
 
     } catch (error) {
         console.error("Callback Error:", error.message);
-        res.redirect(`${PROD_CLIENT_URL}/cart?status=error`);
+        res.redirect(`${CLIENT_URL}/cart?status=error`);
     }
 });
 
