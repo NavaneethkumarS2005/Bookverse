@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const crypto = require('crypto');
-const { auth } = require('../middleware/auth'); // Optional: if you want to protect payment
+const auth = require('../middleware/auth'); // Optional: if you want to protect payment
 
 // PHONEPE TEST CREDENTIALS (UAT)
 const MERCHANT_ID = "PGTESTPAYUAT86";
