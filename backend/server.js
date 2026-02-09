@@ -31,6 +31,7 @@ app.use(cors({
     origin: CLIENT_URL,
     credentials: true
 }));
+app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies (for PhonePe callback)
 app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, 'uploads'))); // Serve images
 
