@@ -59,7 +59,7 @@ app.use('/api/upload', uploadRoutes); // Replaces inline /api/upload
 app.use('/api/phonepe', phonePeRoutes);
 app.use('/api/admin', adminRoutes);
 
-app.use('/api/wishlist', wishlistRoutes); // (Already deleted in previous steps, but just ensuring context matches, actually I should place it before app.listen)
+
 
 // --- TEMPORARY DEBUG ROUTE ---
 app.get('/api/test-email', async (req, res) => {
