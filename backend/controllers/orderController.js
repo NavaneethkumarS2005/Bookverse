@@ -12,8 +12,9 @@ exports.createPaymentIntent = async (req, res) => {
 
         let totalAmount = 0;
         for (const item of items) {
-            const book = await Book.findOne({ id: item.bookId });
-            if (!book) return res.status(404).json({ message: `Book ${item.bookId || 'unknown'} not found` });
+            const id = item.bookId || item.id; // Handle both new and old frontend payloads
+            const book = await Book.findOne({ id: id });
+            if (!book) return res.status(404).json({ message: `Book ${id || 'unknown'} not found` });
             totalAmount += book.price * (item.quantity || 1);
         }
 
@@ -51,7 +52,8 @@ exports.saveOrder = async (req, res) => {
         let totalAmount = 0;
         const orderItems = [];
         for (const item of items) {
-            const book = await Book.findOne({ id: item.bookId });
+            const id = item.bookId || item.id;
+            const book = await Book.findOne({ id: id });
             if (book) {
                 totalAmount += book.price * (item.quantity || 1);
                 orderItems.push({
