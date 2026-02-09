@@ -166,7 +166,14 @@ const Cart = () => {
                 },
                 body: JSON.stringify({
                     amount: getCartTotal(),
-                    userId: "USER_" + Date.now()
+                    userId: "USER_" + Date.now(),
+                    items: cart.map(item => ({
+                        bookId: item.id,
+                        title: item.title,
+                        price: item.price,
+                        quantity: item.quantity || 1
+                    })),
+                    shippingDetails: shippingDetails
                 })
             });
 

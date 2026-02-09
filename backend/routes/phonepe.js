@@ -14,26 +14,44 @@ const PROD_BACKEND_URL = "https://bookverse-km6b.onrender.com";
 const PROD_CLIENT_URL = "https://bookverse-livid.vercel.app";
 
 // 1. INITIATE PAYMENT
-router.post('/pay', async (req, res) => {
+const Order = require('../models/Order');
+
+// 1. INITIATE PAYMENT
+router.post('/pay', auth, async (req, res) => {
     try {
-        const { amount, userId } = req.body;
+        const { amount, items, shippingDetails } = req.body;
+        const userId = req.user.id; // From auth middleware
 
         // Transaction ID must be unique
         const merchantTransactionId = `MT${Date.now()}`;
 
-        // Amount should be in Paise (INR * 100) NOT already converted by frontend if passed as INR
-        // If frontend passes 500 (INR), we simply use it. Assuming frontend passes INR.
-        // PhonePe expects Paise: 10 INR = 1000 Paise
+        // Create a Pending Order
+        const newOrder = new Order({
+            user: userId,
+            items: items.map(item => ({
+                bookId: item.bookId,
+                title: item.title,
+                quantity: item.quantity,
+                price: item.price
+            })),
+            totalAmount: amount, // Frontend sent amount (already processed if needed, but schema expects number)
+            paymentId: merchantTransactionId,
+            paymentMethod: 'PhonePe',
+            status: 'Pending',
+            shippingDetails: shippingDetails
+        });
+
+        await newOrder.save();
 
         const data = {
             merchantId: MERCHANT_ID,
             merchantTransactionId: merchantTransactionId,
-            merchantUserId: userId || 'MUID123',
-            amount: Math.round(amount * 100), // Ensure it is an INTEGER (Paise)
-            redirectUrl: `${PROD_BACKEND_URL}/api/phonepe/callback`, // Route to backend first
+            merchantUserId: userId,
+            amount: Math.round(amount * 100), // Convert to Paise
+            redirectUrl: `${PROD_BACKEND_URL}/api/phonepe/callback`,
             redirectMode: "POST",
-            callbackUrl: `${PROD_BACKEND_URL}/api/phonepe/callback`, // S2S callback
-            mobileNumber: "9999999999",
+            callbackUrl: `${PROD_BACKEND_URL}/api/phonepe/callback`,
+            mobileNumber: shippingDetails?.phone || "9999999999",
             paymentInstrument: {
                 type: "PAY_PAGE"
             }
@@ -42,14 +60,9 @@ router.post('/pay', async (req, res) => {
         const payload = JSON.stringify(data);
         const payloadMain = Buffer.from(payload).toString('base64');
 
-        // X-VERIFY Header: SHA256(base64Payload + "/pg/v1/pay" + saltKey) + ### + saltIndex
         const stringToHash = payloadMain + "/pg/v1/pay" + SALT_KEY;
         const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
         const checksum = sha256 + '###' + SALT_INDEX;
-
-        // Note: For Redirect Flow, we don't necessarily need to call the API from backend to get the link.
-        // We can just return the payload and checksum to frontend, and frontend posts a form.
-        // HOWEVER, PhonePe recommends calling the API to get the redirect URL directly.
 
         const options = {
             method: 'POST',
@@ -66,8 +79,6 @@ router.post('/pay', async (req, res) => {
 
         const response = await axios.request(options);
 
-        // Send the Redirect URL back to frontend
-        // Frontend should redirect window.location.href = response.data.data.instrumentResponse.redirectInfo.url
         res.json({
             success: true,
             url: response.data.data.instrumentResponse.redirectInfo.url,
@@ -75,11 +86,10 @@ router.post('/pay', async (req, res) => {
         });
 
     } catch (error) {
-        console.error("PhonePe Error:", error.response ? JSON.stringify(error.response.data) : error.message);
+        console.error("PhonePe Error:", error.message);
         res.status(500).json({
             success: false,
-            message: error.message || "PhonePe API Error",
-            details: error.response ? error.response.data : null
+            message: error.message || "PhonePe API Error"
         });
     }
 });
@@ -87,14 +97,21 @@ router.post('/pay', async (req, res) => {
 // 2. CALLBACK / REDIRECT HANDLER
 router.post('/callback', async (req, res) => {
     try {
-        // PhonePe sends response in body.code, body.message etc.
-        // For 'POST' redirectMode, it comes in body.
+        const { code, merchantTransactionId } = req.body;
 
-        if (req.body.code === 'PAYMENT_SUCCESS') {
-            // Redirect to Frontend Success Page
+        if (code === 'PAYMENT_SUCCESS') {
+            // Update Order to Paid
+            await Order.findOneAndUpdate(
+                { paymentId: merchantTransactionId },
+                { status: 'Paid' }
+            );
             res.redirect(`${PROD_CLIENT_URL}/orders?status=success`);
         } else {
-            // Redirect to Frontend Failure Page
+            // Update Order to Failed
+            await Order.findOneAndUpdate(
+                { paymentId: merchantTransactionId },
+                { status: 'Failed' }
+            );
             res.redirect(`${PROD_CLIENT_URL}/cart?status=failure`);
         }
 
@@ -128,8 +145,16 @@ router.get('/status/:txnId', async (req, res) => {
         const response = await axios.request(options);
 
         if (response.data.code === 'PAYMENT_SUCCESS') {
+            await Order.findOneAndUpdate(
+                { paymentId: merchantTransactionId },
+                { status: 'Paid' }
+            );
             res.json({ success: true, message: 'Payment Successful', data: response.data });
         } else {
+            await Order.findOneAndUpdate(
+                { paymentId: merchantTransactionId },
+                { status: 'Failed' }
+            );
             res.json({ success: false, message: 'Payment Failed or Pending', data: response.data });
         }
 
