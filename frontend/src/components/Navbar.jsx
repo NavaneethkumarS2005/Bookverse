@@ -70,6 +70,26 @@ const Navbar = () => {
                                 </div>
                                 <span style={{ display: 'none', '@media (min-width: 768px)': { display: 'inline' } }}>{user.name.split(' ')[0]}</span>
                             </Link>
+                            <button
+                                onClick={() => {
+                                    localStorage.removeItem('user');
+                                    localStorage.removeItem('token');
+                                    window.location.href = '/login';
+                                }}
+                                className="btn-logout"
+                                style={{
+                                    background: 'transparent',
+                                    border: '1px solid var(--error)',
+                                    color: 'var(--error)',
+                                    padding: '6px 14px',
+                                    borderRadius: '20px',
+                                    cursor: 'pointer',
+                                    fontSize: '0.8rem',
+                                    fontWeight: '600'
+                                }}
+                            >
+                                Logout
+                            </button>
                         </div>
                     ) : (
                         <Link to="/login" className="btn-nav">Login</Link>
