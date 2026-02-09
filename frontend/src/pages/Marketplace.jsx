@@ -13,6 +13,7 @@ const Marketplace = () => {
     // Filters
     const [searchTerm, setSearchTerm] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('All');
+    const [priceRange, setPriceRange] = useState(5000);
 
 
     const { addToCart } = useCart();
