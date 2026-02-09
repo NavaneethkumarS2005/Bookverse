@@ -29,7 +29,7 @@ const sendEmail = async (to, subject, htmlContent) => {
         return info;
     } catch (error) {
         console.error("❌ Error sending email:", error);
-        return null;
+        throw error; // Throwing so we can see the error in the test-route response
     }
 };
 
