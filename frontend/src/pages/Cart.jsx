@@ -136,7 +136,12 @@ const Cart = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    items: cart.map(item => ({ id: item.id, quantity: item.quantity || 1 })),
+                    items: cart.map(item => ({
+                        bookId: item.id,
+                        title: item.title,
+                        price: item.price,
+                        quantity: item.quantity || 1
+                    })),
                     paymentMethod: 'COD',
                     shippingDetails: shippingDetails
                 })
