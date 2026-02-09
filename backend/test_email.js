@@ -1,30 +1,25 @@
-const path = require('path');
-require('dotenv').config({ path: path.resolve(__dirname, '.env') });
+require('dotenv').config();
 const sendEmail = require('./utils/emailService');
 
-async function test() {
-    console.log("Testing email...");
-    console.log("User:", process.env.EMAIL_USER);
-
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.error("❌ Missing EMAIL_USER or EMAIL_PASS in .env");
-        return;
-    }
+const testEmail = async () => {
+    console.log("📧 Testing Email Service...");
+    const userEmail = "navaneethkumar981@gmail.com"; // Sending to yourself to test
 
     try {
-        const info = await sendEmail(
-            process.env.EMAIL_USER, // Send to self
+        const result = await sendEmail(
+            userEmail,
             "Test Email from BookVerse",
-            "<h1>It Works!</h1><p>Your email configuration is correct.</p>"
+            "<h1>It Works!</h1><p>If you see this, the email service is working perfectly.</p>"
         );
-        if (info) {
-            console.log("✅ Email sent successfully!");
-        } else {
-            console.log("❌ Email failed to send. Check console for details.");
-        }
-    } catch (e) {
-        console.error("❌ Error:", e);
-    }
-}
 
-test();
+        if (result) {
+            console.log("✅ Email Sent Successfully!");
+        } else {
+            console.log("❌ Email Failed (Check logs above)");
+        }
+    } catch (err) {
+        console.error("❌ Critical Error:", err);
+    }
+};
+
+testEmail();

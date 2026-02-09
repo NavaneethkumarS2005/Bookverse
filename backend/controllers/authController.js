@@ -68,7 +68,12 @@ exports.forgotPassword = async (req, res) => {
         const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
         const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-        sendEmail(user.email, "Password Reset - BookVerse", passwordResetTemplate(resetUrl)).catch(err => console.error("Email fail:", err));
+        try {
+            await sendEmail(user.email, "Password Reset - BookVerse", passwordResetTemplate(resetUrl));
+        } catch (emailErr) {
+            console.error("Email send failed:", emailErr);
+            return res.status(500).json({ message: 'Error sending email. Please try again later.' });
+        }
 
         res.json({ message: 'Password reset link sent to email' });
     } catch (err) {
