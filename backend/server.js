@@ -62,25 +62,7 @@ app.use('/api/admin', adminRoutes);
 
 
 // --- TEMPORARY DEBUG ROUTE ---
-app.get('/api/test-email', async (req, res) => {
-    try {
-        console.log("Attempting to send test email...");
-        const sendEmail = require('./utils/emailService');
-        const info = await sendEmail(
-            process.env.EMAIL_USER || "navaneethkumar981@gmail.com",
-            "Render Live Test",
-            "<h1>It Works!</h1><p>Render is successfully talking to Gmail.</p>"
-        );
-        if (info) {
-            res.json({ message: "Email Sent Successfully!", info });
-        } else {
-            res.status(500).json({ message: "Email Function returned null (Check logs)", envUser: process.env.EMAIL_USER });
-        }
-    } catch (err) {
-        res.status(500).json({ message: "Email Failed", error: err.toString(), stack: err.stack });
-    }
-});
-// -----------------------------
+
 
 app.listen(PORT, () => {
     console.log(`🚀 Server running on port ${PORT}`);
