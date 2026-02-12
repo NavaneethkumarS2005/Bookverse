@@ -121,7 +121,7 @@ const Cart: React.FC = () => {
         }
     };
 
-    const handleStripeSuccess = (paymentId?: string) => {
+    const handleStripeSuccess = () => {
         setIsPaymentOpen(false);
         clearCart();
         alert("Payment Successful!");
@@ -241,7 +241,7 @@ const Cart: React.FC = () => {
                                         <div className="font-bold text-indigo-600 dark:text-indigo-400">₹{item.price}</div>
                                     </div>
                                     <button
-                                        onClick={() => removeFromCart(item.id)}
+                                        onClick={() => removeFromCart(item.id ? String(item.id) : item._id)}
                                         className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-sm font-medium transition-colors"
                                     >
                                         Remove
@@ -299,8 +299,8 @@ const Cart: React.FC = () => {
                                 <button
                                     onClick={() => setPaymentMethod('stripe')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'stripe'
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">💳</span>
@@ -309,8 +309,8 @@ const Cart: React.FC = () => {
                                 <button
                                     onClick={() => setPaymentMethod('phonepe')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'phonepe'
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">🟣</span>
@@ -319,8 +319,8 @@ const Cart: React.FC = () => {
                                 <button
                                     onClick={() => setPaymentMethod('cod')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'cod'
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                            : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">💵</span>

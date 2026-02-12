@@ -25,7 +25,7 @@ interface Order {
 }
 
 const Profile: React.FC = () => {
-    const [user, setUser] = useState<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
+    const [user] = useState<User | null>(JSON.parse(localStorage.getItem('user') || 'null'));
     const [activeTab, setActiveTab] = useState('profile'); // profile, orders
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(false);
@@ -89,8 +89,8 @@ const Profile: React.FC = () => {
                                 <button
                                     onClick={() => setActiveTab('profile')}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'profile'
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
-                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                         }`}
                                 >
                                     <span>👤</span> My Profile
@@ -98,8 +98,8 @@ const Profile: React.FC = () => {
                                 <button
                                     onClick={() => setActiveTab('orders')}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'orders'
-                                            ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
-                                            : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
+                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                                         }`}
                                 >
                                     <span>📦</span> My Orders
@@ -177,8 +177,8 @@ const Profile: React.FC = () => {
                                                                 </div>
                                                             </div>
                                                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'Paid'
-                                                                    ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                                    : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                                                 }`}>
                                                                 {order.status}
                                                             </span>

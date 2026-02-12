@@ -81,6 +81,8 @@ export interface IUser {
 export interface IProduct {
     /** Unique identifier for the product (MongoDB ObjectId). */
     _id: string; // Changed from 'id' to '_id' to match MongoDB
+    /** Legacy numerical ID for compatibility. */
+    id?: number | string;
     /** Title of the book. */
     title: string;
     /** Author of the book. */
@@ -92,7 +94,9 @@ export interface IProduct {
     /** URL of the book's cover image. */
     image: string;
     /** Category or genre of the book (e.g., Fiction, Sci-Fi). */
-    category: string;
+    category?: string;
+    /** Genre of the book (Backend uses this field). */
+    genre?: string;
     /** Number of items available in stock. */
     stock: number;
     /** Average rating of the book (0-5). */

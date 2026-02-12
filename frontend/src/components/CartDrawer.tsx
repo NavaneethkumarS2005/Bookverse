@@ -90,7 +90,7 @@ const CartDrawer: React.FC = () => {
                                             }
                                         </div>
                                         <button
-                                            onClick={() => removeFromCart(item.id)}
+                                            onClick={() => removeFromCart(item.id ? String(item.id) : item._id)}
                                             className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
                                         >
                                             Remove

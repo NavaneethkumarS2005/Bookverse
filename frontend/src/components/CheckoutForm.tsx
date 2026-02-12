@@ -10,7 +10,7 @@ interface CheckoutFormProps {
     onCancel: () => void;
 }
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, cartItems, onSuccess, onCancel }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, onSuccess, onCancel }) => {
     const stripe = useStripe();
     const elements = useElements();
 

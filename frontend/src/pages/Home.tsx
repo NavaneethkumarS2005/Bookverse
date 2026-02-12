@@ -5,14 +5,7 @@ import ProductCard from '../components/ProductCard';
 // @ts-ignore
 import { API_URL } from '../config';
 
-interface Book {
-    id: string;
-    title: string;
-    author: string;
-    price: number;
-    image: string;
-    genre: string;
-}
+import { Book } from '../types';
 
 const Home: React.FC = () => {
     // Initialize as empty array but typed as Book[]
