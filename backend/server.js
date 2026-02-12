@@ -24,11 +24,25 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 // --- MIDDLEWARE ---
-const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5173';
-console.log(`🔌 CORS Configured for: ${CLIENT_URL}`);
+// --- MIDDLEWARE ---
+const allowedOrigins = [
+    'http://localhost:5173',
+    'http://localhost:5174',
+    process.env.CLIENT_URL
+].filter(Boolean);
+
+console.log(`🔌 CORS Configured for: ${allowedOrigins.join(', ')}`);
 
 app.use(cors({
-    origin: CLIENT_URL,
+    origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+        if (allowedOrigins.indexOf(origin) === -1) {
+            const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+            return callback(new Error(msg), false);
+        }
+        return callback(null, true);
+    },
     credentials: true
 }));
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies (for PhonePe callback)
@@ -65,6 +79,12 @@ app.use('/api/admin', adminRoutes);
 // --- TEMPORARY DEBUG ROUTE ---
 
 
-app.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-});
+// Export app for serverless
+module.exports = app;
+
+// Only start server if running directly
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`🚀 Server running on port ${PORT}`);
+    });
+}

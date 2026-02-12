@@ -1,3 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  h1 {
+    @apply font-outfit text-4xl font-bold tracking-tight text-slate-900 dark:text-white;
+  }
+
+  h2 {
+    @apply font-outfit text-3xl font-bold tracking-tight text-slate-900 dark:text-white;
+  }
+
+  h3 {
+    @apply font-outfit text-2xl font-semibold text-slate-900 dark:text-white;
+  }
+
+  p {
+    @apply font-inter text-slate-600 dark:text-slate-300 leading-relaxed;
+  }
+}
+
 /* ===== FONTS (Outfit for Headings, Inter for Body) ===== */
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap');
 

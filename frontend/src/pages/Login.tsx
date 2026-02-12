@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate, Link } from 'react-router-dom';
+// @ts-ignore
 import { API_URL } from '../config';
 
-const Login = () => {
+const Login: React.FC = () => {
     const [isLogin, setIsLogin] = useState(true);
 
     const [formData, setFormData] = useState({
@@ -17,26 +18,23 @@ const Login = () => {
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
 
-    const validatePassword = (password) => {
+    const validatePassword = (password: string) => {
         // Regex: At least one uppercase, one lowercase, one number, one special char, min 8 chars
         const regex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
         return regex.test(password);
     };
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setFormData({
             ...formData,
             [e.target.name]: e.target.value
         });
     };
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
         setMessage('');
-
-        // Forgot Password Flow
-
 
         // Password Validation for Sign Up
         if (!isLogin && !validatePassword(formData.password)) {
@@ -60,23 +58,23 @@ const Login = () => {
                 localStorage.setItem('user', JSON.stringify(response.data.user));
                 localStorage.setItem('token', response.data.token);
                 setMessage('Login successful! Redirecting...');
-                setTimeout(() => navigate('/marketplace'), 1500);
+                setTimeout(() => {
+                    navigate('/marketplace');
+                    window.location.reload(); // Force reload to update Navbar state
+                }, 1000);
             } else {
                 setMessage('Registration successful! Please login.');
                 setIsLogin(true);
                 setFormData({ name: '', email: '', password: '' });
             }
-        } catch (err) {
+        } catch (err: any) {
             console.error(err);
-            // Show specific error from backend if available (e.g., "E11000 duplicate key")
             const backendError = err.response?.data?.error;
             const backendMessage = err.response?.data?.message;
 
             if (backendError && backendError.includes('E11000')) {
                 setMessage('Email already registered. Please login instead.');
             } else {
-                // If we have a specific error details, show that. Otherwise show the generic message.
-                // Or show both: "Error registering user: <details>"
                 setMessage(backendError ? `${backendMessage}: ${backendError}` : (backendMessage || 'Something went wrong'));
             }
         } finally {
@@ -85,108 +83,102 @@ const Login = () => {
     };
 
     return (
-        <div style={{ paddingTop: '100px', minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="container">
-            <div className="glass" style={{ padding: '40px', borderRadius: '20px', width: '100%', maxWidth: '450px' }}>
-                <h2 style={{ textAlign: 'center', marginBottom: '24px', fontSize: '2rem' }}>
-                    {isLogin ? 'Welcome Back' : 'Join the Community'}
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-20 px-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 md:p-10 border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+                {/* Decorative background blur */}
+                <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
+
+                <h2 className="text-center mb-8 text-3xl font-outfit font-bold text-slate-900 dark:text-white relative z-10">
+                    {isLogin ? 'Welcome Back' : 'Join the BookVerse'}
                 </h2>
 
                 {message && (
-                    <div style={{
-                        padding: '12px',
-                        borderRadius: '8px',
-                        marginBottom: '20px',
-                        background: message.includes('success') || message.includes('sent') ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                        color: message.includes('success') || message.includes('sent') ? '#10B981' : '#EF4444',
-                        textAlign: 'center',
-                        fontSize: '0.9rem'
-                    }}>
+                    <div className={`p-4 rounded-xl mb-6 text-center text-sm font-medium relative z-10 ${message.includes('success') || message.includes('sent')
+                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
+                        : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800'
+                        }`}>
                         {message}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit}>
+                <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
                     {!isLogin && (
-                        <div className="form-group">
-                            <label className="form-label">Name</label>
+                        <div>
+                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Name</label>
                             <input
                                 type="text"
                                 name="name"
-                                className="form-input"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                                 value={formData.name}
                                 onChange={handleChange}
                                 required={!isLogin}
+                                placeholder="John Doe"
                             />
                         </div>
                     )}
 
-                    <div className="form-group">
-                        <label className="form-label">Email</label>
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Email</label>
                         <input
                             type="email"
                             name="email"
-                            className="form-input"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             value={formData.email}
                             onChange={handleChange}
                             required
+                            placeholder="you@example.com"
                         />
                     </div>
 
-                    <div className="form-group" style={{ position: 'relative' }}>
-                        <label className="form-label">Password</label>
+                    <div className="relative">
+                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Password</label>
                         <input
                             type={showPassword ? "text" : "password"}
                             name="password"
-                            className="form-input"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pr-12"
                             value={formData.password}
                             onChange={handleChange}
                             required
+                            placeholder="••••••••"
                         />
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            style={{
-                                position: 'absolute',
-                                right: '15px',
-                                top: '38px',
-                                background: 'none',
-                                border: 'none',
-                                color: 'var(--text-muted)',
-                                cursor: 'pointer',
-                                fontSize: '1.2rem'
-                            }}
+                            className="absolute right-4 top-[34px] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
                         >
                             {showPassword ? '👁️' : '🔒'}
                         </button>
-                        {!isLogin && <small style={{ color: 'var(--text-muted)', fontSize: '0.75rem', marginTop: '5px', display: 'block' }}>
+                        {!isLogin && <p className="text-xs text-slate-500 mt-2 ml-1">
                             Use 8+ chars, upper, lower, number, special symbol.
-                        </small>}
+                        </p>}
                     </div>
 
                     <button
                         type="submit"
-                        className="btn btn-primary"
-                        style={{ width: '100%', marginTop: '10px' }}
+                        className="w-full py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-pink-500 to-indigo-600 hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-indigo-500/30 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
                         disabled={loading}
                     >
                         {loading ? 'Processing...' : (isLogin ? 'Login' : 'Sign Up')}
                     </button>
 
                     {isLogin && (
-                        <Link
-                            to="/forgot-password"
-                            style={{ display: 'block', width: '100%', marginTop: '15px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.9rem', textDecoration: 'underline' }}
-                        >
-                            Forgot Password?
-                        </Link>
+                        <div className="text-center mt-4">
+                            <Link
+                                to="/forgot-password"
+                                className="text-sm text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                            >
+                                Forgot Password?
+                            </Link>
+                        </div>
                     )}
                 </form>
 
-                <div style={{ marginTop: '24px', textAlign: 'center', color: 'var(--text-muted)' }}>
+                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 text-sm relative z-10">
                     {isLogin ? "Don't have an account? " : "Already have an account? "}
                     <button
                         onClick={() => { setIsLogin(!isLogin); setMessage(''); }}
-                        style={{ background: 'none', border: 'none', color: 'var(--primary)', cursor: 'pointer', fontWeight: 'bold', fontSize: '1rem' }}
+                        className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline bg-transparent border-none cursor-pointer"
                     >
                         {isLogin ? 'Sign Up' : 'Login'}
                     </button>

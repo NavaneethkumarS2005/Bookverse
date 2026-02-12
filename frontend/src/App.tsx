@@ -17,12 +17,15 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 
+import CartDrawer from './components/CartDrawer';
+
 function App() {
   return (
     <CartProvider>
       <ThemeProvider>
         <Router>
           <div className="app-container">
+            <CartDrawer />
             <Navbar />
             <Routes>
               <Route path="/" element={<Home />} />

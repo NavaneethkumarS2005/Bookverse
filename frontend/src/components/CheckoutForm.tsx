@@ -1,15 +1,23 @@
 import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+// @ts-ignore
 import { API_URL } from '../config';
 
-export default function CheckoutForm({ clientSecret, cartItems, onSuccess, onCancel }) {
+interface CheckoutFormProps {
+    clientSecret: string;
+    cartItems: any[]; // Define a stricter type if possible, or use CartItem[]
+    onSuccess: (paymentId?: string) => void;
+    onCancel: () => void;
+}
+
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ clientSecret, cartItems, onSuccess, onCancel }) => {
     const stripe = useStripe();
     const elements = useElements();
 
-    const [message, setMessage] = useState(null);
+    const [message, setMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
 
         if (!stripe || !elements) {
@@ -18,19 +26,18 @@ export default function CheckoutForm({ clientSecret, cartItems, onSuccess, onCan
 
         setIsLoading(true);
 
+        // Confirm the payment
         const { error, paymentIntent } = await stripe.confirmPayment({
             elements,
             confirmParams: {
-                // We don't want a redirect for this simple flow, but Stripe mandates a return_url usually.
-                // However, if we handle next_action manually or use redirect: 'if_required', it works smoothly.
-                // Let's rely on simple redirect for now OR 'if_required' for SPA feel.
+                // Return URL is required by Stripe, but we handle 'if_required' usually
                 return_url: `${window.location.origin}/orders`,
             },
             redirect: 'if_required'
         });
 
         if (error) {
-            setMessage(error.message);
+            setMessage(error.message || "An unexpected error occurred.");
             setIsLoading(false);
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
             // Payment successful! Now save order on backend
@@ -49,11 +56,11 @@ export default function CheckoutForm({ clientSecret, cartItems, onSuccess, onCan
                 });
                 const data = await res.json();
                 if (data.success) {
-                    onSuccess();
+                    onSuccess(paymentIntent.id);
                 } else {
                     setMessage("Payment succeeded but order save failed: " + data.message);
                 }
-            } catch (err) {
+            } catch (err: any) {
                 setMessage("Error saving order: " + err.message);
             }
             setIsLoading(false);
@@ -64,22 +71,29 @@ export default function CheckoutForm({ clientSecret, cartItems, onSuccess, onCan
     };
 
     return (
-        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-            <PaymentElement id="payment-element" options={{ layout: "tabs" }} />
-            {message && <div style={{ color: "red", marginTop: "10px", fontSize: "0.9rem" }}>{message}</div>}
+        <form onSubmit={handleSubmit} className="w-full">
+            <div className="mb-6">
+                <PaymentElement id="payment-element" options={{ layout: "tabs" }} />
+            </div>
 
-            <div style={{ marginTop: '20px', display: 'flex', gap: '10px' }}>
+            {message && (
+                <div className="p-3 mb-4 text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg">
+                    {message}
+                </div>
+            )}
+
+            <div className="flex gap-3 mt-6">
                 <button
                     type="button"
                     onClick={onCancel}
-                    style={{ flex: 1, padding: '12px', borderRadius: '8px', border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-main)', cursor: 'pointer' }}
+                    className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
                 >
                     Cancel
                 </button>
                 <button
                     disabled={isLoading || !stripe || !elements}
                     id="submit"
-                    style={{ flex: 2, padding: '12px', borderRadius: '8px', border: 'none', background: 'var(--primary)', color: '#fff', fontWeight: 'bold', cursor: 'pointer', opacity: isLoading ? 0.7 : 1 }}
+                    className="flex-[2] py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                 >
                     {isLoading ? "Processing..." : "Pay Now"}
                 </button>
@@ -87,3 +101,5 @@ export default function CheckoutForm({ clientSecret, cartItems, onSuccess, onCan
         </form>
     );
 }
+
+export default CheckoutForm;
