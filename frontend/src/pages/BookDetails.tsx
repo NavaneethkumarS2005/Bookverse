@@ -198,22 +198,33 @@ const BookDetails: React.FC = () => {
 
                         {/* ACTIONS */}
                         <div className="flex flex-col sm:flex-row gap-4 mt-auto mb-12">
-                            <button
-                                onClick={handleAddToCart}
-                                disabled={addingToCart}
-                                className={`flex-1 px-8 py-4 rounded-xl font-bold text-white text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-indigo-500/25 ${addingToCart ? 'bg-indigo-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-xl hover:-translate-y-1'}`}
-                            >
-                                {addingToCart ? (
-                                    <>
-                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
-                                        Adding...
-                                    </>
-                                ) : (
-                                    <>
-                                        <span>🛒</span> Add to Cart
-                                    </>
-                                )}
-                            </button>
+                            {book.buyLink ? (
+                                <a
+                                    href={book.buyLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="flex-1 px-8 py-4 rounded-xl font-bold text-white text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-orange-500/25 bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-xl hover:-translate-y-1"
+                                >
+                                    <span>🔗</span> Buy on {book.buyLink.includes('amazon') ? 'Amazon' : 'Flipkart'}
+                                </a>
+                            ) : (
+                                <button
+                                    onClick={handleAddToCart}
+                                    disabled={addingToCart}
+                                    className={`flex-1 px-8 py-4 rounded-xl font-bold text-white text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-indigo-500/25 ${addingToCart ? 'bg-indigo-400 cursor-not-allowed' : 'bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-xl hover:-translate-y-1'}`}
+                                >
+                                    {addingToCart ? (
+                                        <>
+                                            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                            Adding...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <span>🛒</span> Add to Cart
+                                        </>
+                                    )}
+                                </button>
+                            )}
                             <button className="px-8 py-4 rounded-xl font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-lg">
                                 ❤ Save
                             </button>
