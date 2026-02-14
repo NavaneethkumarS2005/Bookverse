@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
 // @ts-ignore
 import { API_URL } from '../config';
 
@@ -21,6 +23,52 @@ const Orders: React.FC = () => {
     const [orders, setOrders] = useState<Order[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+
+    const downloadReceipt = (order: Order) => {
+        const doc = new jsPDF();
+
+        // Header
+        doc.setFillColor(79, 70, 229); // Indigo 600
+        doc.rect(0, 0, 210, 40, 'F');
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.text('BookVerse', 14, 25);
+        doc.setFontSize(12);
+        doc.text('Order Receipt', 200, 25, { align: 'right' });
+
+        // Order Info
+        doc.setTextColor(0, 0, 0);
+        doc.setFontSize(10);
+        doc.text(`Order ID: ${order._id}`, 14, 50);
+        doc.text(`Date: ${new Date(order.createdAt).toLocaleDateString()}`, 14, 55);
+        doc.text(`Status: ${order.status}`, 14, 60);
+
+        // Table
+        const tableBody = order.items.map(item => [
+            item.title,
+            item.quantity,
+            `$${item.price}`,
+            `$${item.price * item.quantity}`
+        ]);
+
+        autoTable(doc, {
+            startY: 70,
+            head: [['Item', 'Qty', 'Price', 'Total']],
+            body: tableBody,
+            foot: [['', '', 'Total Amount', `$${order.totalAmount}`]],
+            theme: 'grid',
+            headStyles: { fillColor: [79, 70, 229] },
+            footStyles: { fillColor: [241, 245, 249], textColor: [0, 0, 0], fontStyle: 'bold' }
+        });
+
+        // Footer
+        const finalY = (doc as any).lastAutoTable.finalY + 20;
+        doc.setFontSize(10);
+        doc.setTextColor(100);
+        doc.text('Thank you for shopping with BookVerse!', 105, finalY, { align: 'center' });
+
+        doc.save(`receipt-${order._id}.pdf`);
+    };
 
     useEffect(() => {
         const fetchOrders = async () => {
@@ -88,10 +136,17 @@ const Orders: React.FC = () => {
                                             <div className="font-bold text-indigo-600 dark:text-indigo-400">₹{order.totalAmount}</div>
                                         </div>
                                     </div>
-                                    <div>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => downloadReceipt(order)}
+                                            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                            title="Download Receipt"
+                                        >
+                                            <span>📄</span> Receipt
+                                        </button>
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'Paid'
-                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                             }`}>
                                             {order.status}
                                         </span>

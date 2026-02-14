@@ -1,6 +1,8 @@
-const jwt = require('jsonwebtoken');
+import { Response, NextFunction } from 'express';
+import jwt from 'jsonwebtoken';
+import { AuthRequest } from '../types';
 
-const auth = (req, res, next) => {
+const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -16,4 +18,4 @@ const auth = (req, res, next) => {
     }
 };
 
-module.exports = auth;
+export default auth;

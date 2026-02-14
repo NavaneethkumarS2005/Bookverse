@@ -1,13 +1,17 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
+import Review from '../models/Review';
+import Book from '../models/Book';
+import Order from '../models/Order';
+// @ts-ignore
+import authMiddleware from '../middleware/auth';
+import { AuthRequest } from '../types';
+
 const router = express.Router();
-const Review = require('../models/Review');
-const Book = require('../models/Book');
-const authMiddleware = require('../middleware/auth');
 
 // GET reviews for a book
-router.get('/:bookId', async (req, res) => {
+router.get('/:bookId', async (req: Request, res: Response) => {
     try {
-        const reviews = await Review.find({ bookId: req.params.bookId }).sort({ createdAt: -1 });
+        const reviews = await Review.find({ bookId: parseInt(req.params.bookId as string) }).sort({ createdAt: -1 });
         res.json(reviews);
     } catch (err) {
         res.status(500).json({ message: "Error fetching reviews" });
@@ -15,10 +19,17 @@ router.get('/:bookId', async (req, res) => {
 });
 
 // POST a review
-router.post('/:bookId', authMiddleware, async (req, res) => {
+router.post('/:bookId', authMiddleware, async (req: AuthRequest, res: Response) => {
     try {
         const { rating, comment } = req.body;
-        const bookId = req.params.bookId;
+        const bookId = parseInt(req.params.bookId as string);
+
+        // Check if user has bought this book (Paid order)
+        const hasPurchased = await Order.findOne({
+            user: req.user.id,
+            status: 'Paid',
+            'items.bookId': bookId
+        });
 
         // 1. Create Review
         const newReview = new Review({
@@ -26,7 +37,8 @@ router.post('/:bookId', authMiddleware, async (req, res) => {
             userName: req.user.name || "Anonymous", // Ideally fetch user name or store it in token
             bookId: bookId,
             rating,
-            comment
+            comment,
+            isVerified: !!hasPurchased
         });
         await newReview.save();
 
@@ -36,10 +48,11 @@ router.post('/:bookId', authMiddleware, async (req, res) => {
         const avgRating = totalRating / reviews.length;
 
         // 3. Update Book
+        // Assuming Book model uses 'id' (number) for identification in this context
         await Book.updateOne(
             { id: bookId },
             {
-                rating: avgRating.toFixed(1),
+                rating: avgRating, // Mongoose handles rounding/casting usually, but fix in frontend if needed
                 reviews: reviews.length
             }
         );
@@ -51,4 +64,4 @@ router.post('/:bookId', authMiddleware, async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

@@ -1,31 +1,32 @@
-const User = require('../models/User');
-const jwt = require('jsonwebtoken');
-const crypto = require('crypto');
-const sendEmail = require('../utils/emailService');
+import { Request, Response } from 'express';
+import User, { IUser } from '../models/User';
+import jwt from 'jsonwebtoken';
+import crypto from 'crypto';
+import bcrypt from 'bcryptjs';
+// @ts-ignore
+import sendEmail from '../utils/emailService';
+// @ts-ignore
+import { welcomeTemplate, passwordResetTemplate } from '../utils/emailTemplates';
 
-const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+const clientUrl = process.env.CLIENT_URL || 'https://book-vers.netlify.app';
 
-const { welcomeTemplate, passwordResetTemplate } = require('../utils/emailTemplates');
-
-exports.register = async (req, res) => {
+export const register = async (req: Request, res: Response) => {
     try {
         const { name, email, password } = req.body;
         const user = new User({ name, email, password });
         await user.save();
 
-        // Send Welcome Email
         // Send Welcome Email (Async - don't wait)
-        sendEmail(email, "Welcome to BookVerse! 📚", welcomeTemplate(name)).catch(err => console.error("Email fail:", err));
+        sendEmail(email, "Welcome to BookVerse! 📚", welcomeTemplate(name))
+            .catch((err: any) => console.error("Welcome Email fail:", err));
 
         res.status(201).json({ message: 'User registered successfully' });
-    } catch (err) {
+    } catch (err: any) {
         res.status(400).json({ message: 'Error registering user', error: err.message });
     }
 };
 
-const bcrypt = require('bcryptjs');
-
-exports.login = async (req, res) => {
+export const login = async (req: Request, res: Response) => {
     try {
         const { email, password } = req.body;
         const user = await User.findOne({ email });
@@ -41,18 +42,26 @@ exports.login = async (req, res) => {
             { expiresIn: '7d' }
         );
 
+        // Security: Set Cookie (as requested)
+        res.cookie('token', token, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'none',
+            maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+        });
+
         res.json({
             message: 'Login successful',
             user: { name: user.name, email: user.email, role: user.role },
             token
         });
-    } catch (err) {
+    } catch (err: any) {
         console.error("Login Error:", err);
         res.status(500).json({ message: 'Server error', error: err.message });
     }
 };
 
-exports.forgotPassword = async (req, res) => {
+export const forgotPassword = async (req: Request, res: Response) => {
     try {
         const { email } = req.body;
         const user = await User.findOne({ email });
@@ -61,14 +70,14 @@ exports.forgotPassword = async (req, res) => {
         // Generate Token
         const resetToken = crypto.randomBytes(20).toString('hex');
         user.resetPasswordToken = resetToken;
+        // @ts-ignore
         user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
         await user.save();
 
-        // Send Email using CLIENT_URL from env or fallback
-        const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
         const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
-        sendEmail(user.email, "Password Reset - BookVerse", passwordResetTemplate(resetUrl)).catch(err => console.error("Email fail:", err));
+        // Wait for email to send before responding
+        await sendEmail(user.email, "Password Reset - BookVerse", passwordResetTemplate(resetUrl));
 
         res.json({ message: 'Password reset link sent to email' });
     } catch (err) {
@@ -77,7 +86,7 @@ exports.forgotPassword = async (req, res) => {
     }
 };
 
-exports.resetPassword = async (req, res) => {
+export const resetPassword = async (req: Request, res: Response) => {
     try {
         const { token, newPassword } = req.body;
         const user = await User.findOne({

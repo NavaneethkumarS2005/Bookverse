@@ -1,5 +1,6 @@
-const Book = require('../models/Book');
-const User = require('../models/User');
+import { Request, Response } from 'express';
+import Book, { IBook } from '../models/Book';
+import User from '../models/User';
 
 const initialBooks = [
     { id: 1, title: "The Great Gatsby", author: "F. Scott Fitzgerald", price: 999, genre: "Fiction", image: "https://placehold.co/400x600/F87171/white?text=Great+Gatsby", rating: 4.5, reviews: 120 },
@@ -25,7 +26,7 @@ const initialBooks = [
     { id: 16, title: "The Catcher in the Rye", author: "J.D. Salinger", price: 550, genre: "Fiction", image: "https://placehold.co/400x600/6366f1/white?text=Catcher+Rye", rating: 4.2, reviews: 400 }
 ];
 
-exports.seedDatabase = async () => {
+export const seedDatabase = async () => {
     try {
         const count = await Book.countDocuments();
         if (count < initialBooks.length) {
@@ -41,7 +42,7 @@ exports.seedDatabase = async () => {
     }
 };
 
-exports.seedAdmin = async () => {
+export const seedAdmin = async () => {
     try {
         const adminEmail = "admin@bookverse.com";
         const existingAdmin = await User.findOne({ email: adminEmail });
@@ -60,7 +61,7 @@ exports.seedAdmin = async () => {
     }
 }
 
-exports.ensureCorrectData = async () => {
+export const ensureCorrectData = async () => {
     try {
         // Update Atomic Habits (Upsert to ensure it exists)
         const atomicHabitsData = {
@@ -82,16 +83,70 @@ exports.ensureCorrectData = async () => {
     }
 };
 
-exports.getBooks = async (req, res) => {
+export const getBooks = async (req: Request, res: Response) => {
     try {
-        const books = await Book.find();
-        res.json(books);
-    } catch (err) {
+        const { keyword, category, minPrice, maxPrice, rating, sort, page = 1, limit = 10 } = req.query;
+
+        const query: any = {};
+
+        // 1. Search (Title or Author)
+        if (keyword) {
+            const regex = new RegExp(keyword as string, 'i');
+            query.$or = [
+                { title: regex },
+                { author: regex }
+            ];
+        }
+
+        // 2. Filter by Category
+        if (category && category !== 'All') {
+            query.genre = category; // Note: Frontend sends 'category', DB uses 'genre'
+        }
+
+        // 3. Filter by Price
+        if (minPrice || maxPrice) {
+            query.price = {};
+            if (minPrice) query.price.$gte = Number(minPrice);
+            if (maxPrice) query.price.$lte = Number(maxPrice);
+        }
+
+        // 4. Filter by Rating
+        if (rating) {
+            query.rating = { $gte: Number(rating) };
+        }
+
+        // 5. Pagination
+        const pageNum = Number(page);
+        const limitNum = Number(limit);
+        const skip = (pageNum - 1) * limitNum;
+
+        // 6. Sorting
+        let sortOption: any = {};
+        if (sort === 'price_asc') sortOption.price = 1;
+        else if (sort === 'price_desc') sortOption.price = -1;
+        else if (sort === 'rating') sortOption.rating = -1;
+        else if (sort === 'newest') sortOption.id = -1; // Assuming higher ID = newer, or use createdAt if available
+        else sortOption.id = -1; // Default
+
+        const books = await Book.find(query)
+            .sort(sortOption)
+            .skip(skip)
+            .limit(limitNum);
+
+        const total = await Book.countDocuments(query);
+
+        res.json({
+            books,
+            total,
+            page: pageNum,
+            pages: Math.ceil(total / limitNum)
+        });
+    } catch (err: any) {
         res.status(500).json({ message: err.message });
     }
 };
 
-exports.addBook = async (req, res) => {
+export const addBook = async (req: Request, res: Response) => {
     try {
         const count = await Book.countDocuments();
         const newBook = new Book({
@@ -100,12 +155,12 @@ exports.addBook = async (req, res) => {
         });
         const savedBook = await newBook.save();
         res.status(201).json(savedBook);
-    } catch (err) {
+    } catch (err: any) {
         res.status(400).json({ message: err.message });
     }
 };
 
-exports.deleteBook = async (req, res) => {
+export const deleteBook = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
         // Try finding by internal id first, then _id
@@ -118,7 +173,7 @@ exports.deleteBook = async (req, res) => {
 
         await Book.deleteOne({ _id: book._id });
         res.json({ message: 'Book deleted successfully' });
-    } catch (err) {
+    } catch (err: any) {
         res.status(500).json({ message: err.message });
     }
 };

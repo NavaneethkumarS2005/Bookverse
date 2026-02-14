@@ -271,9 +271,17 @@ const BookDetails: React.FC = () => {
                                     {reviews.map((rev, i) => (
                                         <div key={i} className="border-b border-slate-200 dark:border-slate-700 pb-4 last:border-0 last:pb-0">
                                             <div className="flex justify-between items-center mb-2">
-                                                <span className="font-bold">
-                                                    {typeof rev.user === 'object' && rev.user !== null ? rev.user.name : 'Anonymous User'}
-                                                </span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="font-bold">
+                                                        {typeof rev.user === 'object' && rev.user !== null ? rev.user.name : 'Anonymous User'}
+                                                    </span>
+                                                    {rev.isVerified && (
+                                                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 flex items-center gap-1">
+                                                            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
+                                                            Verified Purchase
+                                                        </span>
+                                                    )}
+                                                </div>
                                                 <span className="text-amber-400 text-sm">{'★'.repeat(rev.rating)}</span>
                                             </div>
                                             <p className="text-slate-600 dark:text-slate-400 text-sm">{rev.comment}</p>

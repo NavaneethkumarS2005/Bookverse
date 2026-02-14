@@ -11,7 +11,7 @@ const styles = {
     highlight: `color: #6366f1; font-weight: 600;`
 };
 
-exports.welcomeTemplate = (name) => `
+export const welcomeTemplate = (name: string) => `
     <div style="${styles.container}">
         <div style="${styles.header}">
             <h1 style="${styles.headerTitle}">BookVerse</h1>
@@ -21,7 +21,7 @@ exports.welcomeTemplate = (name) => `
             <p>We are thrilled to have you join our community of book lovers.</p>
             <p>At BookVerse, you can discover hidden gems, review your favorites, and build your digital library.</p>
             <div style="text-align: center;">
-                <a href="${process.env.CLIENT_URL || 'http://localhost:5173'}" style="${styles.button}">Start Exploring</a>
+                <a href="${process.env.CLIENT_URL || 'https://book-vers.netlify.app'}" style="${styles.button}">Start Exploring</a>
             </div>
             <p>Happy Reading!<br>The BookVerse Team</p>
         </div>
@@ -31,7 +31,7 @@ exports.welcomeTemplate = (name) => `
     </div>
 `;
 
-exports.passwordResetTemplate = (resetUrl) => `
+export const passwordResetTemplate = (resetUrl: string) => `
     <div style="${styles.container}">
         <div style="${styles.header}">
             <h1 style="${styles.headerTitle}">Password Reset</h1>
@@ -53,7 +53,7 @@ exports.passwordResetTemplate = (resetUrl) => `
     </div>
 `;
 
-exports.orderTemplate = (orderId, items, total) => {
+export const orderTemplate = (orderId: string, items: any[], total: number) => {
     const itemsRows = items.map(item => `
         <tr>
             <td style="${styles.td}">${item.title}</td>
@@ -97,7 +97,7 @@ exports.orderTemplate = (orderId, items, total) => {
     `;
 };
 
-exports.contactNotificationTemplate = (data) => `
+export const contactNotificationTemplate = (data: { name: string; email: string; subject: string; message: string }) => `
     <div style="${styles.container}">
         <div style="${styles.header}">
             <h1 style="${styles.headerTitle}">New Contact Message 📩</h1>

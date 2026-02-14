@@ -1,23 +1,29 @@
-const express = require('express');
+import express, { Request, Response } from 'express';
+import axios from 'axios';
+import crypto from 'crypto';
+// @ts-ignore
+import auth from '../middleware/auth';
+import Order from '../models/Order';
+import { AuthRequest } from '../types';
+
 const router = express.Router();
-const axios = require('axios');
-const crypto = require('crypto');
-const auth = require('../middleware/auth'); // Optional: if you want to protect payment
 
-// PHONEPE TEST CREDENTIALS (UAT)
-const MERCHANT_ID = "PGTESTPAYUAT86";
-const SALT_KEY = "96434309-7796-489d-8924-ab56988a6076";
+// PHONEPE CREDENTIALS
+// Use Env Vars for Production, fallback to UAT (Test) defaults
+const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || "PGTESTPAYUAT86";
+const SALT_KEY = process.env.PHONEPE_SALT_KEY || "96434309-7796-489d-8924-ab56988a6076";
 const SALT_INDEX = 1;
-const PHONEPE_HOST_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+const PHONEPE_HOST_URL = process.env.PHONEPE_HOST_URL || "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
-const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:5000";
+if (!process.env.PHONEPE_MERCHANT_ID) {
+    console.warn("⚠️ PhonePe running in TEST MODE (UAT). Add PHONEPE_MERCHANT_ID for production.");
+}
+
+const CLIENT_URL = process.env.CLIENT_URL || "https://book-vers.netlify.app";
+const BACKEND_URL = process.env.BACKEND_URL || "https://bookverse-backend-gw75.onrender.com";
 
 // 1. INITIATE PAYMENT
-const Order = require('../models/Order');
-
-// 1. INITIATE PAYMENT
-router.post('/pay', auth, async (req, res) => {
+router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
     try {
         const { amount, items, shippingDetails } = req.body;
         const userId = req.user.id; // From auth middleware
@@ -28,7 +34,7 @@ router.post('/pay', auth, async (req, res) => {
         // Create a Pending Order
         const newOrder = new Order({
             user: userId,
-            items: items.map(item => ({
+            items: items.map((item: any) => ({
                 bookId: item.bookId,
                 title: item.title,
                 quantity: item.quantity,
@@ -85,7 +91,7 @@ router.post('/pay', auth, async (req, res) => {
             merchantTransactionId: merchantTransactionId
         });
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("PhonePe Error:", error.message);
         res.status(500).json({
             success: false,
@@ -95,7 +101,7 @@ router.post('/pay', auth, async (req, res) => {
 });
 
 // 2. CALLBACK / REDIRECT HANDLER
-router.post('/callback', async (req, res) => {
+router.post('/callback', async (req: Request, res: Response) => {
     try {
         const { code, merchantTransactionId } = req.body;
 
@@ -115,14 +121,14 @@ router.post('/callback', async (req, res) => {
             res.redirect(`${CLIENT_URL}/cart?status=failure`);
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("Callback Error:", error.message);
         res.redirect(`${CLIENT_URL}/cart?status=error`);
     }
 });
 
 // 3. CHECK STATUS (Frontend calls this to verify after coming back)
-router.get('/status/:txnId', async (req, res) => {
+router.get('/status/:txnId', async (req: Request, res: Response) => {
     try {
         const merchantTransactionId = req.params.txnId;
         const merchantId = MERCHANT_ID;
@@ -158,10 +164,10 @@ router.get('/status/:txnId', async (req, res) => {
             res.json({ success: false, message: 'Payment Failed or Pending', data: response.data });
         }
 
-    } catch (error) {
+    } catch (error: any) {
         console.error("PhonePe Status Error:", error.message);
         res.status(500).json({ success: false, message: 'Error checking status' });
     }
 });
 
-module.exports = router;
+export default router;

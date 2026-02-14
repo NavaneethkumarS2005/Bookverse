@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
+import { API_URL } from '../config';
 
 interface PopupState {
     show: boolean;
@@ -34,8 +35,7 @@ const Contact: React.FC = () => {
         showPopupMessage("Sending...", "info");
 
         try {
-            const apiUrl = import.meta.env.VITE_API_URL || '';
-            const res = await axios.post(`${apiUrl}/api/contact`, formData);
+            const res = await axios.post(`${API_URL}/api/contact`, formData);
 
             if (res.status === 201 || res.status === 200) {
                 showPopupMessage("Message sent successfully ✔", "success");

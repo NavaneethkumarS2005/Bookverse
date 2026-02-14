@@ -1,9 +1,11 @@
-const Contact = require('../models/Contact');
+import { Request, Response } from 'express';
+import Contact from '../models/Contact';
+// @ts-ignore
+import sendEmail from '../utils/emailService';
+// @ts-ignore
+import { contactNotificationTemplate } from '../utils/emailTemplates';
 
-const sendEmail = require('../utils/emailService');
-const { contactNotificationTemplate } = require('../utils/emailTemplates');
-
-exports.sendMessage = async (req, res) => {
+export const sendMessage = async (req: Request, res: Response) => {
     try {
         const contact = new Contact(req.body);
         await contact.save();

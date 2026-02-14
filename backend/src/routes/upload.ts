@@ -1,8 +1,10 @@
-const express = require('express');
-const router = express.Router();
-const upload = require('../middleware/upload');
+import express, { Request, Response } from 'express';
+// @ts-ignore
+import upload from '../middleware/upload';
 
-router.post('/', upload.single('image'), (req, res) => {
+const router = express.Router();
+
+router.post('/', upload.single('image'), (req: Request, res: Response) => {
     try {
         if (!req.file) {
             return res.status(400).json({ message: 'No file uploaded' });
@@ -15,4 +17,4 @@ router.post('/', upload.single('image'), (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

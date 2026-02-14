@@ -72,7 +72,7 @@ const Cart: React.FC = () => {
                 },
                 body: JSON.stringify({
                     items: cart.map(item => ({
-                        bookId: item.id,
+                        bookId: item.id || item._id,
                         title: item.title,
                         price: item.price,
                         quantity: (item as any).quantity || 1
@@ -144,7 +144,7 @@ const Cart: React.FC = () => {
                 },
                 body: JSON.stringify({
                     items: cart.map(item => ({
-                        bookId: item.id,
+                        bookId: item.id || item._id,
                         title: item.title,
                         price: item.price,
                         quantity: (item as any).quantity || 1
@@ -185,7 +185,7 @@ const Cart: React.FC = () => {
                     amount: getCartTotal(),
                     userId: "USER_" + Date.now(),
                     items: cart.map(item => ({
-                        bookId: item.id,
+                        bookId: item.id || item._id,
                         title: item.title,
                         price: item.price,
                         quantity: (item as any).quantity || 1
@@ -229,7 +229,7 @@ const Cart: React.FC = () => {
                         {/* Cart Items */}
                         <div className="flex-1 space-y-6">
                             {cart.map((item) => (
-                                <div key={item.id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
+                                <div key={item.id || item._id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
                                     <img
                                         src={item.image}
                                         alt={item.title}
@@ -341,7 +341,7 @@ const Cart: React.FC = () => {
                                                 <CheckoutForm
                                                     clientSecret={clientSecret}
                                                     cartItems={cart.map(item => ({
-                                                        bookId: item.id,
+                                                        bookId: item.id || item._id,
                                                         title: item.title,
                                                         price: item.price,
                                                         quantity: (item as any).quantity || 1

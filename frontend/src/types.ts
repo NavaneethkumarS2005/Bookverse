@@ -177,13 +177,17 @@ export interface IReview {
     /** Unique identifier for the review. */
     _id: string;
     /** The user who wrote the review. */
-    user: string | IUser;
+    user: string | IUser; // Populated or ID
     /** The product being reviewed. */
-    product: string;
+    product?: string;
+    /** The book ID (backend field). */
+    bookId?: number;
     /** Rating given by the user (1-5). */
     rating: number;
     /** Comment text provided by the user. */
     comment: string;
+    /** Whether the purchase is verified. */
+    isVerified?: boolean;
     /** Date when the review was created. */
     createdAt: string;
 }

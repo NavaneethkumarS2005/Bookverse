@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { API_URL } from '../config';
 import { Book, CartItem } from '../types';
 
 interface CartContextType {
     cart: CartItem[];
     addToCart: (book: Book) => void;
-    removeFromCart: (bookId: string) => void;
+    removeFromCart: (bookId: string | number) => void;
     clearCart: () => void;
     getCartTotal: () => number;
     isCartOpen: boolean;
@@ -26,35 +27,86 @@ interface CartProviderProps {
 }
 
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
-    const [cart, setCart] = useState<CartItem[]>(() => {
-        const savedCart = localStorage.getItem('bookVerse_cart');
-        return savedCart ? JSON.parse(savedCart) : [];
-    });
+    const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
+    const token = localStorage.getItem('token');
+
+    // Fetch Cart from Backend
+    const fetchCart = async () => {
+        if (!token) return;
+        try {
+            // @ts-ignore
+            const res = await fetch(`${API_URL}/api/cart`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setCart(data);
+            }
+        } catch (err) {
+            console.error("Failed to fetch cart", err);
+        }
+    };
 
     useEffect(() => {
-        localStorage.setItem('bookVerse_cart', JSON.stringify(cart));
-    }, [cart]);
+        fetchCart();
+    }, [token]);
 
-    const addToCart = (book: Book) => {
-        setCart(prevCart => {
-            const existingItem = prevCart.find(item => item.id === book.id);
-            if (existingItem) {
-                return prevCart.map(item =>
-                    item.id === book.id ? { ...item, quantity: (item.quantity || 1) + 1 } : item
-                );
+    const addToCart = async (book: Book) => {
+        // Optimistic Update
+        const tempId = book.id || book._id;
+        setCart(prev => [...prev, { ...book, quantity: 1 }]);
+        setIsCartOpen(true);
+
+        if (token) {
+            try {
+                // @ts-ignore
+                await fetch(`${import.meta.env.VITE_API_URL}/api/cart/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({ bookId: book.id || book._id, quantity: 1 })
+                });
+                await fetchCart(); // Sync with backend
+            } catch (err) {
+                console.error("Add to cart failed", err);
             }
-            return [...prevCart, { ...book, quantity: 1 }];
-        });
-        setIsCartOpen(true); // Auto-open cart when adding item
+        }
     };
 
-    const removeFromCart = (bookId: string) => {
-        setCart(prevCart => prevCart.filter(item => item.id !== bookId));
+    const removeFromCart = async (bookId: string | number) => {
+        // Optimistic Update
+        setCart(prev => prev.filter(item => (item._id !== bookId && item.id !== bookId)));
+
+        if (token) {
+            try {
+                // @ts-ignore
+                await fetch(`${import.meta.env.VITE_API_URL}/api/cart/remove/${bookId}`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+                await fetchCart(); // Sync
+            } catch (err) {
+                console.error("Remove from cart failed", err);
+            }
+        }
     };
 
-    const clearCart = () => {
+    const clearCart = async () => {
         setCart([]);
+        if (token) {
+            try {
+                // @ts-ignore
+                await fetch(`${import.meta.env.VITE_API_URL}/api/cart/clear`, {
+                    method: 'DELETE',
+                    headers: { Authorization: `Bearer ${token}` }
+                });
+            } catch (err) {
+                console.error("Clear cart failed", err);
+            }
+        }
     };
 
     const getCartTotal = () => {
