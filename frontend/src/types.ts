@@ -97,6 +97,8 @@ export interface IProduct {
     category?: string;
     /** Genre of the book (Backend uses this field). */
     genre?: string;
+    /** External link to buy the book (e.g. Amazon/Flipkart) */
+    buyLink?: string;
     /** Number of items available in stock. */
     stock: number;
     /** Average rating of the book (0-5). */
