@@ -167,13 +167,22 @@ export const deleteBook = async (req: Request, res: Response) => {
 export const getBookById = async (req: Request, res: Response) => {
     try {
         const { id } = req.params;
-        let book = await Book.findOne({ id: id });
-        if (!book) {
+        let book;
+
+        // 1. If it's a valid MongoDB ObjectId, try findById first
+        if (id.match(/^[0-9a-fA-F]{24}$/)) {
             book = await Book.findById(id);
         }
+
+        // 2. If not found (or not an ObjectId), try legacy numeric ID
+        if (!book && !isNaN(Number(id))) {
+            book = await Book.findOne({ id: id });
+        }
+
         if (!book) return res.status(404).json({ message: 'Book not found' });
         res.json(book);
     } catch (err: any) {
+        console.error("Error in getBookById:", err);
         res.status(500).json({ message: err.message });
     }
 };
