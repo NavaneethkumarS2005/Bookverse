@@ -103,9 +103,25 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
 // 2. CALLBACK / REDIRECT HANDLER
 router.post('/callback', async (req: Request, res: Response) => {
     try {
-        const { code, merchantTransactionId } = req.body;
+        console.log("🔔 PhonePe Callback Received");
+        // PhonePe sends { response: "base64...", checksum: "..." }
+        // We need to decode 'response'
+        const { response } = req.body;
+
+        if (!response) {
+            console.error("❌ No response in callback body:", req.body);
+            return res.redirect(`${CLIENT_URL}/cart?status=error`);
+        }
+
+        const decodedResponse = Buffer.from(response, 'base64').toString('utf-8');
+        const data = JSON.parse(decodedResponse);
+
+        console.log("✅ Decoded PhonePe Data:", data);
+
+        const { code, merchantTransactionId } = data;
 
         if (code === 'PAYMENT_SUCCESS') {
+            console.log(`💰 Payment Success for: ${merchantTransactionId}`);
             // Update Order to Paid
             await Order.findOneAndUpdate(
                 { paymentId: merchantTransactionId },
@@ -113,6 +129,7 @@ router.post('/callback', async (req: Request, res: Response) => {
             );
             res.redirect(`${CLIENT_URL}/orders?status=success`);
         } else {
+            console.log(`⚠️ Payment Failed/Pending for: ${merchantTransactionId}, Code: ${code}`);
             // Update Order to Failed
             await Order.findOneAndUpdate(
                 { paymentId: merchantTransactionId },
