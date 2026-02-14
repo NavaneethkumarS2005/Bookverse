@@ -101,28 +101,37 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // 2. CALLBACK / REDIRECT HANDLER
+// Handle GET Request (Manual visit or redirect issues) - Redirect to Home/Cart
+router.get('/callback', (req: Request, res: Response) => {
+    console.warn("⚠️ Manual GET request to /phonepe/callback. Redirecting to frontend.");
+    res.redirect(`${CLIENT_URL}/cart`);
+});
+
 router.post('/callback', async (req: Request, res: Response) => {
     try {
-        console.log("🔔 PhonePe Callback Received");
-        // PhonePe sends { response: "base64...", checksum: "..." }
-        // We need to decode 'response'
+        console.log("🔔 PhonePe Callback Received (POST)");
         const { response } = req.body;
 
         if (!response) {
-            console.error("❌ No response in callback body:", req.body);
-            return res.redirect(`${CLIENT_URL}/cart?status=error`);
+            console.error("❌ No response in callback body. Body:", req.body);
+            // If body is empty, it might be a parsing issue or wrong content-type
+            return res.redirect(`${CLIENT_URL}/cart?status=error&reason=no_body`);
         }
 
-        const decodedResponse = Buffer.from(response, 'base64').toString('utf-8');
-        const data = JSON.parse(decodedResponse);
-
-        console.log("✅ Decoded PhonePe Data:", data);
+        let data;
+        try {
+            const decodedResponse = Buffer.from(response, 'base64').toString('utf-8');
+            data = JSON.parse(decodedResponse);
+            console.log("✅ Decoded PhonePe Data:", JSON.stringify(data, null, 2));
+        } catch (parseError) {
+            console.error("❌ JSON Parse Error:", parseError);
+            return res.redirect(`${CLIENT_URL}/cart?status=error&reason=parse_error`);
+        }
 
         const { code, merchantTransactionId } = data;
 
         if (code === 'PAYMENT_SUCCESS') {
             console.log(`💰 Payment Success for: ${merchantTransactionId}`);
-            // Update Order to Paid
             await Order.findOneAndUpdate(
                 { paymentId: merchantTransactionId },
                 { status: 'Paid' }
@@ -130,7 +139,6 @@ router.post('/callback', async (req: Request, res: Response) => {
             res.redirect(`${CLIENT_URL}/orders?status=success`);
         } else {
             console.log(`⚠️ Payment Failed/Pending for: ${merchantTransactionId}, Code: ${code}`);
-            // Update Order to Failed
             await Order.findOneAndUpdate(
                 { paymentId: merchantTransactionId },
                 { status: 'Failed' }
@@ -139,8 +147,8 @@ router.post('/callback', async (req: Request, res: Response) => {
         }
 
     } catch (error: any) {
-        console.error("Callback Error:", error.message);
-        res.redirect(`${CLIENT_URL}/cart?status=error`);
+        console.error("Callback Fatal Error:", error.message);
+        res.redirect(`${CLIENT_URL}/cart?status=error&reason=exception`);
     }
 });
 
