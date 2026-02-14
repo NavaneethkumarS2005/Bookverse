@@ -177,3 +177,17 @@ export const deleteBook = async (req: Request, res: Response) => {
         res.status(500).json({ message: err.message });
     }
 };
+
+export const getBookById = async (req: Request, res: Response) => {
+    try {
+        const { id } = req.params;
+        let book = await Book.findOne({ id: id });
+        if (!book) {
+            book = await Book.findById(id);
+        }
+        if (!book) return res.status(404).json({ message: 'Book not found' });
+        res.json(book);
+    } catch (err: any) {
+        res.status(500).json({ message: err.message });
+    }
+};

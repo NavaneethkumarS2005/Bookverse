@@ -6,6 +6,7 @@ import admin from '../middleware/admin';
 const router = express.Router();
 
 router.get('/', bookController.getBooks);
+router.get('/:id', bookController.getBookById);
 router.post('/', auth, admin, bookController.addBook);
 router.delete('/:id', auth, admin, bookController.deleteBook);
 

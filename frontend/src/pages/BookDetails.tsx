@@ -24,41 +24,50 @@ const BookDetails: React.FC = () => {
     useEffect(() => {
         const fetchBookAndRecommendations = async () => {
             try {
-                // 1. Fetch All Books (Simulated single fetch)
-                const res = await axios.get(`${API_URL}/api/books`);
-                const allBooks: any[] = res.data;
+                // 1. Fetch Specific Book
+                const res = await axios.get(`${API_URL}/api/books/${id}`);
+                const bookData: Book = res.data;
 
-                // 2. Find Current Book
-                const currentBook = allBooks.find(b => b._id === id || b.id === id);
+                // Normalize ID: Ensure _id is a string, even if falling back to numeric id
+                const typedBook: Book = {
+                    ...bookData,
+                    _id: (bookData._id || bookData.id || '').toString(),
+                    category: bookData.category || bookData.genre
+                };
 
-                if (currentBook) {
-                    const typedBook: Book = {
-                        ...currentBook,
-                        _id: currentBook._id || currentBook.id, // Ensure _id is present
-                        category: currentBook.category || currentBook.genre // Ensure category is present
-                    };
-                    setBook(typedBook);
-                    setActiveImage(typedBook.image);
+                setBook(typedBook);
+                setActiveImage(typedBook.image);
 
-                    // 3. Recommendation Logic
-                    const recommendations = allBooks.filter(b =>
-                        (b.category === typedBook.category || b.genre === typedBook.category) &&
-                        (b._id !== typedBook._id && b.id !== typedBook._id)
-                    ).slice(0, 4).map(b => ({
-                        ...b,
-                        _id: b._id || b.id,
-                        category: b.category || b.genre
-                    }));
+                // 2. Fetch Recommendations (from all/random/filtered)
+                // For simplicity/performance, we might just query by category if endpoint existed, 
+                // but let's stick to the existing approach of fetching a few books for now, or just mock it to be safe.
+                // Better approach: Fetch books by category
+                try {
+                    const recRes = await axios.get(`${API_URL}/api/books`, {
+                        params: { category: typedBook.category, limit: 5 }
+                    });
 
-                    setSimilarBooks(recommendations);
+                    let recs: any[] = [];
+                    if (recRes.data.books) recs = recRes.data.books;
+                    else if (Array.isArray(recRes.data)) recs = recRes.data;
 
-                    // 4. Fetch Reviews
-                    const targetId = typedBook._id;
-                    try {
-                        const reviewsRes = await axios.get(`${API_URL}/api/reviews/${targetId}`);
-                        setReviews(reviewsRes.data);
-                    } catch (e) { console.log('No reviews yet or error'); }
-                }
+                    const filteredRecs = recs
+                        .filter(b => (b._id !== typedBook._id && b.id !== typedBook.id))
+                        .slice(0, 4)
+                        .map(b => ({ ...b, _id: b._id || b.id, category: b.category || b.genre }));
+
+                    setSimilarBooks(filteredRecs);
+
+                } catch (e) { console.log("Recs error", e); }
+
+
+                // 3. Fetch Reviews
+                const targetId = typedBook._id;
+                try {
+                    const reviewsRes = await axios.get(`${API_URL}/api/reviews/${targetId}`);
+                    setReviews(reviewsRes.data);
+                } catch (e) { console.log('No reviews yet or error'); }
+
             } catch (err) {
                 console.error("Error loading book details:", err);
             } finally {
