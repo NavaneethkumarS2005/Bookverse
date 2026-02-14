@@ -1,6 +1,8 @@
 import express, { Response } from 'express';
-import auth from '../middleware/auth';
-import adminMiddleware from '../middleware/admin';
+// @ts-ignore
+import { auth } from '../middleware/auth';
+// @ts-ignore
+import { admin } from '../middleware/admin';
 import Order from '../models/Order';
 import User from '../models/User';
 import Book from '../models/Book';
@@ -9,7 +11,7 @@ import { AuthRequest } from '../types';
 const router = express.Router();
 
 // GET /api/admin/stats
-router.get('/stats', auth, adminMiddleware, async (req: AuthRequest, res: Response) => {
+router.get('/stats', auth, admin, async (req: AuthRequest, res: Response) => {
     try {
         const totalOrders = await Order.countDocuments();
         const totalUsers = await User.countDocuments();

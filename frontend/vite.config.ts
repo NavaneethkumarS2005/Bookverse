@@ -18,7 +18,7 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/api': {
-        target: 'https://bookverse-backend.onrender.com', // Explicitly point to production or use env var
+        target: 'http://localhost:5000', // Local Backend
         changeOrigin: true,
         secure: false,
       },

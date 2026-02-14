@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import User from '../models/User';
 import { AuthRequest } from '../types';
 
-const admin = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const admin = async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         // req.user is already populated by auth middleware
         if (!req.user) {
@@ -24,5 +24,3 @@ const admin = async (req: AuthRequest, res: Response, next: NextFunction) => {
         res.status(500).json({ message: 'Server error checking admin status' });
     }
 };
-
-export default admin;

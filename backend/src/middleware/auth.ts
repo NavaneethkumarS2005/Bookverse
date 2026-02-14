@@ -2,7 +2,7 @@ import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { AuthRequest } from '../types';
 
-const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
+export const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
         const token = req.header('Authorization')?.replace('Bearer ', '');
 
@@ -17,5 +17,3 @@ const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
         res.status(401).json({ message: 'Invalid token' });
     }
 };
-
-export default auth;

@@ -8,9 +8,14 @@ import sendEmail from '../utils/emailService';
 // @ts-ignore
 import { orderTemplate } from '../utils/emailTemplates';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-    apiVersion: '2024-12-18.acacia',
-} as any);
+const getStripe = () => {
+    if (!process.env.STRIPE_SECRET_KEY) {
+        throw new Error("Stripe Secret Key is missing in environment variables");
+    }
+    return new Stripe(process.env.STRIPE_SECRET_KEY, {
+        apiVersion: '2024-12-18.acacia',
+    } as any);
+};
 
 export const createPaymentIntent = async (req: AuthRequest, res: Response) => {
     try {
@@ -45,7 +50,7 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response) => {
 
         if (totalAmount < 1) return res.status(400).json({ message: "Invalid amount" });
 
-        const paymentIntent = await stripe.paymentIntents.create({
+        const paymentIntent = await getStripe().paymentIntents.create({
             amount: totalAmount * 100,
             currency: "inr",
             automatic_payment_methods: { enabled: true },
@@ -69,7 +74,7 @@ export const saveOrder = async (req: AuthRequest, res: Response) => {
             if (!process.env.STRIPE_SECRET_KEY) {
                 return res.status(500).json({ message: 'Stripe Config Missing' });
             }
-            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+            const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
             if (paymentIntent.status !== 'succeeded') return res.status(400).json({ message: "Payment failed" });
             paymentId = paymentIntent.id;
         } else {
@@ -156,7 +161,7 @@ export const stripeWebhook = async (req: any, res: Response) => {
     let event;
 
     try {
-        event = stripe.webhooks.constructEvent(req.body, sig as string, endpointSecret);
+        event = getStripe().webhooks.constructEvent(req.body, sig as string, endpointSecret);
     } catch (err: any) {
         console.error(`⚠️ Webhook Signature Verification Failed: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);

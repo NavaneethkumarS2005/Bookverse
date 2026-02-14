@@ -1,6 +1,7 @@
 import express from 'express';
 import * as cartController from '../controllers/cartController';
-import auth from '../middleware/auth';
+// @ts-ignore
+import { auth } from '../middleware/auth';
 
 const router = express.Router();
 

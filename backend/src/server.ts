@@ -1,6 +1,9 @@
 import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
+// Load env vars immediately
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 import cors from 'cors';
 import connectDB from './config/db';
 
@@ -18,9 +21,6 @@ import uploadRoutes from './routes/upload';
 import phonePeRoutes from './routes/phonepe';
 import cartRoutes from './routes/cart';
 import adminRoutes from './routes/admin';
-
-// Load env vars
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -98,3 +98,4 @@ if (require.main === module) {
 }
 
 export default app;
+// Restart trigger: 1

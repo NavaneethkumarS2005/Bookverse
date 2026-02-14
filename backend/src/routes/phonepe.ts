@@ -2,7 +2,7 @@ import express, { Request, Response } from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
 // @ts-ignore
-import auth from '../middleware/auth';
+import { auth } from '../middleware/auth';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
 

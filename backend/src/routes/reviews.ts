@@ -3,7 +3,8 @@ import Review from '../models/Review';
 import Book from '../models/Book';
 import Order from '../models/Order';
 // @ts-ignore
-import authMiddleware from '../middleware/auth';
+// @ts-ignore
+import { auth } from '../middleware/auth';
 import { AuthRequest } from '../types';
 
 const router = express.Router();
@@ -19,7 +20,8 @@ router.get('/:bookId', async (req: Request, res: Response) => {
 });
 
 // POST a review
-router.post('/:bookId', authMiddleware, async (req: AuthRequest, res: Response) => {
+// POST a review
+router.post('/:bookId', auth, async (req: AuthRequest, res: Response) => {
     try {
         const { rating, comment } = req.body;
         const bookId = parseInt(req.params.bookId as string);
