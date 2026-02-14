@@ -54,7 +54,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
     const addToCart = async (book: Book) => {
         // Optimistic Update
-        const tempId = book.id || book._id;
         setCart(prev => [...prev, { ...book, quantity: 1 }]);
         setIsCartOpen(true);
 
