@@ -170,7 +170,7 @@ export const getBookById = async (req: Request, res: Response) => {
         let book;
 
         // 1. If it's a valid MongoDB ObjectId, try findById first
-        if (id.match(/^[0-9a-fA-F]{24}$/)) {
+        if (typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/)) {
             book = await Book.findById(id);
         }
 
