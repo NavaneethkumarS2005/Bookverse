@@ -6,6 +6,7 @@ export interface IBook extends Document {
     author: string;
     price: number;
     genre: string;
+    description?: string;
     image?: string;
     buyLink?: string;
     rating: number;
@@ -19,6 +20,7 @@ const bookSchema: Schema = new Schema({
     author: { type: String, required: true },
     price: { type: Number, required: true },
     genre: { type: String, required: true },
+    description: { type: String },
     image: { type: String },
     buyLink: { type: String }, // External URL for purchasing
     rating: { type: Number, default: 0 },
