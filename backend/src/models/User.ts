@@ -10,6 +10,10 @@ export interface IUser extends Document {
     resetPasswordToken?: string;
     resetPasswordExpires?: Date;
     refreshTokens: string[];
+    cart: {
+        bookId: mongoose.Types.ObjectId;
+        quantity: number;
+    }[];
 }
 
 const userSchema: Schema = new Schema({
