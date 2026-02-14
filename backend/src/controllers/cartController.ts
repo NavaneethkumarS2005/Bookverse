@@ -28,9 +28,20 @@ export const getCart = async (req: AuthRequest, res: Response) => {
 // Add to Cart
 export const addToCart = async (req: AuthRequest, res: Response) => {
     try {
-        const { bookId, quantity = 1 } = req.body;
+        let { bookId, quantity = 1 } = req.body;
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
+
+        // Resolve bookId if it's not a valid ObjectId
+        // @ts-ignore
+        if (!bookId.match(/^[0-9a-fA-F]{24}$/)) {
+            const book = await Book.findOne({ id: bookId });
+            if (book) {
+                bookId = book._id.toString();
+            } else {
+                return res.status(404).json({ message: 'Book not found for cart' });
+            }
+        }
 
         // Check if item exists
         // @ts-ignore
@@ -50,6 +61,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         // @ts-ignore
         res.status(200).json({ message: 'Added to cart', cart: user.cart });
     } catch (err: any) {
+        console.error("Add to cart error:", err);
         res.status(500).json({ message: 'Error adding to cart', error: err.message });
     }
 };

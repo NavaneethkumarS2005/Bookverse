@@ -66,7 +66,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${token}`
                     },
-                    body: JSON.stringify({ bookId: book.id || book._id, quantity: 1 })
+                    body: JSON.stringify({ bookId: book._id || book.id, quantity: 1 })
                 });
                 await fetchCart(); // Sync with backend
             } catch (err) {
