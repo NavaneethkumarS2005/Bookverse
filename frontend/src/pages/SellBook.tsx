@@ -42,10 +42,19 @@ const SellBook: React.FC = () => {
         }
 
         try {
+            const token = localStorage.getItem('token');
+            if (!token) {
+                alert("You must be logged in to sell a book.");
+                navigate('/login');
+                setIsLoading(false);
+                return;
+            }
+
             const response = await fetch(`${API_URL}/api/books`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
                     ...formData,
