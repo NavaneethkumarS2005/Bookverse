@@ -93,7 +93,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
 export const removeFromCart = async (req: AuthRequest, res: Response) => {
     try {
-        const { bookId } = req.params;
+        const bookId = req.params.bookId as string;
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
