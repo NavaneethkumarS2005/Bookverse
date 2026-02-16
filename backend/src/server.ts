@@ -14,8 +14,14 @@ const allowedOrigins = [
     'http://localhost:5173',
     'http://localhost:5174',
     'https://book-vers.netlify.app',
+    'https://bookverse-neon.vercel.app',
     process.env.CLIENT_URL
 ].filter(Boolean).map(url => url?.replace(/\/$/, '')) as string[];
+
+// Dynamic check for Vercel preview/branch URLs
+const isVercelOrigin = (origin: string) => {
+    return origin.endsWith('.vercel.app') && origin.includes('bookverse');
+};
 
 app.use(cors({
     origin: (origin, callback) => {
@@ -25,7 +31,7 @@ app.use(cors({
         // Clean the incoming origin to ensure match
         const cleanedOrigin = origin.replace(/\/$/, '');
 
-        if (allowedOrigins.includes(cleanedOrigin)) {
+        if (allowedOrigins.includes(cleanedOrigin) || isVercelOrigin(cleanedOrigin)) {
             return callback(null, true);
         }
 
@@ -84,9 +90,14 @@ connectDB()
     .then(async () => {
         console.log('✅ Database connected');
 
-        // Auto-seed data if empty
-        await seedDatabase();
-        await seedAdmin();
+        try {
+            console.log('🌱 Starting auto-seeding...');
+            await seedDatabase();
+            await seedAdmin();
+            console.log('✨ Seeding complete');
+        } catch (seedErr) {
+            console.error('❌ Seeding error:', seedErr);
+        }
 
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
