@@ -75,3 +75,27 @@ For any issues, please use the [Contact Form](https://book-vers.netlify.app/cont
 
 ---
 *Maintained by Navaneeth Kumar*
+
+---
+
+## 🚀 Deployment (Railway Backend + Netlify Frontend)
+
+### Backend (Railway)
+1.  **Push** this repo to GitHub.
+2.  Go to **Railway.app** -> New Project -> Deploy from GitHub repo.
+3.  **Settings**:
+    *   **Root Directory**: `backend`
+    *   **Variables**: Add `MONGO_URI`, `STRIPE_SECRET_KEY`, `JWT_SECRET`, etc.
+    *   **Networking**: A domain will be generated (e.g., `bookverse.up.railway.app`).
+4.  Copy this URL.
+
+### Frontend (Netlify)
+1.  Go to **Netlify** -> Add New Site -> Import from Git.
+2.  **Settings**:
+    *   **Base Directory**: `frontend`
+    *   **Build Command**: `npm run build`
+    *   **Publish Directory**: `dist`
+3.  **Environment Variables**:
+    *   Key: `VITE_API_URL`
+    *   Value: `https://your-railway-url.up.railway.app` (The URL you copied)
+4.  **Deploy!** 🚀

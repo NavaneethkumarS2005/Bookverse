@@ -9,18 +9,23 @@ export const getCart = async (req: AuthRequest, res: Response) => {
         const user = await User.findById(req.user.id).populate('cart.bookId');
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // Transform to cleaner format
-        const cartItems = user.cart.map((item: any) => ({
-            _id: item.bookId._id,
-            title: item.bookId.title,
-            author: item.bookId.author,
-            price: item.bookId.price,
-            image: item.bookId.image,
-            quantity: item.quantity
-        }));
+        // Transform to cleaner format & Filter out nulls (defensive)
+        const cartItems = user.cart
+            .filter((item: any) => item.bookId) // Remove stale/deleted books
+            .map((item: any) => ({
+                _id: item.bookId._id,
+                title: item.bookId.title,
+                author: item.bookId.author,
+                price: item.bookId.price,
+                image: item.bookId.image,
+                quantity: item.quantity,
+                // Add id for frontend logic compatibility
+                id: item.bookId.id || item.bookId._id
+            }));
 
         res.json(cartItems);
     } catch (err: any) {
+        console.error("Get Cart Error:", err);
         res.status(500).json({ message: 'Error fetching cart', error: err.message });
     }
 };
@@ -32,34 +37,54 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // Resolve bookId if it's not a valid ObjectId
-        // @ts-ignore
-        if (!bookId.match(/^[0-9a-fA-F]{24}$/)) {
-            const book = await Book.findOne({ id: bookId });
-            if (book) {
-                bookId = book._id.toString();
-            } else {
-                return res.status(404).json({ message: 'Book not found for cart' });
-            }
+        // 1. Try to find the book first to get its real _id
+        let book;
+
+        // Is it a valid ObjectId?
+        if (bookId.match(/^[0-9a-fA-F]{24}$/)) {
+            book = await Book.findById(bookId);
         }
 
-        // Check if item exists
+        // If not found or not ObjectId, try numeric custom ID
+        if (!book) {
+            book = await Book.findOne({ id: bookId });
+        }
+
+        if (!book) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
+
+        // Use the MongoDB _id for consistency in the cart array
+        const realBookId = book._id;
+
+        // Check if item exists using the REAL _id
         // @ts-ignore
-        const existingItemIndex = user.cart.findIndex(item => item.bookId.toString() === bookId);
+        const existingItemIndex = user.cart.findIndex(item => item.bookId.toString() === realBookId.toString());
 
         if (existingItemIndex > -1) {
             // @ts-ignore
             user.cart[existingItemIndex].quantity += quantity;
         } else {
             // @ts-ignore
-            user.cart.push({ bookId, quantity });
+            user.cart.push({ bookId: realBookId, quantity });
         }
 
         await user.save();
 
-        // Return updated cart
+        // Return updated cart (populate for immediate UI update)
+        const populatedUser = await user.populate('cart.bookId');
         // @ts-ignore
-        res.status(200).json({ message: 'Added to cart', cart: user.cart });
+        const updatedCart = populatedUser.cart
+            .filter((item: any) => item.bookId)
+            .map((item: any) => ({
+                _id: item.bookId._id,
+                title: item.bookId.title,
+                price: item.bookId.price,
+                image: item.bookId.image,
+                quantity: item.quantity
+            }));
+
+        res.status(200).json({ message: 'Added to cart', cart: updatedCart });
     } catch (err: any) {
         console.error("Add to cart error:", err);
         res.status(500).json({ message: 'Error adding to cart', error: err.message });
