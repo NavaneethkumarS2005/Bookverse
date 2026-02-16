@@ -91,17 +91,33 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
     }
 };
 
-// Remove from Cart
 export const removeFromCart = async (req: AuthRequest, res: Response) => {
     try {
         const { bookId } = req.params;
+        const user = await User.findById(req.user.id);
+        if (!user) return res.status(404).json({ message: 'User not found' });
 
+        // Find the book to get its real _id (handles both ObjectId and numeric id)
+        let book;
+        if (bookId.match(/^[0-9a-fA-F]{24}$/)) {
+            book = await Book.findById(bookId);
+        }
+        if (!book) {
+            book = await Book.findOne({ id: bookId });
+        }
+
+        if (!book) {
+            return res.status(404).json({ message: 'Book not found' });
+        }
+
+        // Remove using the real MongoDB _id
         await User.findByIdAndUpdate(req.user.id, {
-            $pull: { cart: { bookId: bookId } }
+            $pull: { cart: { bookId: book._id } }
         });
 
         res.json({ message: 'Item removed from cart' });
     } catch (err: any) {
+        console.error("Remove from cart error:", err);
         res.status(500).json({ message: 'Error removing item', error: err.message });
     }
 };
