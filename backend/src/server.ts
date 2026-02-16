@@ -72,7 +72,6 @@ import uploadRoutes from './routes/upload';
 import phonePeRoutes from './routes/phonepe';
 import cartRoutes from './routes/cart';
 import adminRoutes from './routes/admin';
-import { seedDatabase, seedAdmin } from './controllers/bookController';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
@@ -91,17 +90,8 @@ app.get('/', (_req, res) => {
 
 // ------------------- START SERVER AFTER DB CONNECT -------------------
 connectDB()
-    .then(async () => {
+    .then(() => {
         console.log('✅ Database connected');
-
-        try {
-            console.log('🌱 Starting auto-seeding...');
-            await seedDatabase();
-            await seedAdmin();
-            console.log('✨ Seeding complete');
-        } catch (seedErr) {
-            console.error('❌ Seeding error:', seedErr);
-        }
 
         app.listen(PORT, () => {
             console.log(`🚀 Server running on port ${PORT}`);
