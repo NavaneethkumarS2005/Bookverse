@@ -5,8 +5,8 @@
 ![BookVerse Hero](https://placehold.co/1200x400/4f46e5/ffffff?text=BookVerse+Production+Ready)
 
 ## 🚀 Live Demo
-- **Frontend (Netlify):** [https://book-vers.netlify.app](https://book-vers.netlify.app)
-- **Backend (Render):** [https://bookverse-backend-gw75.onrender.com](https://bookverse-backend-gw75.onrender.com)
+- **Frontend (Vercel):** [https://bookverse-neon.vercel.app/](https://bookverse-neon.vercel.app/)
+- **Backend (Railway):** [https://bookverse-backend-production.up.railway.app](https://bookverse-backend-production.up.railway.app)
 
 ---
 
@@ -78,7 +78,7 @@ For any issues, please use the [Contact Form](https://book-vers.netlify.app/cont
 
 ---
 
-## 🚀 Deployment (Railway Backend + Netlify Frontend)
+## 🚀 Deployment (Railway Backend + Vercel Frontend)
 
 ### Backend (Railway)
 1.  **Push** this repo to GitHub.
@@ -86,16 +86,13 @@ For any issues, please use the [Contact Form](https://book-vers.netlify.app/cont
 3.  **Settings**:
     *   **Root Directory**: `backend`
     *   **Variables**: Add `MONGO_URI`, `STRIPE_SECRET_KEY`, `JWT_SECRET`, etc.
-    *   **Networking**: A domain will be generated (e.g., `bookverse.up.railway.app`).
-4.  Copy this URL.
+4.  Copy the generated **Public Networking URL**.
 
-### Frontend (Netlify)
-1.  Go to **Netlify** -> Add New Site -> Import from Git.
+### Frontend (Vercel)
+1.  Go to **Vercel** -> Add New Project -> Import from Git.
 2.  **Settings**:
-    *   **Base Directory**: `frontend`
-    *   **Build Command**: `npm run build`
-    *   **Publish Directory**: `dist`
+    *   **Root Directory**: `frontend`
+    *   **Framework Preset**: Vite
 3.  **Environment Variables**:
     *   Key: `VITE_API_URL`
-    *   Value: `https://your-railway-url.up.railway.app` (The URL you copied)
 4.  **Deploy!** 🚀

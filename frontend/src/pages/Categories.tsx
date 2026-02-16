@@ -15,7 +15,9 @@ const Categories: React.FC = () => {
         const fetchBooks = async () => {
             try {
                 const res = await axios.get(`${API_URL}/api/books`);
-                setBooks(res.data);
+                // Support paginated { books: [], ... } or legacy array
+                const bookData = res.data.books || res.data;
+                setBooks(Array.isArray(bookData) ? bookData : []);
             } catch (err) {
                 console.error("Error fetching books:", err);
             } finally {
@@ -103,8 +105,8 @@ const Categories: React.FC = () => {
                         <button
                             key={genre as string}
                             className={`px-6 py-2.5 rounded-full whitespace-nowrap font-medium transition-all ${selectedCategory === genre
-                                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                                    : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
+                                ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                                : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 border border-slate-200 dark:border-slate-800'
                                 }`}
                             onClick={() => setSelectedCategory(genre as string)}
                         >

@@ -79,7 +79,10 @@ const AdminDashboard: React.FC = () => {
 
             setStats(statsRes.data.stats);
             setRecentOrders(statsRes.data.recentOrders);
-            setBooks(booksRes.data);
+
+            // Support paginated { books: [], ... } or legacy array
+            const bookData = booksRes.data.books || booksRes.data;
+            setBooks(Array.isArray(bookData) ? bookData : []);
         } catch (err) {
             console.error("Admin Error:", err);
         } finally {
@@ -139,8 +142,8 @@ const AdminDashboard: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('dashboard')}
                             className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'dashboard'
-                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                         >
                             📊 Overview
@@ -148,8 +151,8 @@ const AdminDashboard: React.FC = () => {
                         <button
                             onClick={() => setActiveTab('books')}
                             className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'books'
-                                    ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
                                 }`}
                         >
                             📚 Manage Books
@@ -212,8 +215,8 @@ const AdminDashboard: React.FC = () => {
                                                     <td className="py-4 font-medium text-slate-900 dark:text-white">{order.user?.name || 'Guest'}</td>
                                                     <td className="py-4">
                                                         <span className={`px-2 py-1 rounded-full text-xs font-bold ${order.status === 'Paid'
-                                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                                                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
                                                             }`}>
                                                             {order.status}
                                                         </span>

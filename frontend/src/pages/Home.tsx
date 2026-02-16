@@ -16,9 +16,14 @@ const Home: React.FC = () => {
         const fetchBooks = async () => {
             try {
                 const res = await axios.get(`${API_URL}/api/books`);
-                // Display top 4 books as featured
-                // Ensure data matches interface, or cast it if strictly necessary
-                setFeaturedBooks(res.data.slice(0, 4));
+                // Handle paginated response { books: [], total: ... } or legacy array
+                const bookData = res.data.books || res.data;
+                if (Array.isArray(bookData)) {
+                    setFeaturedBooks(bookData.slice(0, 4));
+                } else {
+                    console.error("Expected array for books, got:", typeof bookData);
+                    setFeaturedBooks([]);
+                }
             } catch (err) {
                 console.error("Failed to load books", err);
             } finally {

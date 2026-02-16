@@ -15,15 +15,22 @@ const allowedOrigins = [
     'http://localhost:5174',
     'https://book-vers.netlify.app',
     process.env.CLIENT_URL
-].filter(Boolean) as string[];
+].filter(Boolean).map(url => url?.replace(/\/$/, '')) as string[];
 
 app.use(cors({
     origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
-        if (allowedOrigins.includes(origin)) {
+
+        // Clean the incoming origin to ensure match
+        const cleanedOrigin = origin.replace(/\/$/, '');
+
+        if (allowedOrigins.includes(cleanedOrigin)) {
             return callback(null, true);
         }
-        return callback(new Error(`CORS: origin ${origin} not allowed`));
+
+        console.warn(`⚠️ CORS blocked for origin: ${origin}`);
+        return callback(null, false); // Block it without crashing with a 500
     },
     credentials: true
 }));
