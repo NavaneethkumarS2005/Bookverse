@@ -25,18 +25,22 @@ const isVercelOrigin = (origin: string) => {
 
 app.use(cors({
     origin: (origin, callback) => {
-        // Allow requests with no origin (like mobile apps or curl)
-        if (!origin) return callback(null, true);
-
-        // Clean the incoming origin to ensure match
-        const cleanedOrigin = origin.replace(/\/$/, '');
-
-        if (allowedOrigins.includes(cleanedOrigin) || isVercelOrigin(cleanedOrigin)) {
+        if (!origin) {
+            console.log('✅ CORS: No origin (Allowed)');
             return callback(null, true);
         }
 
-        console.warn(`⚠️ CORS blocked for origin: ${origin}`);
-        return callback(null, false); // Block it without crashing with a 500
+        const cleanedOrigin = origin.replace(/\/$/, '');
+        const isAllowed = allowedOrigins.includes(cleanedOrigin) || isVercelOrigin(cleanedOrigin);
+
+        if (isAllowed) {
+            console.log(`✅ CORS: Allowed origin: ${origin}`);
+            return callback(null, true);
+        }
+
+        console.error(`❌ CORS BLOCKED: ${origin}`);
+        console.log(`Debug - Allowed Origins: ${JSON.stringify(allowedOrigins)}`);
+        return callback(null, false);
     },
     credentials: true
 }));
