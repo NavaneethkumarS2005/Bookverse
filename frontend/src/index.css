@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -19,9 +21,6 @@
     @apply font-inter text-slate-600 dark:text-slate-300 leading-relaxed;
   }
 }
-
-/* ===== FONTS (Outfit for Headings, Inter for Body) ===== */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;700;800&display=swap');
 
 /* ===== RESET & BASE ===== */
 *,

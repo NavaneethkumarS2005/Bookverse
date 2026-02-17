@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import InlineAlert from '../components/InlineAlert';
 // @ts-ignore
 import { API_URL } from '../config';
 
@@ -13,9 +14,12 @@ interface BookFormData {
     rating: number;
 }
 
+type SellMessageType = 'success' | 'error' | 'info';
+
 const SellBook: React.FC = () => {
     const navigate = useNavigate();
     const [isLoading, setIsLoading] = useState(false);
+    const [pageMessage, setPageMessage] = useState<{ type: SellMessageType; text: string } | null>(null);
     const [formData, setFormData] = useState<BookFormData>({
         title: '',
         author: '',
@@ -33,10 +37,11 @@ const SellBook: React.FC = () => {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
+        setPageMessage(null);
 
         // Basic Validation
         if (!formData.title || !formData.author || !formData.price || !formData.genre) {
-            alert("Please fill in all required fields.");
+            setPageMessage({ type: 'error', text: 'Please fill in all required fields.' });
             setIsLoading(false);
             return;
         }
@@ -44,7 +49,7 @@ const SellBook: React.FC = () => {
         try {
             const token = localStorage.getItem('token');
             if (!token) {
-                alert("You must be logged in to sell a book.");
+                setPageMessage({ type: 'error', text: 'You must be logged in to sell a book. Redirecting to login...' });
                 navigate('/login');
                 setIsLoading(false);
                 return;
@@ -64,15 +69,15 @@ const SellBook: React.FC = () => {
             });
 
             if (response.ok) {
-                alert("Book listed successfully!");
+                setPageMessage({ type: 'success', text: 'Book listed successfully!' });
                 navigate('/marketplace');
             } else {
                 const data = await response.json();
-                alert(`Failed to list book: ${data.message}`);
+                setPageMessage({ type: 'error', text: `Failed to list book: ${data.message}` });
             }
         } catch (error) {
             console.error("Error listing book:", error);
-            alert("Error listing book. Please try again.");
+            setPageMessage({ type: 'error', text: 'Error listing book. Please try again.' });
         } finally {
             setIsLoading(false);
         }
@@ -87,6 +92,7 @@ const SellBook: React.FC = () => {
 
         try {
             setIsLoading(true);
+            setPageMessage({ type: 'info', text: 'Uploading image...' });
             const res = await fetch(`${API_URL}/api/upload`, {
                 method: 'POST',
                 body: uploadData
@@ -94,10 +100,11 @@ const SellBook: React.FC = () => {
             const data = await res.json();
             if (data.imageUrl) {
                 setFormData(prev => ({ ...prev, image: data.imageUrl }));
+                setPageMessage({ type: 'success', text: 'Image uploaded successfully.' });
             }
         } catch (err) {
             console.error("Upload error:", err);
-            alert("Failed to upload image");
+            setPageMessage({ type: 'error', text: 'Failed to upload image.' });
         } finally {
             setIsLoading(false);
         }
@@ -110,6 +117,15 @@ const SellBook: React.FC = () => {
                     <h1 className="font-outfit text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent text-center mb-8">
                         Sell Your Book
                     </h1>
+
+                    {pageMessage && (
+                        <InlineAlert
+                            type={pageMessage.type}
+                            message={pageMessage.text}
+                            onClose={() => setPageMessage(null)}
+                            className="mb-6"
+                        />
+                    )}
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>

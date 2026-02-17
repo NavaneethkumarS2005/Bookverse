@@ -60,7 +60,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         if (token) {
             try {
                 // @ts-ignore
-                await fetch(`${import.meta.env.VITE_API_URL}/api/cart/add`, {
+                await fetch(`${API_URL}/api/cart/add`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -76,13 +76,18 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     };
 
     const removeFromCart = async (bookId: string | number) => {
+        const targetId = String(bookId);
         // Optimistic Update
-        setCart(prev => prev.filter(item => (item._id !== bookId && item.id !== bookId)));
+        setCart(prev => prev.filter(item => {
+            const itemMongoId = item._id ? String(item._id) : '';
+            const itemCustomId = item.id !== undefined && item.id !== null ? String(item.id) : '';
+            return itemMongoId !== targetId && itemCustomId !== targetId;
+        }));
 
         if (token) {
             try {
                 // @ts-ignore
-                await fetch(`${import.meta.env.VITE_API_URL}/api/cart/remove/${bookId}`, {
+                await fetch(`${API_URL}/api/cart/remove/${bookId}`, {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` }
                 });
@@ -98,7 +103,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         if (token) {
             try {
                 // @ts-ignore
-                await fetch(`${import.meta.env.VITE_API_URL}/api/cart/clear`, {
+                await fetch(`${API_URL}/api/cart/clear`, {
                     method: 'DELETE',
                     headers: { Authorization: `Bearer ${token}` }
                 });

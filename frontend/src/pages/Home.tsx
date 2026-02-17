@@ -11,6 +11,7 @@ const Home: React.FC = () => {
     // Initialize as empty array but typed as Book[]
     const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchBooks = async () => {
@@ -20,12 +21,15 @@ const Home: React.FC = () => {
                 const bookData = res.data.books || res.data;
                 if (Array.isArray(bookData)) {
                     setFeaturedBooks(bookData.slice(0, 4));
+                    setError(null);
                 } else {
                     console.error("Expected array for books, got:", typeof bookData);
                     setFeaturedBooks([]);
+                    setError('Unable to load featured books right now. Please visit the marketplace for the full catalog.');
                 }
             } catch (err) {
                 console.error("Failed to load books", err);
+                setError('Unable to load featured books right now. Please check your connection or try again later.');
             } finally {
                 setLoading(false);
             }
@@ -90,6 +94,10 @@ const Home: React.FC = () => {
 
                     {loading ? (
                         <div className="text-center p-10 text-slate-500 animate-pulse">Loading bestsellers...</div>
+                    ) : error ? (
+                        <div className="text-center p-8 rounded-2xl border border-dashed border-red-200 bg-red-50/60 text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
+                            {error}
+                        </div>
                     ) : (
                         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
                             {featuredBooks.map(book => (

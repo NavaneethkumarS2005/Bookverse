@@ -6,6 +6,7 @@ import { API_URL } from '../config';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 import { Book, IReview } from '../types';
+import InlineAlert from '../components/InlineAlert';
 
 const BookDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -20,6 +21,8 @@ const BookDetails: React.FC = () => {
     const [newReview, setNewReview] = useState({ rating: 5, comment: '' });
     const [submitting, setSubmitting] = useState(false);
     const [activeImage, setActiveImage] = useState<string>('');
+    const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     useEffect(() => {
         const fetchBookAndRecommendations = async () => {
@@ -58,7 +61,9 @@ const BookDetails: React.FC = () => {
 
                     setSimilarBooks(filteredRecs);
 
-                } catch (e) { console.log("Recs error", e); }
+                } catch (e) {
+                    console.log("Recs error", e);
+                }
 
 
                 // 3. Fetch Reviews
@@ -66,10 +71,13 @@ const BookDetails: React.FC = () => {
                 try {
                     const reviewsRes = await axios.get(`${API_URL}/api/reviews/${targetId}`);
                     setReviews(reviewsRes.data);
-                } catch (e) { console.log('No reviews yet or error'); }
+                } catch (e) {
+                    console.log('No reviews yet or error');
+                }
 
             } catch (err) {
                 console.error("Error loading book details:", err);
+                setLoadError('We could not load this book right now. It may have been removed or there is a connection issue.');
             } finally {
                 setLoading(false);
             }
@@ -86,13 +94,14 @@ const BookDetails: React.FC = () => {
         await new Promise(resolve => setTimeout(resolve, 600));
         addToCart(book);
         setAddingToCart(false);
+        setAlertMessage({ type: 'success', text: 'Book added to cart!' });
     };
 
     const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         const token = localStorage.getItem('token');
         if (!token) {
-            alert("Please login to write a review.");
+            setAlertMessage({ type: 'error', text: 'Please login to write a review.' });
             navigate('/login');
             return;
         }
@@ -107,10 +116,10 @@ const BookDetails: React.FC = () => {
 
             setReviews([res.data, ...reviews]);
             setNewReview({ rating: 5, comment: '' });
-            alert("Review submitted!");
+            setAlertMessage({ type: 'success', text: 'Review submitted!' });
         } catch (err) {
             console.error("Review failed:", err);
-            alert("Failed to submit review. Please try again.");
+            setAlertMessage({ type: 'error', text: 'Failed to submit review. Please try again.' });
         } finally {
             setSubmitting(false);
         }
@@ -126,14 +135,29 @@ const BookDetails: React.FC = () => {
     );
 
     if (!book) return (
-        <div className="min-h-screen pt-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400">
-            <h2 className="text-2xl font-bold mb-4">Book not found</h2>
+        <div className="min-h-screen pt-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-5 text-center">
+            <h2 className="text-2xl font-bold mb-3">
+                {loadError ? 'Unable to load book' : 'Book not found'}
+            </h2>
+            {loadError && (
+                <p className="mb-4 max-w-md">{loadError}</p>
+            )}
             <Link to="/marketplace" className="text-indigo-600 hover:text-indigo-500 hover:underline">Return to Marketplace</Link>
         </div>
     );
 
     return (
         <div className="min-h-screen pt-[72px] bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+            {/* Inline Alert */}
+            {alertMessage && (
+                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
+                    <InlineAlert
+                        type={alertMessage.type}
+                        message={alertMessage.text}
+                        onClose={() => setAlertMessage(null)}
+                    />
+                </div>
+            )}
 
             {/* STICKY NAV HEADER */}
             <div className="sticky top-[72px] z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-3 px-5 md:hidden flex justify-between items-center transition-all">

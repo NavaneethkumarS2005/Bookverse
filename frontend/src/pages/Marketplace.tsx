@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 // @ts-ignore
 import { API_URL } from '../config';
 import ProductCard from '../components/ProductCard';
@@ -22,7 +22,20 @@ const Marketplace: React.FC = () => {
     const [page, setPage] = useState(1);
     const [totalPages, setTotalPages] = useState(1);
 
+    const location = useLocation();
+
     const categories = ['All', 'Fiction', 'Non-Fiction', 'Sci-Fi', 'Mystery', 'Biography', 'History', 'Technology', 'Romance'];
+
+    // Sync search term with URL ?keyword=... (e.g. from Navbar search)
+    useEffect(() => {
+        const params = new URLSearchParams(location.search);
+        const keyword = params.get('keyword') || '';
+        if (keyword && keyword !== searchTerm) {
+            setSearchTerm(keyword);
+            setDebouncedSearch(keyword);
+            setPage(1);
+        }
+    }, [location.search]);
 
     // Debounce Search Term
     useEffect(() => {

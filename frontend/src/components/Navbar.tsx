@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { FiBook, FiSearch, FiShoppingCart, FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut, FiShoppingBag, FiGrid, FiPhone, FiPackage } from 'react-icons/fi';
@@ -14,6 +14,7 @@ const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
+    const navigate = useNavigate();
     const { cart, toggleCart } = useCart();
     const { theme, toggleTheme } = useTheme();
     const user = JSON.parse(localStorage.getItem('user') || 'null') as User | null;
@@ -56,11 +57,22 @@ const Navbar: React.FC = () => {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <FiSearch className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
                     </div>
-                    <input
-                        type="text"
-                        placeholder="Search"
-                        className="block w-full pl-10 pr-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-sm transition-all duration-300 placeholder:text-slate-500"
-                    />
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            const formData = new FormData(e.currentTarget);
+                            const value = ((formData.get('navbarSearch') as string) || '').trim();
+                            if (!value) return;
+                            navigate(`/marketplace?keyword=${encodeURIComponent(value)}`);
+                        }}
+                    >
+                        <input
+                            type="text"
+                            name="navbarSearch"
+                            placeholder="Search books, authors..."
+                            className="block w-full pl-10 pr-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-sm transition-all duration-300 placeholder:text-slate-500"
+                        />
+                    </form>
                 </div>
 
                 {/* Desktop Navigation */}

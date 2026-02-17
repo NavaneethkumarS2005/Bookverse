@@ -37,17 +37,25 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
+        const normalizedBookId = typeof bookId === 'string' ? bookId.trim() : String(bookId ?? '').trim();
+        if (!normalizedBookId) {
+            return res.status(400).json({ message: 'bookId is required' });
+        }
+
         // 1. Try to find the book first to get its real _id
         let book;
 
         // Is it a valid ObjectId?
-        if (bookId.match(/^[0-9a-fA-F]{24}$/)) {
-            book = await Book.findById(bookId);
+        if (/^[0-9a-fA-F]{24}$/.test(normalizedBookId)) {
+            book = await Book.findById(normalizedBookId);
         }
 
         // If not found or not ObjectId, try numeric custom ID
         if (!book) {
-            book = await Book.findOne({ id: bookId });
+            const numericId = Number(normalizedBookId);
+            if (!Number.isNaN(numericId)) {
+                book = await Book.findOne({ id: numericId });
+            }
         }
 
         if (!book) {
@@ -94,16 +102,23 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 export const removeFromCart = async (req: AuthRequest, res: Response) => {
     try {
         const bookId = req.params.bookId as string;
+        const normalizedBookId = typeof bookId === 'string' ? bookId.trim() : String(bookId ?? '').trim();
+        if (!normalizedBookId) {
+            return res.status(400).json({ message: 'bookId is required' });
+        }
         const user = await User.findById(req.user.id);
         if (!user) return res.status(404).json({ message: 'User not found' });
 
         // Find the book to get its real _id (handles both ObjectId and numeric id)
         let book;
-        if (bookId.match(/^[0-9a-fA-F]{24}$/)) {
-            book = await Book.findById(bookId);
+        if (/^[0-9a-fA-F]{24}$/.test(normalizedBookId)) {
+            book = await Book.findById(normalizedBookId);
         }
         if (!book) {
-            book = await Book.findOne({ id: bookId });
+            const numericId = Number(normalizedBookId);
+            if (!Number.isNaN(numericId)) {
+                book = await Book.findOne({ id: numericId });
+            }
         }
 
         if (!book) {

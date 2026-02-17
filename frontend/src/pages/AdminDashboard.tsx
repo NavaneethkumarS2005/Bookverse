@@ -4,6 +4,7 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 import { Book } from '../types';
+import InlineAlert from '../components/InlineAlert';
 
 interface Stats {
     revenue: number;
@@ -26,6 +27,8 @@ const AdminDashboard: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [activeTab, setActiveTab] = useState('dashboard'); // dashboard, books
     const navigate = useNavigate();
+    const [alertMessage, setAlertMessage] = useState<{ type: 'success' | 'error' | 'info'; text: string } | null>(null);
+    const [loadError, setLoadError] = useState<string | null>(null);
 
     // Activities
     const [activities, setActivities] = useState<Activity[]>([
@@ -83,8 +86,10 @@ const AdminDashboard: React.FC = () => {
             // Support paginated { books: [], ... } or legacy array
             const bookData = booksRes.data.books || booksRes.data;
             setBooks(Array.isArray(bookData) ? bookData : []);
+            setLoadError(null);
         } catch (err) {
             console.error("Admin Error:", err);
+            setLoadError('Failed to load admin data. Please check your connection or try refreshing the page.');
         } finally {
             setLoading(false);
         }
@@ -98,10 +103,10 @@ const AdminDashboard: React.FC = () => {
                 headers: { Authorization: `Bearer ${token}` }
             });
             setBooks(books.filter(b => b.id !== id && (b as any)._id !== id));
-            alert("Book deleted");
+            setAlertMessage({ type: 'success', text: 'Book deleted successfully!' });
         } catch (err) {
             console.error(err);
-            alert("Failed to delete book");
+            setAlertMessage({ type: 'error', text: 'Failed to delete book. Please try again.' });
         }
     };
 
@@ -115,10 +120,10 @@ const AdminDashboard: React.FC = () => {
             setBooks([...books, res.data]);
             setShowBookModal(false);
             setNewBook({ title: '', author: '', price: '', genre: '', image: '', desc: '', buyLink: '' });
-            alert("Book added successfully!");
+            setAlertMessage({ type: 'success', text: 'Book added successfully!' });
         } catch (err) {
             console.error(err);
-            alert("Failed to add book");
+            setAlertMessage({ type: 'error', text: 'Failed to add book. Please try again.' });
         }
     };
 
@@ -133,8 +138,19 @@ const AdminDashboard: React.FC = () => {
 
     return (
         <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+            {/* Inline Alert */}
+            {alertMessage && (
+                <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
+                    <InlineAlert
+                        type={alertMessage.type}
+                        message={alertMessage.text}
+                        onClose={() => setAlertMessage(null)}
+                    />
+                </div>
+            )}
+
             <div className="max-w-7xl mx-auto px-5">
-                <div className="flex flex-col md:flex-row justify-between items-center mb-10 gap-4">
+                <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
                     <h1 className="font-outfit text-3xl font-bold bg-gradient-to-r from-red-500 to-orange-500 bg-clip-text text-transparent">
                         Admin Dashboard
                     </h1>
@@ -159,6 +175,16 @@ const AdminDashboard: React.FC = () => {
                         </button>
                     </div>
                 </div>
+
+                {loadError && (
+                    <div className="mb-6">
+                        <InlineAlert
+                            type="error"
+                            message={loadError}
+                            onClose={() => setLoadError(null)}
+                        />
+                    </div>
+                )}
 
                 {activeTab === 'dashboard' && stats && (
                     <div className="space-y-8 animate-fade-in">

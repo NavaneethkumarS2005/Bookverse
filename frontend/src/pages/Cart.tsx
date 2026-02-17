@@ -4,6 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
+import InlineAlert from '../components/InlineAlert';
 // @ts-ignore
 import { API_URL } from '../config';
 
@@ -17,6 +18,8 @@ interface ShippingDetails {
     phone: string;
 }
 
+type CheckoutMessageType = 'success' | 'error' | 'info';
+
 const Cart: React.FC = () => {
     const { cart, removeFromCart, getCartTotal, clearCart } = useCart();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -24,6 +27,9 @@ const Cart: React.FC = () => {
     const [processing, setProcessing] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
     const [loadingSecret, setLoadingSecret] = useState(false);
+    const [checkoutMessage, setCheckoutMessage] = useState<{ type: CheckoutMessageType; text: string } | null>(null);
+    // Persist message even when cart becomes empty
+    const [persistedMessage, setPersistedMessage] = useState<{ type: CheckoutMessageType; text: string } | null>(null);
     const [shippingDetails, setShippingDetails] = useState<ShippingDetails>({
         address: '',
         city: '',
@@ -38,9 +44,10 @@ const Cart: React.FC = () => {
         const query = new URLSearchParams(location.search);
         const status = query.get('status');
         if (status === 'failure') {
-            alert("Payment Failed! Please try again.");
+            setCheckoutMessage({ type: 'error', text: 'Payment failed. Please try again.' });
         } else if (status === 'success') {
-            alert("Payment Successful!");
+            setCheckoutMessage({ type: 'success', text: 'Payment successful! Your order is placed.' });
+            setPersistedMessage({ type: 'success', text: 'Payment successful! Your order is placed.' });
             clearCart();
         }
     }, [location, clearCart]);
@@ -51,13 +58,25 @@ const Cart: React.FC = () => {
 
     const handleCheckout = () => {
         if (cart.length === 0) return;
+
+        const token = localStorage.getItem('token');
+        if (!token) {
+            const msg = { type: 'error' as CheckoutMessageType, text: 'You must be logged in to checkout. Redirecting to login...' };
+            setCheckoutMessage(msg);
+            setPersistedMessage(msg);
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 800);
+            return;
+        }
+
         setIsPaymentOpen(true);
     };
 
     const fetchPaymentIntent = async () => {
         const token = localStorage.getItem('token');
         if (!token) {
-            alert("You must be logged in to checkout.");
+            setCheckoutMessage({ type: 'error', text: 'You must be logged in to checkout. Redirecting to login...' });
             window.location.href = "/login";
             return;
         }
@@ -82,7 +101,7 @@ const Cart: React.FC = () => {
 
             if (!response.ok) {
                 if (response.status === 401) {
-                    alert("Session expired. Please log in again.");
+                    setCheckoutMessage({ type: 'error', text: 'Session expired. Please log in again.' });
                     localStorage.removeItem('token');
                     window.location.href = "/login";
                     return;
@@ -94,11 +113,8 @@ const Cart: React.FC = () => {
             setClientSecret(data.clientSecret);
         } catch (error: any) {
             console.error("Payment Intent Error:", error);
-            if (error.message !== "Failed to fetch") {
-                // handled?
-            }
             if (!window.location.href.includes('login')) {
-                alert("Error initiating checkout: " + error.message);
+                setCheckoutMessage({ type: 'error', text: "Error initiating checkout: " + error.message });
             }
         } finally {
             setLoadingSecret(false);
@@ -123,19 +139,32 @@ const Cart: React.FC = () => {
 
     const handleStripeSuccess = () => {
         setIsPaymentOpen(false);
+        const successMsg = { type: 'success' as CheckoutMessageType, text: 'Payment successful! Your order is placed.' };
+        setCheckoutMessage(successMsg);
+        setPersistedMessage(successMsg);
         clearCart();
-        alert("Payment Successful!");
     };
 
     const handleCOD = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            const msg = { type: 'error' as CheckoutMessageType, text: 'Your session has expired. Please log in again to place an order.' };
+            setCheckoutMessage(msg);
+            setPersistedMessage(msg);
+            setIsPaymentOpen(false);
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 800);
+            return;
+        }
+
         if (!shippingDetails.address || !shippingDetails.phone) {
-            alert("Please enter your Address and Phone Number for delivery.");
+            setCheckoutMessage({ type: 'error', text: 'Please enter your address and phone number for delivery.' });
             return;
         }
 
         setProcessing(true);
         try {
-            const token = localStorage.getItem('token');
             const res = await fetch(`${API_URL}/api/payment/save-order`, {
                 method: 'POST',
                 headers: {
@@ -156,24 +185,37 @@ const Cart: React.FC = () => {
 
             const data = await res.json();
             if (data.success) {
-                alert("Order Placed Successfully via COD!");
+                const successMsg = { type: 'success' as CheckoutMessageType, text: 'Order placed successfully via Cash on Delivery.' };
+                setCheckoutMessage(successMsg);
+                setPersistedMessage(successMsg);
                 clearCart();
                 setIsPaymentOpen(false);
             } else {
-                alert("Order Failed: " + data.message);
+                setCheckoutMessage({ type: 'error', text: 'Order failed: ' + data.message });
             }
         } catch (error) {
             console.error("COD Error:", error);
-            alert("Order Processing Failed");
+            setCheckoutMessage({ type: 'error', text: 'Order processing failed. Please try again.' });
         } finally {
             setProcessing(false);
         }
     };
 
     const handlePhonePe = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) {
+            const msg = { type: 'error' as CheckoutMessageType, text: 'Your session has expired. Please log in again to continue payment.' };
+            setCheckoutMessage(msg);
+            setPersistedMessage(msg);
+            setIsPaymentOpen(false);
+            setTimeout(() => {
+                window.location.href = "/login";
+            }, 800);
+            return;
+        }
+
         try {
             setProcessing(true);
-            const token = localStorage.getItem('token');
 
             const res = await fetch(`${API_URL}/api/phonepe/pay`, {
                 method: 'POST',
@@ -196,17 +238,21 @@ const Cart: React.FC = () => {
 
             const data = await res.json();
             if (data.success) {
+                setCheckoutMessage({ type: 'info', text: 'Redirecting to PhonePe payment page...' });
                 window.location.href = data.url; // Redirect to PhonePe
             } else {
-                alert("PhonePe Error: " + data.message);
+                setCheckoutMessage({ type: 'error', text: 'PhonePe error: ' + data.message });
                 setProcessing(false);
             }
         } catch (error: any) {
             console.error("Payment Error:", error);
-            alert("Payment Initiation Failed: " + error.message);
+            setCheckoutMessage({ type: 'error', text: 'Payment initiation failed: ' + error.message });
             setProcessing(false);
         }
     };
+
+    // Determine which message to show - prefer checkoutMessage, fallback to persistedMessage
+    const displayMessage = checkoutMessage || persistedMessage;
 
     return (
         <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative">
@@ -214,6 +260,18 @@ const Cart: React.FC = () => {
                 <h1 className="font-outfit text-4xl font-bold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent mb-10 w-fit">
                     Your Cart
                 </h1>
+
+                {displayMessage && (
+                    <InlineAlert
+                        type={displayMessage.type}
+                        message={displayMessage.text}
+                        onClose={() => {
+                            setCheckoutMessage(null);
+                            setPersistedMessage(null);
+                        }}
+                        className="mb-6"
+                    />
+                )}
 
                 {cart.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">

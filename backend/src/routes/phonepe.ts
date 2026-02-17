@@ -19,12 +19,27 @@ if (!process.env.PHONEPE_MERCHANT_ID) {
     console.warn("⚠️ PhonePe running in TEST MODE (UAT). Add PHONEPE_MERCHANT_ID for production.");
 }
 
-const CLIENT_URL = process.env.CLIENT_URL || "https://book-vers.netlify.app";
-const BACKEND_URL = process.env.BACKEND_URL || "https://bookverse-backend-gw75.onrender.com";
+const CLIENT_URL = process.env.CLIENT_URL;
+const BACKEND_URL = process.env.BACKEND_URL;
+
+if (!CLIENT_URL) {
+    console.warn("⚠️ CLIENT_URL is not set. PhonePe callback redirects may fail.");
+}
+
+if (!BACKEND_URL) {
+    console.warn("⚠️ BACKEND_URL is not set. PhonePe payment initiation may fail.");
+}
 
 // 1. INITIATE PAYMENT
 router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
     try {
+        if (!BACKEND_URL) {
+            return res.status(500).json({
+                success: false,
+                message: 'BACKEND_URL is not configured on server'
+            });
+        }
+
         const { amount, items, shippingDetails } = req.body;
         const userId = req.user.id; // From auth middleware
 
@@ -104,11 +119,24 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
 // Handle GET Request (Manual visit or redirect issues) - Redirect to Home/Cart
 router.get('/callback', (req: Request, res: Response) => {
     console.warn("⚠️ Manual GET request to /phonepe/callback. Redirecting to frontend.");
+    if (!CLIENT_URL) {
+        return res.status(500).json({
+            success: false,
+            message: 'CLIENT_URL is not configured on server'
+        });
+    }
     res.redirect(`${CLIENT_URL}/cart`);
 });
 
 router.post('/callback', async (req: Request, res: Response) => {
     try {
+        if (!CLIENT_URL) {
+            return res.status(500).json({
+                success: false,
+                message: 'CLIENT_URL is not configured on server'
+            });
+        }
+
         console.log("🔔 PhonePe Callback Received (POST)");
         const { response } = req.body;
 
