@@ -10,6 +10,7 @@ interface CartContextType {
     getCartTotal: () => number;
     isCartOpen: boolean;
     toggleCart: () => void;
+    updateQuantity: (item: CartItem, quantity: number) => void;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -53,8 +54,25 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }, [token]);
 
     const addToCart = async (book: Book) => {
-        // Optimistic Update
-        setCart(prev => [...prev, { ...book, quantity: 1 }]);
+        // Optimistic Update: increment quantity if item already exists
+        setCart(prev => {
+            const targetId = String(book._id || (book as any).id);
+            const existingIndex = prev.findIndex(item =>
+                String(item._id || (item as any).id) === targetId
+            );
+
+            if (existingIndex > -1) {
+                const updated = [...prev];
+                const current = updated[existingIndex];
+                updated[existingIndex] = {
+                    ...current,
+                    quantity: (current.quantity || 1) + 1,
+                };
+                return updated;
+            }
+
+            return [...prev, { ...(book as any), quantity: 1 }];
+        });
         setIsCartOpen(true);
 
         if (token) {
@@ -66,7 +84,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
                         'Content-Type': 'application/json',
                         Authorization: `Bearer ${token}`
                     },
-                    body: JSON.stringify({ bookId: book._id || book.id, quantity: 1 })
+                    body: JSON.stringify({ bookId: (book as any)._id || (book as any).id, quantity: 1 })
                 });
                 await fetchCart(); // Sync with backend
             } catch (err) {
@@ -119,8 +137,54 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
     const toggleCart = () => setIsCartOpen(!isCartOpen);
 
+    const updateQuantity = async (item: CartItem, quantity: number) => {
+        const targetId = String(item._id || (item as any).id);
+
+        // Optimistic local update
+        setCart(prev =>
+            prev
+                .map(ci => {
+                    const ciId = String(ci._id || (ci as any).id);
+                    if (ciId !== targetId) return ci;
+                    if (quantity <= 0) return null;
+                    return { ...ci, quantity };
+                })
+                .filter(Boolean) as CartItem[]
+        );
+
+        if (!token) return;
+
+        try {
+            // Simplest robust approach: remove existing item, then add with new quantity
+            // @ts-ignore
+            await fetch(`${API_URL}/api/cart/remove/${targetId}`, {
+                method: 'DELETE',
+                headers: { Authorization: `Bearer ${token}` }
+            });
+
+            if (quantity > 0) {
+                // @ts-ignore
+                await fetch(`${API_URL}/api/cart/add`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        bookId: targetId,
+                        quantity
+                    })
+                });
+            }
+
+            await fetchCart(); // Final sync
+        } catch (err) {
+            console.error("Update quantity failed", err);
+        }
+    };
+
     return (
-        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getCartTotal, isCartOpen, toggleCart }}>
+        <CartContext.Provider value={{ cart, addToCart, removeFromCart, clearCart, getCartTotal, isCartOpen, toggleCart, updateQuantity }}>
             {children}
         </CartContext.Provider>
     );

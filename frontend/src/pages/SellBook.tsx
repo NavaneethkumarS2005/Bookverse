@@ -64,7 +64,6 @@ const SellBook: React.FC = () => {
                 body: JSON.stringify({
                     ...formData,
                     price: Number(formData.price),
-                    id: Date.now()
                 })
             });
 

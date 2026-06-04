@@ -16,7 +16,7 @@ const Home: React.FC = () => {
     useEffect(() => {
         const fetchBooks = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/books`);
+                const res = await axios.get(`${API_URL}/api/books?limit=4`);
                 // Handle paginated response { books: [], total: ... } or legacy array
                 const bookData = res.data.books || res.data;
                 if (Array.isArray(bookData)) {

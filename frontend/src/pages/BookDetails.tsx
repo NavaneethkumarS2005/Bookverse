@@ -90,8 +90,6 @@ const BookDetails: React.FC = () => {
     const handleAddToCart = async () => {
         if (!book) return;
         setAddingToCart(true);
-        // Simulate network delay for "Loading State" UX
-        await new Promise(resolve => setTimeout(resolve, 600));
         addToCart(book);
         setAddingToCart(false);
         setAlertMessage({ type: 'success', text: 'Book added to cart!' });

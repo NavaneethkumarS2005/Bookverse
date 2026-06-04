@@ -60,7 +60,7 @@ const Login: React.FC = () => {
                 setMessage('Login successful! Redirecting...');
                 setTimeout(() => {
                     navigate('/marketplace');
-                    window.location.reload(); // Force reload to update Navbar state
+                    // window.location.reload(); // Removed to preserve SPA state. Ensure Navbar listens to storage or context.
                 }, 1000);
             } else {
                 setMessage('Registration successful! Please login.');

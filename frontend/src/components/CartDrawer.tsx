@@ -3,7 +3,7 @@ import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
 
 const CartDrawer: React.FC = () => {
-    const { isCartOpen, toggleCart, cart, removeFromCart, getCartTotal } = useCart();
+    const { isCartOpen, toggleCart, cart, removeFromCart, getCartTotal, updateQuantity } = useCart();
     const drawerRef = useRef<HTMLDivElement>(null);
 
     // Close on Escape key for accessibility
@@ -69,36 +69,60 @@ const CartDrawer: React.FC = () => {
                             </button>
                         </div>
                     ) : (
-                        cart.map((item) => (
-                            <div key={item.id} className="flex gap-4 animate-fadeIn">
-                                <div className="w-20 h-28 flex-shrink-0 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-                                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
-                                </div>
-                                <div className="flex-1 flex flex-col justify-between">
-                                    <div>
-                                        <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item.title}</h4>
-                                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.author}</p>
-                                        <div className="text-indigo-600 dark:text-indigo-400 font-bold">₹{item.price}</div>
+                        cart.map((item) => {
+                            const quantity = (item as any).quantity || 1;
+                            const lineTotal = item.price * quantity;
+                            const itemId = item.id ? String(item.id) : (item as any)._id;
+                            return (
+                                <div key={item.id || (item as any)._id} className="flex gap-4 animate-fadeIn">
+                                    <div className="w-20 h-28 flex-shrink-0 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
+                                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                                     </div>
-
-                                    <div className="flex items-center justify-between mt-2">
-                                        <div className="flex items-center gap-3 bg-slate-100 dark:bg-slate-800 rounded-lg px-2 py-1">
-                                            <span className="text-xs font-medium px-2">Qty: {item.quantity}</span>
-                                            {/* In a real app, adding +/- buttons would go here. 
-                                                For now we rely on 'addToCart' logic which increments. 
-                                                Ideally we'd expose a specific updateQuantity method. */
-                                            }
+                                    <div className="flex-1 flex flex-col justify-between">
+                                        <div>
+                                            <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item.title}</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.author}</p>
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">₹{item.price}</span>
+                                                <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                                                    Total: <span className="font-semibold text-slate-800 dark:text-slate-100">₹{lineTotal}</span>
+                                                </span>
+                                            </div>
                                         </div>
-                                        <button
-                                            onClick={() => removeFromCart(item.id ? String(item.id) : item._id)}
-                                            className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
-                                        >
-                                            Remove
-                                        </button>
+
+                                        <div className="flex items-center justify-between mt-2">
+                                            <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateQuantity(item as any, quantity - 1)}
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                                                    aria-label="Decrease quantity"
+                                                >
+                                                    −
+                                                </button>
+                                                <span className="px-2 text-xs font-medium text-slate-800 dark:text-slate-100">
+                                                    {quantity}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => updateQuantity(item as any, quantity + 1)}
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                                                    aria-label="Increase quantity"
+                                                >
+                                                    +
+                                                </button>
+                                            </div>
+                                            <button
+                                                onClick={() => removeFromCart(itemId)}
+                                                className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
+                                            >
+                                                Remove
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            );
+                        })
                     )}
                 </div>
 

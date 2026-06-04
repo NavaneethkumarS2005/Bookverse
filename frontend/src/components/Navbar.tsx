@@ -1,8 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { FiBook, FiSearch, FiShoppingCart, FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut, FiShoppingBag, FiGrid, FiPhone, FiPackage } from 'react-icons/fi';
+import useApi from '../hooks/useApi';
+import { Book } from '../types';
 
 interface User {
     name: string;
@@ -13,11 +15,17 @@ interface User {
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const location = useLocation();
     const navigate = useNavigate();
     const { cart, toggleCart } = useCart();
     const { theme, toggleTheme } = useTheme();
     const user = JSON.parse(localStorage.getItem('user') || 'null') as User | null;
+    const searchInputRef = useRef<HTMLInputElement | null>(null);
+    const suggestionsRef = useRef<HTMLDivElement | null>(null);
+    const { data: suggestions, get: searchBooks } = useApi<Book[]>();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -26,6 +34,55 @@ const Navbar: React.FC = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
+
+    // Debounced search for suggestions
+    useEffect(() => {
+        if (!searchTerm.trim()) {
+            setShowSuggestions(false);
+            setHighlightedIndex(null);
+            return;
+        }
+
+        const handler = setTimeout(() => {
+            searchBooks('/api/books', {
+                params: {
+                    keyword: searchTerm.trim(),
+                    limit: 6,
+                },
+            }).then((result) => {
+                if (result && (result as any[]).length > 0) {
+                    setShowSuggestions(true);
+                    setHighlightedIndex(0);
+                } else {
+                    setShowSuggestions(false);
+                    setHighlightedIndex(null);
+                }
+            });
+        }, 300);
+
+        return () => clearTimeout(handler);
+    }, [searchTerm, searchBooks]);
+
+    // Close suggestions on outside click
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            const target = event.target as Node;
+            if (
+                suggestionsRef.current &&
+                !suggestionsRef.current.contains(target) &&
+                searchInputRef.current &&
+                !searchInputRef.current.contains(target)
+            ) {
+                setShowSuggestions(false);
+                setHighlightedIndex(null);
+            }
+        };
+
+        if (showSuggestions) {
+            document.addEventListener('mousedown', handleClickOutside);
+        }
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, [showSuggestions]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const closeMenu = () => setIsMenuOpen(false);
@@ -60,9 +117,10 @@ const Navbar: React.FC = () => {
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
-                            const formData = new FormData(e.currentTarget);
-                            const value = ((formData.get('navbarSearch') as string) || '').trim();
+                            const value = searchTerm.trim();
                             if (!value) return;
+                            setShowSuggestions(false);
+                            setHighlightedIndex(null);
                             navigate(`/marketplace?keyword=${encodeURIComponent(value)}`);
                         }}
                     >
@@ -70,9 +128,93 @@ const Navbar: React.FC = () => {
                             type="text"
                             name="navbarSearch"
                             placeholder="Search books, authors..."
+                            ref={searchInputRef}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                            onFocus={() => {
+                                if (suggestions && suggestions.length > 0) {
+                                    setShowSuggestions(true);
+                                }
+                            }}
+                            onKeyDown={(e) => {
+                                if (!suggestions || !showSuggestions) return;
+                                const maxIndex = suggestions.length - 1;
+                                if (e.key === 'ArrowDown') {
+                                    e.preventDefault();
+                                    setHighlightedIndex((prev) =>
+                                        prev === null ? 0 : Math.min(maxIndex, prev + 1)
+                                    );
+                                } else if (e.key === 'ArrowUp') {
+                                    e.preventDefault();
+                                    setHighlightedIndex((prev) =>
+                                        prev === null ? maxIndex : Math.max(0, prev - 1)
+                                    );
+                                } else if (e.key === 'Enter' && highlightedIndex !== null) {
+                                    e.preventDefault();
+                                    const book = suggestions[highlightedIndex];
+                                    if (book) {
+                                        setShowSuggestions(false);
+                                        setHighlightedIndex(null);
+                                        navigate(`/book/${(book as any)._id || (book as any).id}`);
+                                    }
+                                } else if (e.key === 'Escape') {
+                                    setShowSuggestions(false);
+                                    setHighlightedIndex(null);
+                                }
+                            }}
                             className="block w-full pl-10 pr-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-sm transition-all duration-300 placeholder:text-slate-500"
                         />
                     </form>
+
+                    {/* Suggestions Dropdown */}
+                    {showSuggestions && suggestions && suggestions.length > 0 && (
+                        <div
+                            ref={suggestionsRef}
+                            className="absolute mt-2 w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl z-50 overflow-hidden"
+                        >
+                            <ul className="max-h-80 overflow-y-auto">
+                                {suggestions.map((book, index) => (
+                                    <li
+                                        key={(book as any)._id || (book as any).id || index}
+                                        className={`px-4 py-2.5 cursor-pointer flex items-center justify-between gap-3 text-sm ${
+                                            highlightedIndex === index
+                                                ? 'bg-indigo-50 dark:bg-indigo-900/40 text-slate-900 dark:text-white'
+                                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        }`}
+                                        onMouseEnter={() => setHighlightedIndex(index)}
+                                        onClick={() => {
+                                            setShowSuggestions(false);
+                                            setHighlightedIndex(null);
+                                            navigate(`/book/${(book as any)._id || (book as any).id}`);
+                                        }}
+                                    >
+                                        <div className="min-w-0">
+                                            <p className="font-medium truncate">{book.title}</p>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                                                {book.author} · {book.category || (book as any).genre}
+                                            </p>
+                                        </div>
+                                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
+                                            ₹{book.price}
+                                        </span>
+                                    </li>
+                                ))}
+                            </ul>
+                            <button
+                                type="button"
+                                onClick={() => {
+                                    const value = searchTerm.trim();
+                                    if (!value) return;
+                                    setShowSuggestions(false);
+                                    setHighlightedIndex(null);
+                                    navigate(`/marketplace?keyword=${encodeURIComponent(value)}`);
+                                }}
+                                className="w-full px-4 py-2.5 text-xs font-semibold text-center text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border-t border-slate-200 dark:border-slate-700"
+                            >
+                                See all results for “{searchTerm.trim()}”
+                            </button>
+                        </div>
+                    )}
                 </div>
 
                 {/* Desktop Navigation */}

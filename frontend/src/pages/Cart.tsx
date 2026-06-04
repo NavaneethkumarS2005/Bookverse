@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useCart } from '../context/CartContext';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
@@ -9,7 +9,7 @@ import InlineAlert from '../components/InlineAlert';
 import { API_URL } from '../config';
 
 // Initialize Stripe
-const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY || 'pk_test_51SuDX02UpQ2jp5vRwVDAnoecRVA8WsNteEtprKOzrkjUjiLHIme2TyErwI4N4icMlwVkwHpsZFqalBIVYzh9YJLD00S6cm8qSM');
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
 
 interface ShippingDetails {
     address: string;
@@ -21,7 +21,7 @@ interface ShippingDetails {
 type CheckoutMessageType = 'success' | 'error' | 'info';
 
 const Cart: React.FC = () => {
-    const { cart, removeFromCart, getCartTotal, clearCart } = useCart();
+    const { cart, removeFromCart, getCartTotal, clearCart, updateQuantity } = useCart();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     const [paymentMethod, setPaymentMethod] = useState('phonepe'); // 'stripe', 'phonepe', 'cod'
     const [processing, setProcessing] = useState(false);
@@ -38,6 +38,7 @@ const Cart: React.FC = () => {
     });
 
     const location = useLocation();
+    const navigate = useNavigate();
 
     // Handle Payment Redirect Status (PhonePe)
     useEffect(() => {
@@ -65,7 +66,7 @@ const Cart: React.FC = () => {
             setCheckoutMessage(msg);
             setPersistedMessage(msg);
             setTimeout(() => {
-                window.location.href = "/login";
+                navigate('/login');
             }, 800);
             return;
         }
@@ -77,7 +78,7 @@ const Cart: React.FC = () => {
         const token = localStorage.getItem('token');
         if (!token) {
             setCheckoutMessage({ type: 'error', text: 'You must be logged in to checkout. Redirecting to login...' });
-            window.location.href = "/login";
+            navigate('/login');
             return;
         }
 
@@ -103,7 +104,7 @@ const Cart: React.FC = () => {
                 if (response.status === 401) {
                     setCheckoutMessage({ type: 'error', text: 'Session expired. Please log in again.' });
                     localStorage.removeItem('token');
-                    window.location.href = "/login";
+                    navigate('/login');
                     return;
                 }
                 const err = await response.json();
@@ -153,7 +154,7 @@ const Cart: React.FC = () => {
             setPersistedMessage(msg);
             setIsPaymentOpen(false);
             setTimeout(() => {
-                window.location.href = "/login";
+                navigate('/login');
             }, 800);
             return;
         }
@@ -209,7 +210,7 @@ const Cart: React.FC = () => {
             setPersistedMessage(msg);
             setIsPaymentOpen(false);
             setTimeout(() => {
-                window.location.href = "/login";
+                navigate('/login');
             }, 800);
             return;
         }
@@ -286,26 +287,63 @@ const Cart: React.FC = () => {
                     <div className="flex flex-col lg:flex-row gap-8">
                         {/* Cart Items */}
                         <div className="flex-1 space-y-6">
-                            {cart.map((item) => (
-                                <div key={item.id || item._id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
-                                    <img
-                                        src={item.image}
-                                        alt={item.title}
-                                        className="w-20 h-28 object-cover rounded-xl shadow-md"
-                                    />
-                                    <div className="flex-1">
-                                        <h3 className="font-outfit font-bold text-lg text-slate-900 dark:text-white mb-1 line-clamp-1">{item.title}</h3>
-                                        <p className="text-slate-500 text-sm mb-2">{item.author}</p>
-                                        <div className="font-bold text-indigo-600 dark:text-indigo-400">₹{item.price}</div>
+                            {cart.map((item) => {
+                                const quantity = (item as any).quantity || 1;
+                                const lineTotal = item.price * quantity;
+                                const itemId = item.id ? String(item.id) : (item as any)._id;
+                                return (
+                                    <div key={item.id || (item as any)._id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
+                                        <img
+                                            src={item.image}
+                                            alt={item.title}
+                                            className="w-20 h-28 object-cover rounded-xl shadow-md"
+                                        />
+                                        <div className="flex-1 space-y-2">
+                                            <div>
+                                                <h3 className="font-outfit font-bold text-lg text-slate-900 dark:text-white mb-1 line-clamp-1">{item.title}</h3>
+                                                <p className="text-slate-500 text-sm mb-1">{item.author}</p>
+                                            </div>
+                                            <div className="flex items-center justify-between gap-4">
+                                                <div className="flex items-center gap-3">
+                                                    <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">₹{item.price}</span>
+                                                    <span className="text-xs text-slate-500 dark:text-slate-400">
+                                                        × {quantity} = <span className="font-semibold text-slate-800 dark:text-slate-100">₹{lineTotal}</span>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div className="flex items-center justify-between mt-2">
+                                                <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateQuantity(item as any, quantity - 1)}
+                                                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm"
+                                                        aria-label="Decrease quantity"
+                                                    >
+                                                        −
+                                                    </button>
+                                                    <span className="px-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                                                        {quantity}
+                                                    </span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => updateQuantity(item as any, quantity + 1)}
+                                                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm"
+                                                        aria-label="Increase quantity"
+                                                    >
+                                                        +
+                                                    </button>
+                                                </div>
+                                                <button
+                                                    onClick={() => removeFromCart(itemId)}
+                                                    className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-sm font-medium transition-colors"
+                                                >
+                                                    Remove
+                                                </button>
+                                            </div>
+                                        </div>
                                     </div>
-                                    <button
-                                        onClick={() => removeFromCart(item.id ? String(item.id) : item._id)}
-                                        className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-sm font-medium transition-colors"
-                                    >
-                                        Remove
-                                    </button>
-                                </div>
-                            ))}
+                                );
+                            })}
                         </div>
 
                         {/* Summary */}
@@ -315,7 +353,14 @@ const Cart: React.FC = () => {
                             </h3>
 
                             <div className="flex justify-between mb-3 text-slate-500 dark:text-slate-400">
-                                <span>Items ({cart.length})</span>
+                                <span>
+                                    Items (
+                                    {cart.reduce(
+                                        (sum, item) => sum + ((item as any).quantity || 1),
+                                        0
+                                    )}
+                                    )
+                                </span>
                                 <span>₹{getCartTotal()}</span>
                             </div>
                             <div className="flex justify-between mb-6 text-slate-500 dark:text-slate-400">
