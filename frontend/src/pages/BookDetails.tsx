@@ -300,7 +300,7 @@ const BookDetails: React.FC = () => {
                                     onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
                                     required
                                 ></textarea>
-                                <button type="submit" disabled={submitting} className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 transition-opacity">
+                                <button type="submit" disabled={submitting} className="w-full py-3 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 transition-opacity">
                                     {submitting ? 'Posting...' : 'Post Review'}
                                 </button>
                             </form>

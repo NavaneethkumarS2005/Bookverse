@@ -347,7 +347,7 @@ const AdminDashboard: React.FC = () => {
                                 </div>
                                 <input type="url" placeholder="Image URL (e.g. from Unsplash/Placehold)" required className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" value={newBook.image} onChange={e => setNewBook({ ...newBook, image: e.target.value })} />
                                 <input type="text" placeholder="Description (Optional)" className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" value={newBook.desc || ''} onChange={e => setNewBook({ ...newBook, desc: e.target.value })} />
-                                <button type="submit" className="w-full py-4 rounded-xl font-bold text-white bg-slate-900 dark:bg-white text-slate-900 hover:opacity-90 transition-opacity mt-2">Add Book</button>
+                                <button type="submit" className="w-full py-4 rounded-xl font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 hover:opacity-90 transition-opacity mt-2">Add Book</button>
                             </form>
                         </div>
                     </div>
