@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import { Link, useLocation } from 'react-router-dom';
 // @ts-ignore
@@ -17,6 +17,10 @@ const Marketplace: React.FC = () => {
     const [selectedCategory, setSelectedCategory] = useState('All');
     const [priceRange, setPriceRange] = useState(5000);
     const [sortOption, setSortOption] = useState('newest');
+    
+    // Custom Sort Dropdown State & Ref
+    const [isSortOpen, setIsSortOpen] = useState(false);
+    const sortRef = useRef<HTMLDivElement>(null);
 
     // Pagination State
     const [page, setPage] = useState(1);
@@ -45,6 +49,25 @@ const Marketplace: React.FC = () => {
         }, 500);
         return () => clearTimeout(handler);
     }, [searchTerm]);
+
+    // Handle click outside custom sort dropdown
+    useEffect(() => {
+        const handleClickOutside = (event: MouseEvent) => {
+            if (sortRef.current && !sortRef.current.contains(event.target as Node)) {
+                setIsSortOpen(false);
+            }
+        };
+        document.addEventListener('mousedown', handleClickOutside);
+        return () => document.removeEventListener('mousedown', handleClickOutside);
+    }, []);
+
+    const sortOptions = [
+        { value: 'newest', label: 'Newest Arrivals' },
+        { value: 'price_asc', label: 'Price: Low to High' },
+        { value: 'price_desc', label: 'Price: High to Low' },
+        { value: 'rating', label: 'Best Rated' }
+    ];
+    const currentSortLabel = sortOptions.find(opt => opt.value === sortOption)?.label || 'Newest Arrivals';
 
     useEffect(() => {
         const fetchBooks = async () => {
@@ -122,19 +145,51 @@ const Marketplace: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Sort By (Mobile/Desktop friendly in sidebar for now, or move to top) */}
+                        {/* Sort By */}
                         <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
                             <h3 className="font-outfit font-bold text-lg text-slate-900 dark:text-white mb-4">Sort By</h3>
-                            <select
-                                value={sortOption}
-                                onChange={(e) => setSortOption(e.target.value)}
-                                className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none text-sm"
-                            >
-                                <option value="newest">Newest Arrivals</option>
-                                <option value="price_asc">Price: Low to High</option>
-                                <option value="price_desc">Price: High to Low</option>
-                                <option value="rating">Best Rated</option>
-                            </select>
+                            <div className="relative" ref={sortRef}>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsSortOpen(!isSortOpen)}
+                                    className="w-full px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white hover:bg-slate-100 dark:hover:bg-slate-900/30 transition-all flex items-center justify-between text-sm font-medium focus:ring-2 focus:ring-indigo-500/50 outline-none"
+                                >
+                                    <span>{currentSortLabel}</span>
+                                    <svg
+                                        className={`w-4 h-4 transition-transform duration-200 text-slate-400 dark:text-slate-500 ${isSortOpen ? 'rotate-180' : ''}`}
+                                        fill="none"
+                                        stroke="currentColor"
+                                        viewBox="0 0 24 24"
+                                    >
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </button>
+                                
+                                {isSortOpen && (
+                                    <div className="absolute left-0 right-0 mt-2 z-30 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 shadow-xl shadow-slate-100 dark:shadow-slate-950/50 overflow-hidden py-1 transition-all duration-200">
+                                        {sortOptions.map((opt) => (
+                                            <button
+                                                key={opt.value}
+                                                type="button"
+                                                onClick={() => {
+                                                    setSortOption(opt.value);
+                                                    setIsSortOpen(false);
+                                                }}
+                                                className={`w-full text-left px-4 py-2.5 text-sm transition-colors flex items-center justify-between ${
+                                                    sortOption === opt.value
+                                                        ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-600 dark:text-indigo-400 font-semibold'
+                                                        : 'text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800/50 hover:text-slate-900 dark:hover:text-white'
+                                                }`}
+                                            >
+                                                <span>{opt.label}</span>
+                                                {sortOption === opt.value && (
+                                                    <span className="text-indigo-500 font-bold">✓</span>
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         {/* Categories */}
