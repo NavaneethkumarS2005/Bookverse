@@ -24,7 +24,7 @@ const Footer: React.FC = () => {
                         <h4 className="font-outfit font-bold text-lg text-slate-800 dark:text-white mb-6">Connect</h4>
                         <div className="flex gap-4 mb-6">
                             <a
-                                href="https://www.linkedin.com/in/navaneeth-kumar-98751b399"
+                                href="https://www.linkedin.com/in/navaneeth-kumar-s-98751b399/"
                                 target="_blank"
                                 rel="noreferrer"
                                 className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-blue-600 hover:border-blue-600 hover:text-white transition-all transform hover:-translate-y-1 shadow-sm"
