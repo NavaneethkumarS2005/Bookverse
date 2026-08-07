@@ -101,14 +101,13 @@ router.post('/chat', async (req: Request, res: Response) => {
                 })) : [];
 
                 const response = await ai.models.generateContent({
-                    model: 'gemini-2.5-flash',
+                    model: 'gemini-3.6-flash',
                     contents: [
                         ...chatHistory,
                         { role: 'user', parts: [{ text: message }] }
                     ],
                     config: {
                         systemInstruction: systemPromptWithCatalog,
-                        temperature: 0.7,
                         maxOutputTokens: 500,
                     }
                 });
