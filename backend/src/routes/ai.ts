@@ -108,7 +108,9 @@ router.post('/chat', async (req: Request, res: Response) => {
                     ],
                     config: {
                         systemInstruction: systemPromptWithCatalog,
-                        maxOutputTokens: 500,
+                        // Gemini 3.6 Flash uses part of this shared budget for thinking.
+                        // A larger limit prevents short user-facing answers from ending mid-sentence.
+                        maxOutputTokens: 2048,
                     }
                 });
 
