@@ -18,7 +18,7 @@ const AIChatbot: React.FC = () => {
     const [isListening, setIsListening] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const [botStatus, setBotStatus] = useState<string>('Ready to answer your BookVerse questions');
-    
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<any>(null);
 
@@ -49,7 +49,7 @@ const AIChatbot: React.FC = () => {
                 setInput(transcript);
                 setIsListening(false);
                 // Optionally auto-send after voice input
-                // handleSendMessage(transcript); 
+                // handleSendMessage(transcript);
             };
 
             recognitionRef.current.onerror = (event: any) => {
@@ -94,7 +94,7 @@ const AIChatbot: React.FC = () => {
             if (!res.ok) {
                 throw new Error(data.message || 'The chatbot service is unavailable.');
             }
-            
+
             setIsTyping(false);
             if (data.success) {
                 const metaParts: string[] = [];
@@ -158,8 +158,8 @@ const AIChatbot: React.FC = () => {
                     <div className="flex-1 h-80 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
-                                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.isBot 
-                                    ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-100 dark:border-slate-700 shadow-sm' 
+                                <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.isBot
+                                    ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-100 dark:border-slate-700 shadow-sm'
                                     : 'bg-indigo-600 text-white rounded-tr-none shadow-md'}`}>
                                     {msg.text}
                                     {msg.meta && (
@@ -186,7 +186,7 @@ const AIChatbot: React.FC = () => {
                     <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
                         <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2">
                             {recognitionRef.current && (
-                                <button 
+                                <button
                                     onClick={toggleListen}
                                     className={`focus:outline-none transition-colors ${isListening ? 'text-pink-500 animate-pulse' : 'text-slate-400 hover:text-indigo-500 dark:text-slate-500'}`}
                                     title="Click to speak"
@@ -196,7 +196,7 @@ const AIChatbot: React.FC = () => {
                                     </svg>
                                 </button>
                             )}
-                            <input 
+                            <input
                                 type="text"
                                 value={input}
                                 onChange={(e) => setInput(e.target.value)}
@@ -204,7 +204,7 @@ const AIChatbot: React.FC = () => {
                                 placeholder={isListening ? "Listening..." : "Ask me anything..."}
                                 className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
                             />
-                            <button 
+                            <button
                                 onClick={() => handleSendMessage()}
                                 disabled={!input.trim()}
                                 className={`flex items-center justify-center w-8 h-8 rounded-full ${input.trim() ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'} transition-colors`}
@@ -219,7 +219,7 @@ const AIChatbot: React.FC = () => {
             )}
 
             {/* Floating Toggle Button */}
-            <button 
+            <button
                 onClick={() => setIsOpen(!isOpen)}
                 className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform hover:scale-110 active:scale-95 ${isOpen ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-gradient-to-r from-indigo-600 to-pink-500 text-white animate-bounce-slow'}`}
             >
