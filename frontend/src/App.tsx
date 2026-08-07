@@ -18,6 +18,7 @@ import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 
 import CartDrawer from './components/CartDrawer';
+import AIChatbot from './components/AIChatbot';
 
 function App() {
   return (
@@ -26,6 +27,7 @@ function App() {
         <Router>
           <div className="app-container">
             <CartDrawer />
+            <AIChatbot />
             <Navbar />
             <Routes>
               <Route path="/" element={<Home />} />

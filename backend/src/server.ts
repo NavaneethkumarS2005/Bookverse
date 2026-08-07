@@ -51,9 +51,12 @@ app.use(express.urlencoded({ extended: true }));
 // Stripe webhook (raw body)
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
 
-// JSON parser for everything else
+// PhonePe callback: capture raw body so we can inspect incoming payloads (QR flow may POST different content-types)
+app.use('/api/phonepe/callback', express.raw({ type: '*/*', limit: '1mb' }));
+
+// JSON parser for everything else (skip webhook and phonepe raw endpoints)
 app.use((req, res, next) => {
-    if (req.originalUrl === '/api/payment/webhook') {
+    if (req.originalUrl === '/api/payment/webhook' || req.originalUrl === '/api/phonepe/callback') {
         return next();
     }
     express.json()(req, res, next);
@@ -72,6 +75,7 @@ import uploadRoutes from './routes/upload';
 import phonePeRoutes from './routes/phonepe';
 import cartRoutes from './routes/cart';
 import adminRoutes from './routes/admin';
+import aiRoutes from './routes/ai';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
@@ -83,6 +87,7 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/phonepe', phonePeRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/', (_req, res) => {
     res.send('API is running...');

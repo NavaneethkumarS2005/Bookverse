@@ -34,7 +34,7 @@ const Orders: React.FC = () => {
         doc.setFontSize(22);
         doc.text('BookVerse', 14, 25);
         doc.setFontSize(12);
-        doc.text('Order Receipt', 200, 25, { align: 'right' });
+        doc.text('Order Invoice', 200, 25, { align: 'right' });
 
         // Order Info
         doc.setTextColor(0, 0, 0);
@@ -47,15 +47,15 @@ const Orders: React.FC = () => {
         const tableBody = order.items.map(item => [
             item.title,
             item.quantity,
-            `$${item.price}`,
-            `$${item.price * item.quantity}`
+            `₹${item.price}`,
+            `₹${item.price * item.quantity}`
         ]);
 
         autoTable(doc, {
             startY: 70,
             head: [['Item', 'Qty', 'Price', 'Total']],
             body: tableBody,
-            foot: [['', '', 'Total Amount', `$${order.totalAmount}`]],
+            foot: [['', '', 'Total Amount', `₹${order.totalAmount}`]],
             theme: 'grid',
             headStyles: { fillColor: [79, 70, 229] },
             footStyles: { fillColor: [241, 245, 249], textColor: [0, 0, 0], fontStyle: 'bold' }
@@ -67,7 +67,7 @@ const Orders: React.FC = () => {
         doc.setTextColor(100);
         doc.text('Thank you for shopping with BookVerse!', 105, finalY, { align: 'center' });
 
-        doc.save(`receipt-${order._id}.pdf`);
+        doc.save(`invoice-${order._id}.pdf`);
     };
 
     useEffect(() => {
@@ -140,9 +140,9 @@ const Orders: React.FC = () => {
                                         <button
                                             onClick={() => downloadReceipt(order)}
                                             className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                                            title="Download Receipt"
+                                            title="Download Invoice"
                                         >
-                                            <span>📄</span> Receipt
+                                            <span>📄</span> Invoice
                                         </button>
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'Paid'
                                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'

@@ -2,16 +2,28 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard';
+import { useCart } from '../context/CartContext';
 // @ts-ignore
 import { API_URL } from '../config';
 
 import { Book } from '../types';
 
 const Home: React.FC = () => {
+    const { clearCart } = useCart();
     // Initialize as empty array but typed as Book[]
     const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [paymentComplete, setPaymentComplete] = useState(false);
+
+    useEffect(() => {
+        const query = new URLSearchParams(window.location.search);
+        if (query.get('payment') !== 'success') return;
+
+        setPaymentComplete(true);
+        void clearCart();
+        window.history.replaceState({}, '', window.location.pathname);
+    }, [clearCart]);
 
     useEffect(() => {
         const fetchBooks = async () => {
@@ -39,6 +51,11 @@ const Home: React.FC = () => {
 
     return (
         <>
+            {paymentComplete && (
+                <div className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-xl">
+                    Payment successful! Your order has been placed.
+                </div>
+            )}
             {/* HERO SECTION */}
             <header className="min-h-[calc(100vh-72px)] flex items-center relative overflow-hidden py-20 bg-gradient-to-b from-indigo-50/50 via-white to-white dark:from-slate-900 dark:via-slate-950 dark:to-slate-950">
                 {/* Background Blobs for specific mood */}
