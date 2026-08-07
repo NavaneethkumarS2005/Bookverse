@@ -90,9 +90,15 @@ const BookDetails: React.FC = () => {
     const handleAddToCart = async () => {
         if (!book) return;
         setAddingToCart(true);
-        addToCart(book);
-        setAddingToCart(false);
-        setAlertMessage({ type: 'success', text: 'Book added to cart!' });
+        try {
+            await addToCart(book);
+            setAlertMessage({ type: 'success', text: 'Book added to cart!' });
+            navigate('/cart');
+        } catch (error: any) {
+            setAlertMessage({ type: 'error', text: error.message || 'Unable to add this book to your cart.' });
+        } finally {
+            setAddingToCart(false);
+        }
     };
 
     const handleReviewSubmit = async (e: React.FormEvent) => {

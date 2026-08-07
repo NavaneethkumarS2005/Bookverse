@@ -4,7 +4,7 @@ import { Book, CartItem } from '../types';
 
 interface CartContextType {
     cart: CartItem[];
-    addToCart: (book: Book) => void;
+    addToCart: (book: Book) => Promise<void>;
     removeFromCart: (bookId: string | number) => void;
     clearCart: () => void;
     getCartTotal: () => number;
@@ -30,10 +30,11 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const token = localStorage.getItem('token');
+    const getToken = () => localStorage.getItem('token');
 
     // Fetch Cart from Backend
     const fetchCart = async () => {
+        const token = getToken();
         if (!token) return;
         try {
             // @ts-ignore
@@ -51,9 +52,10 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
     useEffect(() => {
         fetchCart();
-    }, [token]);
+    }, []);
 
     const addToCart = async (book: Book) => {
+        const token = getToken();
         // Optimistic Update: increment quantity if item already exists
         setCart(prev => {
             const targetId = String(book._id || (book as any).id);
@@ -78,7 +80,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         if (token) {
             try {
                 // @ts-ignore
-                await fetch(`${API_URL}/api/cart/add`, {
+                const response = await fetch(`${API_URL}/api/cart/add`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -86,14 +88,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
                     },
                     body: JSON.stringify({ bookId: (book as any)._id || (book as any).id, quantity: 1 })
                 });
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    throw new Error(data.message || 'Unable to add this book to your cart.');
+                }
                 await fetchCart(); // Sync with backend
             } catch (err) {
                 console.error("Add to cart failed", err);
+                throw err;
             }
         }
     };
 
     const removeFromCart = async (bookId: string | number) => {
+        const token = getToken();
         const targetId = String(bookId);
         // Optimistic Update
         setCart(prev => prev.filter(item => {
@@ -117,6 +125,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     };
 
     const clearCart = async () => {
+        const token = getToken();
         setCart([]);
         if (token) {
             try {
@@ -138,6 +147,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     const toggleCart = () => setIsCartOpen(!isCartOpen);
 
     const updateQuantity = async (item: CartItem, quantity: number) => {
+        const token = getToken();
         const targetId = String(item._id || (item as any).id);
 
         // Optimistic local update
