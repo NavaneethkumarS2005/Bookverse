@@ -31,6 +31,7 @@
     "nodemailer": "^7.0.13",
     "nodemon": "^3.0.1",
     "razorpay": "^2.9.6",
+    "resend": "^6.18.1",
     "serverless-http": "^4.0.0",
     "sha256": "^0.2.0",
     "stripe": "^20.2.0",
