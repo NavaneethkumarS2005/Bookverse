@@ -21,6 +21,7 @@ import Authors from './pages/Authors';
 import Publishers from './pages/Publishers';
 import BookFairs from './pages/BookFairs';
 import DiscoveryDetails from './pages/DiscoveryDetails';
+import BoothDetails from './pages/BoothDetails';
 
 import CartDrawer from './components/CartDrawer';
 import AIChatbot from './components/AIChatbot';
@@ -47,7 +48,7 @@ function App() {
               <Route path="/authors/:id" element={<DiscoveryDetails kind="authors" />} />
               <Route path="/publishers/:id" element={<DiscoveryDetails kind="publishers" />} />
               <Route path="/book-fairs/:id" element={<DiscoveryDetails kind="book-fairs" />} />
-              <Route path="/booths/:id" element={<DiscoveryDetails kind="booths" />} />
+              <Route path="/booths/:id" element={<BoothDetails />} />
               <Route path="/login" element={<Login />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
