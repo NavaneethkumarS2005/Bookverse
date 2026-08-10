@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
-import { FiBook, FiSearch, FiShoppingCart, FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut, FiShoppingBag, FiGrid, FiPhone, FiPackage } from 'react-icons/fi';
-import useApi from '../hooks/useApi';
-import { Book } from '../types';
+import { FiBook, FiShoppingCart, FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut, FiShoppingBag, FiGrid, FiPhone, FiPackage, FiCompass, FiChevronDown } from 'react-icons/fi';
 
 interface User {
     name: string;
@@ -15,17 +13,10 @@ interface User {
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [scrolled, setScrolled] = useState(false);
-    const [searchTerm, setSearchTerm] = useState('');
-    const [showSuggestions, setShowSuggestions] = useState(false);
-    const [highlightedIndex, setHighlightedIndex] = useState<number | null>(null);
     const location = useLocation();
-    const navigate = useNavigate();
     const { cart, toggleCart } = useCart();
     const { theme, toggleTheme } = useTheme();
     const user = JSON.parse(localStorage.getItem('user') || 'null') as User | null;
-    const searchInputRef = useRef<HTMLInputElement | null>(null);
-    const suggestionsRef = useRef<HTMLDivElement | null>(null);
-    const { data: suggestions, get: searchBooks } = useApi<Book[]>();
 
     useEffect(() => {
         const handleScroll = () => {
@@ -34,55 +25,6 @@ const Navbar: React.FC = () => {
         window.addEventListener('scroll', handleScroll);
         return () => window.removeEventListener('scroll', handleScroll);
     }, []);
-
-    // Debounced search for suggestions
-    useEffect(() => {
-        if (!searchTerm.trim()) {
-            setShowSuggestions(false);
-            setHighlightedIndex(null);
-            return;
-        }
-
-        const handler = setTimeout(() => {
-            searchBooks('/api/books', {
-                params: {
-                    keyword: searchTerm.trim(),
-                    limit: 6,
-                },
-            }).then((result) => {
-                if (result && (result as any[]).length > 0) {
-                    setShowSuggestions(true);
-                    setHighlightedIndex(0);
-                } else {
-                    setShowSuggestions(false);
-                    setHighlightedIndex(null);
-                }
-            });
-        }, 300);
-
-        return () => clearTimeout(handler);
-    }, [searchTerm, searchBooks]);
-
-    // Close suggestions on outside click
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            const target = event.target as Node;
-            if (
-                suggestionsRef.current &&
-                !suggestionsRef.current.contains(target) &&
-                searchInputRef.current &&
-                !searchInputRef.current.contains(target)
-            ) {
-                setShowSuggestions(false);
-                setHighlightedIndex(null);
-            }
-        };
-
-        if (showSuggestions) {
-            document.addEventListener('mousedown', handleClickOutside);
-        }
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [showSuggestions]);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const closeMenu = () => setIsMenuOpen(false);
@@ -97,7 +39,7 @@ const Navbar: React.FC = () => {
                     : 'bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-transparent h-[80px]'
                 }`}
         >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-center justify-between gap-4">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
 
                 {/* Logo Section */}
                 <Link to="/" className="flex items-center gap-2.5 group shrink-0" onClick={closeMenu}>
@@ -109,127 +51,22 @@ const Navbar: React.FC = () => {
                     </span>
                 </Link>
 
-                {/* Desktop Search */}
-                <div className="hidden lg:block max-w-md w-full relative group">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiSearch className="text-slate-400 group-focus-within:text-indigo-500 transition-colors" />
-                    </div>
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            const value = searchTerm.trim();
-                            if (!value) return;
-                            setShowSuggestions(false);
-                            setHighlightedIndex(null);
-                            navigate(`/marketplace?keyword=${encodeURIComponent(value)}`);
-                        }}
-                    >
-                        <input
-                            type="text"
-                            name="navbarSearch"
-                            placeholder="Search books, authors..."
-                            ref={searchInputRef}
-                            value={searchTerm}
-                            onChange={(e) => setSearchTerm(e.target.value)}
-                            onFocus={() => {
-                                if (suggestions && suggestions.length > 0) {
-                                    setShowSuggestions(true);
-                                }
-                            }}
-                            onKeyDown={(e) => {
-                                if (!suggestions || !showSuggestions) return;
-                                const maxIndex = suggestions.length - 1;
-                                if (e.key === 'ArrowDown') {
-                                    e.preventDefault();
-                                    setHighlightedIndex((prev) =>
-                                        prev === null ? 0 : Math.min(maxIndex, prev + 1)
-                                    );
-                                } else if (e.key === 'ArrowUp') {
-                                    e.preventDefault();
-                                    setHighlightedIndex((prev) =>
-                                        prev === null ? maxIndex : Math.max(0, prev - 1)
-                                    );
-                                } else if (e.key === 'Enter' && highlightedIndex !== null) {
-                                    e.preventDefault();
-                                    const book = suggestions[highlightedIndex];
-                                    if (book) {
-                                        setShowSuggestions(false);
-                                        setHighlightedIndex(null);
-                                        navigate(`/book/${(book as any)._id || (book as any).id}`);
-                                    }
-                                } else if (e.key === 'Escape') {
-                                    setShowSuggestions(false);
-                                    setHighlightedIndex(null);
-                                }
-                            }}
-                            className="block w-full pl-10 pr-4 py-2.5 rounded-full bg-slate-100 dark:bg-slate-800 border-none focus:ring-2 focus:ring-indigo-500/20 focus:bg-white dark:focus:bg-slate-900 text-slate-900 dark:text-white text-sm transition-all duration-300 placeholder:text-slate-500"
-                        />
-                    </form>
-
-                    {/* Suggestions Dropdown */}
-                    {showSuggestions && suggestions && suggestions.length > 0 && (
-                        <div
-                            ref={suggestionsRef}
-                            className="absolute mt-2 w-full rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 shadow-xl z-50 overflow-hidden"
-                        >
-                            <ul className="max-h-80 overflow-y-auto">
-                                {suggestions.map((book, index) => (
-                                    <li
-                                        key={(book as any)._id || (book as any).id || index}
-                                        className={`px-4 py-2.5 cursor-pointer flex items-center justify-between gap-3 text-sm ${
-                                            highlightedIndex === index
-                                                ? 'bg-indigo-50 dark:bg-indigo-900/40 text-slate-900 dark:text-white'
-                                                : 'bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
-                                        }`}
-                                        onMouseEnter={() => setHighlightedIndex(index)}
-                                        onClick={() => {
-                                            setShowSuggestions(false);
-                                            setHighlightedIndex(null);
-                                            navigate(`/book/${(book as any)._id || (book as any).id}`);
-                                        }}
-                                    >
-                                        <div className="min-w-0">
-                                            <p className="font-medium truncate">{book.title}</p>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
-                                                {book.author} · {book.category || (book as any).genre}
-                                            </p>
-                                        </div>
-                                        <span className="text-xs font-semibold text-indigo-600 dark:text-indigo-400">
-                                            ₹{book.price}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    const value = searchTerm.trim();
-                                    if (!value) return;
-                                    setShowSuggestions(false);
-                                    setHighlightedIndex(null);
-                                    navigate(`/marketplace?keyword=${encodeURIComponent(value)}`);
-                                }}
-                                className="w-full px-4 py-2.5 text-xs font-semibold text-center text-indigo-600 dark:text-indigo-400 bg-slate-50 dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 border-t border-slate-200 dark:border-slate-700"
-                            >
-                                See all results for “{searchTerm.trim()}”
-                            </button>
-                        </div>
-                    )}
-                </div>
-
                 {/* Desktop Navigation */}
-                <div className="hidden md:flex items-center gap-1">
+                <div className="hidden lg:flex min-w-0 items-center justify-center gap-1">
                     <NavLink to="/" icon={<FiBook />} label="Home" active={location.pathname === '/'} />
                     <NavLink to="/marketplace" icon={<FiShoppingBag />} label="Marketplace" active={location.pathname === '/marketplace'} />
                     <NavLink to="/categories" icon={<FiGrid />} label="Categories" active={location.pathname === '/categories'} />
+                    <details className="group relative">
+                        <summary className="list-none cursor-pointer px-3 py-2 rounded-full text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800/50 flex items-center gap-2"><FiCompass /><span>Discover</span><FiChevronDown className="transition-transform group-open:rotate-180" /></summary>
+                        <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl">
+                            <ExploreLink to="/upcoming-books" label="Upcoming books" /><ExploreLink to="/authors" label="Authors" /><ExploreLink to="/publishers" label="Publishers" /><ExploreLink to="/book-fairs" label="Book fairs" />
+                        </div>
+                    </details>
                     <NavLink to="/contact" icon={<FiPhone />} label="Contact" active={location.pathname === '/contact'} />
-                    {user && (
-                        <NavLink to="/orders" icon={<FiPackage />} label="My Orders" active={location.pathname === '/orders'} />
-                    )}
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center gap-2 sm:gap-3">
+                <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                     <button
                         onClick={toggleTheme}
                         className="p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20"
@@ -254,28 +91,19 @@ const Navbar: React.FC = () => {
                     <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
 
                     {user ? (
-                        <div className="flex items-center gap-3 pl-1">
-                            <Link to="/profile" className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
-                                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white text-xs font-bold shadow-md">
+                        <details className="group relative">
+                            <summary className="list-none cursor-pointer rounded-full p-1 outline-none ring-offset-2 transition hover:ring-2 hover:ring-indigo-500/30">
+                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md" title="Account menu">
                                     {user.name.charAt(0).toUpperCase()}
                                 </div>
-                                <div className="hidden lg:block text-left">
-                                    <p className="text-xs font-semibold text-slate-900 dark:text-white leading-none mb-0.5">{user.name.split(' ')[0]}</p>
-                                    <p className="text-[10px] text-slate-500 dark:text-slate-400 leading-none">View Profile</p>
-                                </div>
-                            </Link>
-                            <button
-                                onClick={() => {
-                                    localStorage.removeItem('user');
-                                    localStorage.removeItem('token');
-                                    window.location.href = '/login';
-                                }}
-                                className="p-2.5 rounded-full text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-colors hidden sm:block"
-                                aria-label="Logout"
-                            >
-                                <FiLogOut className="text-xl" />
-                            </button>
-                        </div>
+                            </summary>
+                            <div className="absolute right-0 mt-3 w-52 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900">
+                                <div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800"><p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user.name}</p><p className="truncate text-xs text-slate-500">{user.email}</p></div>
+                                <AccountLink to="/profile" icon={<FiUser />} label="My profile" />
+                                <AccountLink to="/orders" icon={<FiPackage />} label="My orders" />
+                                <button onClick={() => { localStorage.removeItem('user'); localStorage.removeItem('token'); window.location.href = '/login'; }} className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"><FiLogOut /> Log out</button>
+                            </div>
+                        </details>
                     ) : (
                         <div className="flex items-center gap-3">
                             <Link to="/login" className="hidden sm:flex px-5 py-2.5 rounded-full font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all text-sm shadow-md shadow-indigo-500/20 active:scale-95 items-center gap-2">
@@ -286,7 +114,7 @@ const Navbar: React.FC = () => {
 
                     <button
                         type="button"
-                        className="md:hidden p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                        className="lg:hidden p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
                         onClick={toggleMenu}
                     >
                         {isMenuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}
@@ -295,11 +123,15 @@ const Navbar: React.FC = () => {
             </div>
 
             {/* Mobile Menu */}
-            <div className={`fixed inset-x-0 top-[72px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl md:hidden transition-all duration-300 ease-in-out origin-top ${isMenuOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0 overflow-hidden'}`}>
+            <div className={`fixed inset-x-0 top-[72px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl lg:hidden transition-all duration-300 ease-in-out origin-top ${isMenuOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0 overflow-hidden'}`}>
                 <div className="px-4 py-6 space-y-2">
                     <MobileNavLink to="/" icon={<FiBook />} label="Home" onClick={closeMenu} />
                     <MobileNavLink to="/marketplace" icon={<FiShoppingBag />} label="Marketplace" onClick={closeMenu} />
                     <MobileNavLink to="/categories" icon={<FiGrid />} label="Categories" onClick={closeMenu} />
+                    <MobileNavLink to="/upcoming-books" icon={<FiBook />} label="Upcoming books" onClick={closeMenu} />
+                    <MobileNavLink to="/authors" icon={<FiUser />} label="Authors" onClick={closeMenu} />
+                    <MobileNavLink to="/publishers" icon={<FiPackage />} label="Publishers" onClick={closeMenu} />
+                    <MobileNavLink to="/book-fairs" icon={<FiGrid />} label="Book fairs" onClick={closeMenu} />
                     <MobileNavLink to="/contact" icon={<FiPhone />} label="Contact" onClick={closeMenu} />
 
                     {user && (
@@ -362,5 +194,9 @@ const MobileNavLink = ({ to, icon, label, onClick }: { to: string; icon: React.R
         {label}
     </Link>
 );
+
+const ExploreLink = ({ to, label }: { to: string; label: string }) => <Link to={to} className="block rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-slate-800">{label}</Link>;
+
+const AccountLink = ({ to, icon, label }: { to: string; icon: React.ReactNode; label: string }) => <Link to={to} className="mt-1 flex items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 dark:text-slate-300 dark:hover:bg-slate-800">{icon}{label}</Link>;
 
 export default Navbar;

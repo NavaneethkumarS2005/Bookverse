@@ -12,6 +12,10 @@ const Home: React.FC = () => {
     const { clearCart } = useCart();
     // Initialize as empty array but typed as Book[]
     const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
+    const [recommendations, setRecommendations] = useState<Book[]>([]);
+    const [recommendationLabel, setRecommendationLabel] = useState('Live picks for you');
+    const [recommendationBasis, setRecommendationBasis] = useState<'general' | 'history'>('general');
+    const [recommendationLoading, setRecommendationLoading] = useState(true);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [paymentComplete, setPaymentComplete] = useState(false);
@@ -48,6 +52,25 @@ const Home: React.FC = () => {
         };
         fetchBooks();
     }, []);
+
+    const fetchRecommendations = async (refresh = false) => {
+        setRecommendationLoading(true);
+        try {
+            const token = localStorage.getItem('token');
+            const endpoint = token ? '/api/recommendations/personalized' : `/api/recommendations/general${refresh ? '?refresh=true' : ''}`;
+            const response = await axios.get(`${API_URL}${endpoint}`, token ? { headers: { Authorization: `Bearer ${token}` }, params: refresh ? { refresh: 'true' } : undefined } : undefined);
+            setRecommendations((response.data.books || []).slice(0, 4));
+            setRecommendationLabel(response.data.label || 'Live picks for you');
+            setRecommendationBasis(response.data.basis === 'history' ? 'history' : 'general');
+        } catch (err) {
+            console.error('Failed to load recommendations', err);
+            setRecommendations([]);
+        } finally {
+            setRecommendationLoading(false);
+        }
+    };
+
+    useEffect(() => { void fetchRecommendations(); }, []);
 
     return (
         <>
@@ -100,6 +123,27 @@ const Home: React.FC = () => {
 
                 </div>
             </header>
+
+            {/* LIVE RECOMMENDATIONS */}
+            <section className="relative overflow-hidden bg-slate-950 py-20 text-white">
+                <div className="pointer-events-none absolute -left-24 top-0 h-64 w-64 rounded-full bg-indigo-500/30 blur-3xl" />
+                <div className="pointer-events-none absolute -right-24 bottom-0 h-64 w-64 rounded-full bg-pink-500/25 blur-3xl" />
+                <div className="relative mx-auto max-w-7xl px-5">
+                    <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                        <div>
+                            <p className="mb-2 text-sm font-semibold uppercase tracking-[0.22em] text-indigo-300">Live recommendations</p>
+                            <h2 className="font-outfit text-3xl font-bold sm:text-4xl">{recommendationLabel}</h2>
+                            <p className="mt-3 max-w-xl text-slate-300">{recommendationBasis === 'history' ? 'Tailored from the books you have enjoyed with BookVerse.' : 'A live selection from our catalog. Sign in and build your reading history for personalized suggestions.'}</p>
+                        </div>
+                        <button onClick={() => void fetchRecommendations(true)} disabled={recommendationLoading} className="self-start rounded-xl border border-white/20 bg-white/10 px-5 py-3 text-sm font-semibold transition hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-60 sm:self-auto">
+                            {recommendationLoading ? 'Refreshing…' : 'Refresh picks ↻'}
+                        </button>
+                    </div>
+                    {recommendationLoading ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">{Array.from({ length: 4 }).map((_, i) => <div key={i} className="h-80 animate-pulse rounded-2xl bg-white/10" />)}</div>
+                        : recommendations.length ? <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">{recommendations.map(book => <ProductCard key={book._id || book.id} book={book} />)}</div>
+                        : <div className="rounded-2xl border border-white/15 bg-white/5 p-8 text-slate-300">Recommendations will appear when the catalog is available.</div>}
+                </div>
+            </section>
 
             {/* FEATURED BOOKS */}
             <section className="py-24 relative">

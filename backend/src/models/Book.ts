@@ -1,31 +1,189 @@
-import mongoose, { Document, Schema } from 'mongoose';
+import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IBook extends Document {
-    id: number; // Legacy numerical ID
-    title: string;
-    author: string;
-    price: number;
-    genre: string;
-    description?: string;
-    image?: string;
-    buyLink?: string;
-    rating: number;
-    reviews: number;
-    createdAt: Date;
+  // --- Legacy fields (existing records) ---
+  id?: number;
+  title: string;
+  author: string;
+  description?: string;
+  price: number;
+  genre: string;
+  image: string;
+  rating?: number;
+  reviews?: number;
+  buyLink?: string;
+  availability?: string;
+  publisher?: string;
+  featuredMetadata?: {
+    featured?: boolean;
+    order?: number;
+  };
+
+  // --- Phase 1 optional references ---
+  authorId?: mongoose.Types.ObjectId;
+  publisherId?: mongoose.Types.ObjectId;
+  boothId?: mongoose.Types.ObjectId;
+
+  // --- Phase 1 enrichment fields ---
+  isUpcoming?: boolean;
+  expectedReleaseDate?: Date;
+  preorderLink?: string;
+  isPreorderAvailable?: boolean;
+  language?: string;
+  genres?: string[];
+  totalCopiesSold?: number;
+  averageRating?: number;
+  metadata?: {
+    publisherSummary?: string;
+    readingTime?: number;
+    targetAudience?: string;
+    awards?: string[];
+  };
+  isFeatured?: boolean;
+  featuredOrder?: number;
 }
 
-const bookSchema: Schema = new Schema({
-    id: { type: Number, required: true }, // Keeping numerical ID for compatibility with frontend logic
-    title: { type: String, required: true },
-    author: { type: String, required: true },
-    price: { type: Number, required: true },
-    genre: { type: String, required: true },
-    description: { type: String },
-    image: { type: String },
-    buyLink: { type: String }, // External URL for purchasing
-    rating: { type: Number, default: 0 },
-    reviews: { type: Number, default: 0 },
-    createdAt: { type: Date, default: Date.now }
-});
+const bookSchema = new Schema<IBook>(
+  {
+    id: {
+      type: Number,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
+    title: {
+      type: String,
+      required: [true, 'Book title is required'],
+      trim: true,
+    },
+    author: {
+      type: String,
+      required: [true, 'Author name is required'],
+      trim: true,
+    },
+    description: {
+      type: String,
+      default: '',
+    },
+    price: {
+      type: Number,
+      required: [true, 'Price is required'],
+      min: 0,
+    },
+    genre: {
+      type: String,
+      required: [true, 'Genre is required'],
+      index: true,
+    },
+    image: {
+      type: String,
+      default: '',
+    },
+    rating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    reviews: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    buyLink: {
+      type: String,
+    },
+    availability: {
+      type: String,
+      default: 'In Stock',
+    },
+    publisher: {
+      type: String,
+      trim: true,
+    },
+    featuredMetadata: {
+      featured: { type: Boolean, default: false },
+      order: { type: Number, default: 999 },
+    },
 
-export default mongoose.model<IBook>('Book', bookSchema);
+    authorId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Author',
+      default: null,
+      index: true,
+    },
+    publisherId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Publisher',
+      default: null,
+      index: true,
+    },
+    boothId: {
+      type: Schema.Types.ObjectId,
+      ref: 'Booth',
+      default: null,
+      index: true,
+    },
+
+    isUpcoming: {
+      type: Boolean,
+      default: false,
+    },
+    expectedReleaseDate: {
+      type: Date,
+    },
+    preorderLink: {
+      type: String,
+    },
+    isPreorderAvailable: {
+      type: Boolean,
+      default: false,
+    },
+    language: {
+      type: String,
+      default: 'English',
+      index: true,
+    },
+    genres: [
+      {
+        type: String,
+        index: true,
+      },
+    ],
+    totalCopiesSold: {
+      type: Number,
+      default: 0,
+    },
+    averageRating: {
+      type: Number,
+      default: 0,
+      min: 0,
+      max: 5,
+    },
+    metadata: {
+      publisherSummary: String,
+      readingTime: Number,
+      targetAudience: String,
+      awards: [String],
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
+    featuredOrder: {
+      type: Number,
+      default: 999,
+    },
+  },
+  {
+    timestamps: true,
+  }
+);
+
+bookSchema.index({ authorId: 1, isUpcoming: 1 });
+bookSchema.index({ publisherId: 1, 'metadata.awards': 1 });
+bookSchema.index({ genres: 1, averageRating: -1 });
+bookSchema.index({ isFeatured: 1, featuredOrder: 1 });
+
+const Book = mongoose.model<IBook>('Book', bookSchema);
+export default Book;

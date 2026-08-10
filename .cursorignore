@@ -1,0 +1,28 @@
+# Dependencies & Build Artifacts
+node_modules/
+dist/
+build/
+.next/
+out/
+
+# Package Lock Files (Extremely large, waste context tokens)
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Logs & Environment Files
+*.log
+.env
+.env.*
+
+# Media Files (Images, Audios, Videos)
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.mp4
+*.pdf
+
+# Git and OS metadata
+.git/
+.DS_Store

@@ -111,6 +111,47 @@ export interface IProduct {
     createdAt: string;
     /** Date when the product was last updated. */
     updatedAt: string;
+
+    // --- Phase 1 optional references ---
+    /** Linked Author document (MongoDB ObjectId). */
+    authorId?: string | IAuthor;
+    /** Linked Publisher document (MongoDB ObjectId). */
+    publisherId?: string | IPublisher;
+    /** Linked Booth document (MongoDB ObjectId). */
+    boothId?: string | IBooth;
+
+    // --- Phase 1 enrichment fields ---
+    /** Whether this title is flagged as an upcoming release. */
+    isUpcoming?: boolean;
+    /** Expected release date for upcoming titles. */
+    expectedReleaseDate?: string;
+    /** External preorder URL. */
+    preorderLink?: string;
+    /** Whether preorder is currently available. */
+    isPreorderAvailable?: boolean;
+    /** Primary language of the book. */
+    language?: string;
+    /** Multi-genre tags (Phase 1; legacy records may only have `genre`). */
+    genres?: string[];
+    /** Lifetime copies sold counter. */
+    totalCopiesSold?: number;
+    /** Computed average rating (Phase 1 aggregate). */
+    averageRating?: number;
+    /** Extended publisher/reading metadata. */
+    metadata?: IBookMetadata;
+    /** Whether the book is featured in discovery surfaces. */
+    isFeatured?: boolean;
+    /** Sort order among featured books. */
+    featuredOrder?: number;
+    /** Legacy availability label (e.g. "In Stock"). */
+    availability?: string;
+    /** Legacy publisher name string (pre-ObjectId migration). */
+    publisher?: string;
+    /** Legacy featured flag container used by recommendation queries. */
+    featuredMetadata?: {
+        featured?: boolean;
+        order?: number;
+    };
 }
 
 /**
@@ -192,6 +233,216 @@ export interface IReview {
     isVerified?: boolean;
     /** Date when the review was created. */
     createdAt: string;
+}
+
+// --- PHASE 1: DISCOVERY & BOOK FAIR TYPES ---
+
+/** Status lifecycle for upcoming book releases. */
+export type UpcomingBookStatus = 'ANNOUNCED' | 'COMING_SOON' | 'RELEASED' | 'CANCELLED';
+
+/** Status lifecycle for book fairs. */
+export type BookFairStatus = 'UPCOMING' | 'ONGOING' | 'COMPLETED' | 'CANCELLED';
+
+/** Booth availability at a book fair. */
+export type BoothStatus = 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'RESERVED';
+
+/** Publisher prominence at a fair booth. */
+export type BoothFeaturedStatus = 'FEATURED' | 'REGULAR' | 'SPONSOR';
+
+/** Shared image asset shape used across discovery entities. */
+export interface IImageAsset {
+    url: string;
+    publicId: string;
+}
+
+/** Represents an author profile in the discovery catalog. */
+export interface IAuthor {
+    _id: string;
+    name: string;
+    authorSlug?: string;
+    bio?: string;
+    birthDate?: string;
+    deathDate?: string;
+    nationality?: string;
+    language?: string[];
+    genres?: string[];
+    /** Author portrait URL (defaults to Unsplash placeholder when unset). */
+    avatarUrl?: string;
+    photo?: IImageAsset;
+    socialLinks?: {
+        twitter?: string;
+        website?: string;
+        instagram?: string;
+        goodreads?: string;
+    };
+    averageRating?: number;
+    totalBooksSold?: number;
+    isFeatured?: boolean;
+    featuredOrder?: number;
+    isVerified?: boolean;
+    metadata?: {
+        popularWorks?: string[];
+        awards?: string[];
+        trivia?: string[];
+    };
+    bookCount?: number;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/** Represents a publishing house in the discovery catalog. */
+export interface IPublisher {
+    _id: string;
+    name: string;
+    publisherSlug?: string;
+    description?: string;
+    /** Publisher logo URL (defaults to Unsplash placeholder when unset). */
+    logoUrl?: string;
+    logo?: IImageAsset;
+    establishedYear?: number;
+    headquarters?: string;
+    country?: string;
+    website?: string;
+    contactEmail?: string;
+    isVerified?: boolean;
+    isFeatured?: boolean;
+    boothNumber?: string;
+    genres?: string[];
+    socialLinks?: {
+        twitter?: string;
+        linkedin?: string;
+    };
+    stats?: {
+        totalBooksPublished?: number;
+        averageRating?: number;
+    };
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/** Represents a book announced for future release. */
+export interface IUpcomingBook {
+    _id: string;
+    title: string;
+    bookSlug?: string;
+    description?: string;
+    coverImage?: IImageAsset;
+    authorId: string | IAuthor;
+    publisherId?: string | IPublisher;
+    genres?: string[];
+    expectedReleaseDate: string;
+    actualReleaseDate?: string;
+    isbn?: string;
+    pageCount?: number;
+    price?: number;
+    language?: string;
+    isPreorderAvailable?: boolean;
+    preorderLink?: string;
+    status: UpcomingBookStatus;
+    isFeatured?: boolean;
+    featuredOrder?: number;
+    metadata?: {
+        publisherSummary?: string;
+        authorStatement?: string;
+        teaser?: string;
+    };
+    isComingSoon?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/** Geographic location details for a book fair. */
+export interface IBookFairLocation {
+    venue: string;
+    city: string;
+    state: string;
+    country: string;
+    coordinates?: {
+        lat: number;
+        lng: number;
+    };
+}
+
+/** Represents a book fair event. */
+export interface IBookFair {
+    _id: string;
+    name: string;
+    fairSlug?: string;
+    description?: string;
+    location?: IBookFairLocation;
+    startDate: string;
+    endDate: string;
+    website?: string;
+    isVirtual?: boolean;
+    virtualLink?: string;
+    isFeatured?: boolean;
+    status: BookFairStatus;
+    ticketInfo?: {
+        price: number;
+        purchaseLink: string;
+    };
+    featuredImage?: IImageAsset;
+    stats?: {
+        totalVisitors: number;
+        totalPublishers: number;
+        totalBooksDisplayed: number;
+    };
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/** Represents a publisher booth at a book fair. */
+export interface IBooth {
+    _id: string;
+    boothNumber: string;
+    fairId: string | IBookFair;
+    publisherId: string | IPublisher;
+    section?: string;
+    floor?: string;
+    size?: {
+        width: number;
+        height: number;
+        unit: string;
+    };
+    capacity?: number;
+    isBooked?: boolean;
+    bookingDate?: string;
+    bookingReference?: string;
+    amenities?: string[];
+    specialNotes?: string;
+    featuredBooks?: string[];
+    status: BoothStatus;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/** Maps a publisher to a booth within a book fair. */
+export interface IBoothPublisherMapping {
+    _id: string;
+    fairId: string | IBookFair;
+    boothId: string | IBooth;
+    publisherId: string | IPublisher;
+    featuredStatus?: BoothFeaturedStatus;
+    booksDisplayed?: string[];
+    additionalInfo?: string;
+    schedule?: Array<{
+        day: string;
+        startTime: string;
+        endTime: string;
+        activity: string;
+    }>;
+    isActive?: boolean;
+    createdAt?: string;
+    updatedAt?: string;
+}
+
+/** Extended book metadata for Phase 1 discovery features. */
+export interface IBookMetadata {
+    publisherSummary?: string;
+    readingTime?: number;
+    targetAudience?: string;
+    awards?: string[];
 }
 
 // Ensure compatibility with existing code where simpler interfaces might be used temporarily

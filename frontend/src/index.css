@@ -38,28 +38,22 @@ ul {
 }
 
 :root {
-  /* Premium Light Theme */
-  --bg-main: #FAFBFF;
-  /* Very subtle blue-ish white */
-  --bg-secondary: #F3F6FD;
-  --bg-card: rgba(255, 255, 255, 0.85);
+  /* Light Theme */
+  --bg-main: #FFFFFF;
+  --bg-secondary: #F8FAFC;
+  --bg-card: #FFFFFF;
 
   /* Text */
-  --text-main: #0F172A;
-  /* Slate 900 */
+  --text-main: #1E293B;
   --text-muted: #64748B;
-  /* Slate 500 */
   --text-highlight: #3B82F6;
 
   /* Accents */
-  --primary: #4F46E5;
-  /* Indigo 600 - More premium than standard blue */
-  --primary-hover: #4338CA;
-  --primary-glow: rgba(79, 70, 229, 0.3);
-  --secondary: #8B5CF6;
-  /* Violet 500 */
-  --accent-gradient: linear-gradient(135deg, #4F46E5, #EC4899);
-  /* Indigo to Pink */
+  --primary: #2563EB;
+  --primary-hover: #1D4ED8;
+  --primary-glow: rgba(37, 99, 235, 0.3);
+  --secondary: #9333EA;
+  --accent-gradient: linear-gradient(135deg, #2563EB, #9333EA);
 
   /* Status Colors */
   --success: #10B981;
@@ -67,10 +61,10 @@ ul {
   --error: #EF4444;
 
   /* UI Elements */
-  --border: rgba(148, 163, 184, 0.2);
-  --border-hover: rgba(99, 102, 241, 0.3);
+  --border: #E2E8F0;
+  --border-hover: #9CA3AF;
   --nav-height: 72px;
-  --nav-bg: rgba(255, 255, 255, 0.8);
+  --nav-bg: rgba(255, 255, 255, 0.9);
   --radius: 16px;
 
   /* Shadows */
@@ -79,7 +73,7 @@ ul {
   --shadow-lg: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 10px -2px rgba(0, 0, 0, 0.05);
   --shadow-xl: 0 20px 40px -5px rgba(0, 0, 0, 0.2);
   --glow: 0 0 25px var(--primary-glow);
-  --input-bg: #FFFFFF;
+  --input-bg: #F8FAFC;
 }
 
 [data-theme="dark"] {
@@ -119,8 +113,8 @@ body {
   overflow-x: hidden;
   padding-top: var(--nav-height);
   background-image:
-    radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.08), transparent 40%),
-    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.08), transparent 40%);
+    radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.02), transparent 40%),
+    radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.02), transparent 40%);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 

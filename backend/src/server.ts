@@ -2,7 +2,12 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import connectDB from './config/db';
+import connectDB from './config/db.js';
+import authorRoutes from './routes/authorRoutes.js';
+import publisherRoutes from './routes/publisherRoutes.js';
+import upcomingBookRoutes from './routes/upcomingBookRoutes.js';
+import bookFairRoutes from './routes/bookFairRoutes.js';
+import recommendationRoutes from './routes/recommendationRoutes.js';
 
 dotenv.config();
 
@@ -18,7 +23,6 @@ const allowedOrigins = [
     process.env.CLIENT_URL
 ].filter(Boolean).map(url => url?.replace(/\/$/, '')) as string[];
 
-// Dynamic check for Vercel preview/branch URLs
 const isVercelOrigin = (origin: string) => {
     return origin.endsWith('.vercel.app') && origin.includes('bookverse');
 };
@@ -39,7 +43,6 @@ app.use(cors({
         }
 
         console.error(`❌ CORS BLOCKED: ${origin}`);
-        console.log(`Debug - Allowed Origins: ${JSON.stringify(allowedOrigins)}`);
         return callback(null, false);
     },
     credentials: true
@@ -47,14 +50,9 @@ app.use(cors({
 
 // ------------------- BODY PARSING -------------------
 app.use(express.urlencoded({ extended: true }));
-
-// Stripe webhook (raw body)
 app.use('/api/payment/webhook', express.raw({ type: 'application/json' }));
-
-// PhonePe callback: capture raw body so we can inspect incoming payloads (QR flow may POST different content-types)
 app.use('/api/phonepe/callback', express.raw({ type: '*/*', limit: '1mb' }));
 
-// JSON parser for everything else (skip webhook and phonepe raw endpoints)
 app.use((req, res, next) => {
     if (req.originalUrl === '/api/payment/webhook' || req.originalUrl === '/api/phonepe/callback') {
         return next();
@@ -65,18 +63,22 @@ app.use((req, res, next) => {
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // ------------------- ROUTES -------------------
-import authRoutes from './routes/auth';
-import bookRoutes from './routes/books';
-import orderRoutes from './routes/orders';
-import paymentRoutes from './routes/payment';
-import contactRoutes from './routes/contact';
-import reviewRoutes from './routes/reviews';
-import uploadRoutes from './routes/upload';
-import phonePeRoutes from './routes/phonepe';
-import cartRoutes from './routes/cart';
-import adminRoutes from './routes/admin';
-import aiRoutes from './routes/ai';
+import authRoutes from './routes/auth.js';
+import bookRoutes from './routes/books.js';
+import orderRoutes from './routes/orders.js';
+import paymentRoutes from './routes/payment.js';
+import contactRoutes from './routes/contact.js';
+import reviewRoutes from './routes/reviews.js';
+import uploadRoutes from './routes/upload.js';
+import phonePeRoutes from './routes/phonepe.js';
+import cartRoutes from './routes/cart.js';
+import adminRoutes from './routes/admin.js';
+import aiRoutes from './routes/ai.js';
+import discoveryRoutes from './routes/discoveryRoutes.js';
+import adminDiscoveryRoutes from './routes/adminDiscovery.js';
+import { seedDiscovery } from './data/seedDiscovery.js';
 
+// ------------------- REGISTER ROUTES -------------------
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
 app.use('/api/orders', orderRoutes);
@@ -88,7 +90,17 @@ app.use('/api/phonepe', phonePeRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/discovery', discoveryRoutes);
+app.use('/api/recommendations', recommendationRoutes);
+app.use('/api/admin/discovery', adminDiscoveryRoutes);
 
+// ------------------- PHASE 1 NEW ROUTES -------------------
+app.use('/api/authors', authorRoutes);
+app.use('/api/publishers', publisherRoutes);
+app.use('/api/upcoming-books', upcomingBookRoutes);
+app.use('/api/book-fairs', bookFairRoutes);
+
+// ------------------- HEALTH & ROOT -------------------
 app.get('/', (_req, res) => {
     res.send('API is running...');
 });
@@ -97,18 +109,16 @@ app.get('/health', (_req, res) => {
     res.status(200).json({ status: 'ok' });
 });
 
-// ------------------- START SERVER AFTER DB CONNECT -------------------
-connectDB()
-    .then(() => {
-        console.log('✅ Database connected');
+// ------------------- START SERVER -------------------
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
-        app.listen(PORT, () => {
-            console.log(`🚀 Server running on port ${PORT}`);
-        });
+connectDB()
+    .then(async () => {
+        console.log('✅ Database connected');
+        await seedDiscovery();
     })
     .catch((error) => {
-        console.error('❌ Database connection failed:', error);
-        process.exit(1);
+        console.error('❌ Database unavailable:', error.message);
     });
 
 export default app;

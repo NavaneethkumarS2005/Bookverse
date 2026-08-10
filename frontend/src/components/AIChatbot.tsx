@@ -1,4 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useCart } from '../context/CartContext';
 // @ts-ignore
 import { API_URL } from '../config';
 
@@ -7,9 +9,14 @@ interface Message {
     text: string;
     isBot: boolean;
     meta?: string;
+    results?: DiscoveryResult[];
 }
 
+interface DiscoveryResult { type: 'book' | 'upcoming_book' | 'author' | 'publisher' | 'fair' | 'booth'; data: any; actions: string[]; }
+
 const AIChatbot: React.FC = () => {
+    const navigate = useNavigate();
+    const { addToCart } = useCart();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
         { id: '1', text: 'Hello! I am your BookVerse AI assistant. How can I help you today?', isBot: true }
@@ -120,7 +127,8 @@ const AIChatbot: React.FC = () => {
                     id: Date.now().toString(),
                     text: data.reply,
                     isBot: true,
-                    meta: metaParts.length ? metaParts.join(' · ') : undefined
+                    meta: metaParts.length ? metaParts.join(' · ') : undefined,
+                    results: Array.isArray(data.results) ? data.results : undefined
                 }]);
             } else {
                 setBotStatus('Server error');
@@ -167,6 +175,29 @@ const AIChatbot: React.FC = () => {
                                             {msg.meta}
                                         </div>
                                     )}
+                                    {msg.results?.map((result, index) => {
+                                        const item = result.data;
+                                        const id = item._id || item.id;
+                                        const target = result.type === 'book' ? `/book/${id}`
+                                            : result.type === 'upcoming_book' ? '/upcoming-books'
+                                            : result.type === 'author' ? `/authors/${id}`
+                                            : result.type === 'publisher' ? `/publishers/${id}`
+                                            : result.type === 'fair' ? `/book-fairs/${id}` : `/booths/${id}`;
+                                        const title = item.title || item.name || item.boothNumber || 'Discovery result';
+                                        const subtitle = item.author || item.city || item.publisherId?.name || item.fairId?.name || item.genre;
+                                        const image = item.image || item.coverImage || item.profileImage || item.logo;
+                                        return <div key={`${id}-${index}`} className="mt-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                                            <div className="flex gap-2 p-2">
+                                                {image && <img src={image} alt="" className="h-14 w-10 rounded object-cover" />}
+                                                <div className="min-w-0 flex-1"><div className="truncate font-semibold">{title}</div><div className="truncate text-xs text-slate-500">{subtitle}{item.price || item.expectedPrice ? ` · ₹${item.price || item.expectedPrice}` : ''}</div></div>
+                                            </div>
+                                            <div className="flex gap-2 border-t border-slate-200 dark:border-slate-700 p-2">
+                                                <button onClick={() => { navigate(target); setIsOpen(false); }} className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white">View</button>
+                                                {result.type === 'book' && <button onClick={() => addToCart(item).catch(() => setBotStatus('Could not add to cart'))} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Add to cart</button>}
+                                                {result.type === 'upcoming_book' && <button onClick={() => navigate('/upcoming-books')} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Pre-order</button>}
+                                            </div>
+                                        </div>;
+                                    })}
                                 </div>
                             </div>
                         ))}

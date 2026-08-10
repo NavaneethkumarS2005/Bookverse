@@ -16,6 +16,11 @@ import BookDetails from './pages/BookDetails';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
+import UpcomingBooks from './pages/UpcomingBooks';
+import Authors from './pages/Authors';
+import Publishers from './pages/Publishers';
+import BookFairs from './pages/BookFairs';
+import DiscoveryDetails from './pages/DiscoveryDetails';
 
 import CartDrawer from './components/CartDrawer';
 import AIChatbot from './components/AIChatbot';
@@ -35,6 +40,14 @@ function App() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/marketplace" element={<Marketplace />} />
               <Route path="/categories" element={<Categories />} />
+              <Route path="/upcoming-books" element={<UpcomingBooks />} />
+              <Route path="/authors" element={<Authors />} />
+              <Route path="/publishers" element={<Publishers />} />
+              <Route path="/book-fairs" element={<BookFairs />} />
+              <Route path="/authors/:id" element={<DiscoveryDetails kind="authors" />} />
+              <Route path="/publishers/:id" element={<DiscoveryDetails kind="publishers" />} />
+              <Route path="/book-fairs/:id" element={<DiscoveryDetails kind="book-fairs" />} />
+              <Route path="/booths/:id" element={<DiscoveryDetails kind="booths" />} />
               <Route path="/login" element={<Login />} />
               <Route path="/cart" element={<Cart />} />
               <Route path="/orders" element={<Orders />} />
