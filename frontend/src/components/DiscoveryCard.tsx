@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IImageAsset } from '../types';
-import { DISCOVERY_FALLBACKS, DISCOVERY_IMAGE_FALLBACK, getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
+import { getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
 
 interface DiscoveryCardProps {
   title: string;
@@ -26,13 +26,9 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, descript
   useEffect(() => {
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-discovery-image-url]'));
     const usedImages = new Set(cards.map(card => card.dataset.discoveryImageUrl).filter(Boolean) as string[]);
-
-    // The current card is already in the DOM by the time this effect runs, so exclude its current value.
     usedImages.delete(resolvedImage);
     if (!usedImages.has(resolvedImage)) return;
-
-    const preferred = getDiscoveryFallback(seed, usedImages);
-    setImageSrc(preferred);
+    setImageSrc(getDiscoveryFallback(seed, usedImages));
   }, [resolvedImage, seed]);
 
   const handleImageError = () => {
