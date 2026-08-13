@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IImageAsset } from '../types';
-import { DISCOVERY_IMAGE_FALLBACK, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
+import { DISCOVERY_IMAGE_FALLBACK, getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
 
 interface DiscoveryCardProps {
   title: string;
@@ -14,7 +14,8 @@ interface DiscoveryCardProps {
 }
 
 const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, description, image, badge, label, to }) => {
-  const resolvedImage = resolveDiscoveryImage(image);
+  const fallbackImage = useMemo(() => getDiscoveryFallback(`${title}:${subtitle}`), [title, subtitle]);
+  const resolvedImage = resolveDiscoveryImage(image, fallbackImage);
   const [imageSrc, setImageSrc] = useState(resolvedImage);
 
   useEffect(() => {
@@ -30,7 +31,8 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, descript
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
           onError={() => {
-            if (imageSrc !== DISCOVERY_IMAGE_FALLBACK) setImageSrc(DISCOVERY_IMAGE_FALLBACK);
+            if (imageSrc !== fallbackImage) setImageSrc(fallbackImage);
+            else if (imageSrc !== DISCOVERY_IMAGE_FALLBACK) setImageSrc(DISCOVERY_IMAGE_FALLBACK);
           }}
         />
         {badge && (
