@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
@@ -12,24 +12,17 @@ interface User {
 
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
-    const [scrolled, setScrolled] = useState(false);
     const location = useLocation();
     const { cart, toggleCart } = useCart();
     const { theme, toggleTheme } = useTheme();
     const user = JSON.parse(localStorage.getItem('user') || 'null') as User | null;
-
-    useEffect(() => {
-        const handleScroll = () => setScrolled(window.scrollY > 20);
-        window.addEventListener('scroll', handleScroll);
-        return () => window.removeEventListener('scroll', handleScroll);
-    }, []);
 
     const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const closeMenu = () => setIsMenuOpen(false);
     const isDiscoverActive = ['/upcoming-books', '/authors', '/publishers', '/book-fairs'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
 
     return (
-        <nav className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 font-outfit ${scrolled ? 'bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[72px]' : 'bg-white/50 dark:bg-slate-900/50 backdrop-blur-sm border-b border-transparent h-[80px]'}`}>
+        <nav className="relative w-full z-50 font-outfit bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[80px]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                 <Link to="/" className="flex items-center gap-2.5 group shrink-0" onClick={closeMenu}>
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300"><FiBook className="text-xl" /></div>
@@ -58,7 +51,7 @@ const Navbar: React.FC = () => {
                 </div>
             </div>
 
-            <div className={`fixed inset-x-0 top-[72px] bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl lg:hidden transition-all duration-300 ease-in-out origin-top ${isMenuOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0 overflow-hidden'}`}>
+            <div className={`absolute inset-x-0 top-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl lg:hidden transition-all duration-300 ease-in-out origin-top ${isMenuOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0 overflow-hidden'}`}>
                 <div className="px-4 py-6 space-y-2"><MobileNavLink to="/" icon={<FiBook />} label="Home" onClick={closeMenu} /><MobileNavLink to="/marketplace" icon={<FiShoppingBag />} label="Marketplace" onClick={closeMenu} /><MobileNavLink to="/categories" icon={<FiGrid />} label="Categories" onClick={closeMenu} /><MobileNavLink to="/upcoming-books" icon={<FiBook />} label="Upcoming books" onClick={closeMenu} /><MobileNavLink to="/authors" icon={<FiUser />} label="Authors" onClick={closeMenu} /><MobileNavLink to="/publishers" icon={<FiPackage />} label="Publishers" onClick={closeMenu} /><MobileNavLink to="/book-fairs" icon={<FiGrid />} label="Book fairs" onClick={closeMenu} /><MobileNavLink to="/contact" icon={<FiPhone />} label="Contact" onClick={closeMenu} />{user && <><div className="my-4 border-t border-slate-100 dark:border-slate-800"></div><MobileNavLink to="/profile" icon={<FiUser />} label="My Profile" onClick={closeMenu} /><MobileNavLink to="/orders" icon={<FiPackage />} label="My Orders" onClick={closeMenu} /><div className="pt-2"><button onClick={() => { localStorage.removeItem('user'); localStorage.removeItem('token'); window.location.href = '/login'; }} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 font-medium transition-colors"><FiLogOut className="text-lg" /><span>Logout</span></button></div></>}{!user && <div className="pt-4"><Link to="/login" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-500/20" onClick={closeMenu}><FiUser /><span>Login / Register</span></Link></div>}</div>
             </div>
         </nav>
