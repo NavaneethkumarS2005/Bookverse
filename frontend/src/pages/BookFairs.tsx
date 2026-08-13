@@ -51,6 +51,14 @@ const BookFairs: React.FC = () => {
         });
     }, [fairs, searchTerm, statusFilter]);
 
+    const usedImageUrls = new Set<string>();
+    const uniqueFairImage = (fair: IBookFair): string | undefined => {
+        const candidate = fair.featuredImage?.url?.trim();
+        if (!candidate || usedImageUrls.has(candidate)) return undefined;
+        usedImageUrls.add(candidate);
+        return candidate;
+    };
+
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
@@ -66,7 +74,7 @@ const BookFairs: React.FC = () => {
                 ) : visibleFairs.length === 0 ? (
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 text-center border border-slate-200 dark:border-slate-800 shadow-sm"><div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-4xl mb-6 mx-auto">🎪</div><h3 className="font-outfit text-xl font-bold text-slate-900 dark:text-white mb-2">No book fairs found</h3><p className="text-slate-500 dark:text-slate-400">Try another status filter or check back later.</p></div>
                 ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">{visibleFairs.map(fair => <DiscoveryCard key={fair._id} title={fair.name} subtitle={locationOf(fair)} description={fair.description || locationOf(fair)} image={fair.featuredImage} badge={fair.status ? fair.status.charAt(0) + fair.status.slice(1).toLowerCase() : 'Upcoming'} label={formatRange(fair.startDate, fair.endDate)} to={`/book-fairs/${fair._id}`} />)}</div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">{visibleFairs.map((fair, index) => <DiscoveryCard key={fair._id} title={fair.name} subtitle={locationOf(fair)} description={fair.description || locationOf(fair)} image={uniqueFairImage(fair)} fallbackSeed={`book-fair:${fair._id}:${index}`} fallbackIndex={index} badge={fair.status ? fair.status.charAt(0) + fair.status.slice(1).toLowerCase() : 'Upcoming'} label={formatRange(fair.startDate, fair.endDate)} to={`/book-fairs/${fair._id}`} />)}</div>
                 )}
             </div>
         </div>
