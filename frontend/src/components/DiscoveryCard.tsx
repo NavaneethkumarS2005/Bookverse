@@ -25,9 +25,11 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, descript
 
   useEffect(() => {
     const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-discovery-image-url]'));
+    const duplicateCount = cards.filter(card => card.dataset.discoveryImageUrl === resolvedImage).length;
+    if (duplicateCount <= 1) return;
+
     const usedImages = new Set(cards.map(card => card.dataset.discoveryImageUrl).filter(Boolean) as string[]);
     usedImages.delete(resolvedImage);
-    if (!usedImages.has(resolvedImage)) return;
     setImageSrc(getDiscoveryFallback(seed, usedImages));
   }, [resolvedImage, seed]);
 
