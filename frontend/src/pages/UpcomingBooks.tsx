@@ -40,6 +40,14 @@ const UpcomingBooks: React.FC = () => {
         return books.filter(book => [book.title, nameOf(book.authorId), nameOf(book.publisherId), ...(book.genres || [])].join(' ').toLowerCase().includes(term));
     }, [books, searchTerm]);
 
+    const usedImageUrls = new Set<string>();
+    const uniqueBookImage = (book: IUpcomingBook): string | undefined => {
+        const candidate = book.coverImage?.url?.trim();
+        if (!candidate || usedImageUrls.has(candidate)) return undefined;
+        usedImageUrls.add(candidate);
+        return candidate;
+    };
+
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
@@ -55,7 +63,7 @@ const UpcomingBooks: React.FC = () => {
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 text-center border border-slate-200 dark:border-slate-800 shadow-sm"><div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-4xl mb-6 mx-auto">📖</div><h3 className="font-outfit text-xl font-bold text-slate-900 dark:text-white mb-2">No upcoming books</h3><p className="text-slate-500 dark:text-slate-400">New releases will appear here as publishers announce them.</p></div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {visibleBooks.map(book => <DiscoveryCard key={book._id} title={book.title} subtitle={nameOf(book.authorId) || 'Author to be announced'} description={book.description} image={book.coverImage} badge={book.status?.replace('_', ' ') || 'ANNOUNCED'} label={formatDate(book.expectedReleaseDate)} to={`/marketplace?keyword=${encodeURIComponent(book.title)}`} />)}
+                        {visibleBooks.map((book, index) => <DiscoveryCard key={book._id} title={book.title} subtitle={nameOf(book.authorId) || 'Author to be announced'} description={book.description} image={uniqueBookImage(book)} fallbackSeed={`upcoming-book:${book._id}:${index}`} fallbackIndex={index} badge={book.status?.replace('_', ' ') || 'ANNOUNCED'} label={formatDate(book.expectedReleaseDate)} to={`/marketplace?keyword=${encodeURIComponent(book.title)}`} />)}
                     </div>
                 )}
             </div>
