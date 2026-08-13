@@ -1,25 +1,35 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { FiBook, FiShoppingCart, FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut, FiShoppingBag, FiGrid, FiPhone, FiPackage, FiCompass, FiChevronDown } from 'react-icons/fi';
 
-interface User {
-    name: string;
-    email: string;
-    role: 'user' | 'admin';
-}
+interface User { name: string; email: string; role: 'user' | 'admin'; }
 
 const Navbar: React.FC = () => {
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isDiscoverOpen, setIsDiscoverOpen] = useState(false);
     const location = useLocation();
+    const discoverRef = useRef<HTMLDivElement>(null);
     const { cart, toggleCart } = useCart();
     const { theme, toggleTheme } = useTheme();
     const user = JSON.parse(localStorage.getItem('user') || 'null') as User | null;
 
-    const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
     const closeMenu = () => setIsMenuOpen(false);
     const isDiscoverActive = ['/upcoming-books', '/authors', '/publishers', '/book-fairs'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
+
+    useEffect(() => {
+        setIsDiscoverOpen(false);
+        setIsMenuOpen(false);
+    }, [location.pathname]);
+
+    useEffect(() => {
+        const handleOutsideClick = (event: MouseEvent) => {
+            if (discoverRef.current && !discoverRef.current.contains(event.target as Node)) setIsDiscoverOpen(false);
+        };
+        document.addEventListener('mousedown', handleOutsideClick);
+        return () => document.removeEventListener('mousedown', handleOutsideClick);
+    }, []);
 
     return (
         <nav className="relative w-full z-50 font-outfit bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[80px]">
@@ -33,12 +43,14 @@ const Navbar: React.FC = () => {
                     <NavLink to="/" icon={<FiBook />} label="Home" active={location.pathname === '/'} />
                     <NavLink to="/marketplace" icon={<FiShoppingBag />} label="Marketplace" active={location.pathname === '/marketplace'} />
                     <NavLink to="/categories" icon={<FiGrid />} label="Categories" active={location.pathname === '/categories'} />
-                    <details className="group relative">
-                        <summary className={`list-none cursor-pointer px-3 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all duration-300 ${isDiscoverActive ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}><FiCompass /><span>Discover</span><FiChevronDown className="transition-transform group-open:rotate-180" /></summary>
-                        <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl">
+                    <div ref={discoverRef} className="relative">
+                        <button type="button" onClick={() => setIsDiscoverOpen(open => !open)} aria-expanded={isDiscoverOpen} aria-haspopup="menu" className={`px-3 py-2 rounded-full text-sm font-medium flex items-center gap-2 transition-all duration-300 ${isDiscoverActive ? 'text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/10' : 'text-slate-600 dark:text-slate-400 hover:text-indigo-600 hover:bg-slate-50 dark:hover:bg-slate-800/50'}`}>
+                            <FiCompass /><span>Discover</span><FiChevronDown className={`transition-transform ${isDiscoverOpen ? 'rotate-180' : ''}`} />
+                        </button>
+                        {isDiscoverOpen && <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl" role="menu">
                             <ExploreLink to="/upcoming-books" label="Upcoming books" /><ExploreLink to="/authors" label="Authors" /><ExploreLink to="/publishers" label="Publishers" /><ExploreLink to="/book-fairs" label="Book fairs" />
-                        </div>
-                    </details>
+                        </div>}
+                    </div>
                     <NavLink to="/contact" icon={<FiPhone />} label="Contact" active={location.pathname === '/contact'} />
                 </div>
 
@@ -47,7 +59,7 @@ const Navbar: React.FC = () => {
                     <button onClick={toggleCart} className="relative p-2.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500/20" aria-label="Open cart"><FiShoppingCart className="text-xl" />{cart.length > 0 && <span className="absolute top-1.5 right-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white dark:ring-slate-900">{cart.length}</span>}</button>
                     <div className="h-6 w-px bg-slate-200 dark:bg-slate-700 mx-1 hidden sm:block"></div>
                     {user ? <details className="group relative"><summary className="list-none cursor-pointer rounded-full p-1 outline-none ring-offset-2 transition hover:ring-2 hover:ring-indigo-500/30"><div className="flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 text-sm font-bold text-white shadow-md" title="Account menu">{user.name.charAt(0).toUpperCase()}</div></summary><div className="absolute right-0 mt-3 w-52 rounded-2xl border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-900"><div className="border-b border-slate-100 px-3 py-2 dark:border-slate-800"><p className="truncate text-sm font-semibold text-slate-900 dark:text-white">{user.name}</p><p className="truncate text-xs text-slate-500">{user.email}</p></div><AccountLink to="/profile" icon={<FiUser />} label="My profile" /><AccountLink to="/orders" icon={<FiPackage />} label="My orders" /><button onClick={() => { localStorage.removeItem('user'); localStorage.removeItem('token'); window.location.href = '/login'; }} className="mt-1 flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm font-medium text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10"><FiLogOut /> Log out</button></div></details> : <div className="flex items-center gap-3"><Link to="/login" className="hidden sm:flex px-5 py-2.5 rounded-full font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all text-sm shadow-md shadow-indigo-500/20 active:scale-95 items-center gap-2"><FiUser /> <span>Login</span></Link></div>}
-                    <button type="button" className="lg:hidden p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onClick={toggleMenu}>{isMenuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}</button>
+                    <button type="button" className="lg:hidden p-2.5 rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" onClick={() => setIsMenuOpen(open => !open)}>{isMenuOpen ? <FiX className="text-2xl" /> : <FiMenu className="text-2xl" />}</button>
                 </div>
             </div>
 
