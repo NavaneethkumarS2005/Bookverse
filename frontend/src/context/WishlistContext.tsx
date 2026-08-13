@@ -13,7 +13,6 @@ interface WishlistContextValue {
 }
 
 const WishlistContext = createContext<WishlistContextValue | undefined>(undefined);
-
 const getToken = () => localStorage.getItem('token');
 const idOf = (book: Book) => String(book._id || book.id);
 
@@ -46,7 +45,11 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     useEffect(() => {
         void refreshWishlist();
         window.addEventListener('storage', refreshWishlist);
-        return () => window.removeEventListener('storage', refreshWishlist);
+        window.addEventListener('bookverse-auth-changed', refreshWishlist);
+        return () => {
+            window.removeEventListener('storage', refreshWishlist);
+            window.removeEventListener('bookverse-auth-changed', refreshWishlist);
+        };
     }, [refreshWishlist]);
 
     const isWishlisted = useCallback((bookId: string | number) => {
@@ -61,10 +64,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         const bookId = idOf(book);
         const currentlyWishlisted = wishlist.some(item => idOf(item) === bookId);
         const previous = wishlist;
-
-        setWishlist(currentlyWishlisted
-            ? wishlist.filter(item => idOf(item) !== bookId)
-            : [book, ...wishlist]);
+        setWishlist(currentlyWishlisted ? wishlist.filter(item => idOf(item) !== bookId) : [book, ...wishlist]);
 
         try {
             if (currentlyWishlisted) {
@@ -83,7 +83,6 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }, [wishlist]);
 
     const value = useMemo(() => ({ wishlist, loading, isWishlisted, toggleWishlist, refreshWishlist }), [wishlist, loading, isWishlisted, toggleWishlist, refreshWishlist]);
-
     return <WishlistContext.Provider value={value}>{children}</WishlistContext.Provider>;
 };
 
