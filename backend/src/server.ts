@@ -9,8 +9,24 @@ import publisherRoutes from './routes/publisherRoutes.js';
 import upcomingBookRoutes from './routes/upcomingBookRoutes.js';
 import bookFairRoutes from './routes/bookFairRoutes.js';
 import recommendationRoutes from './routes/recommendationRoutes.js';
+import authRoutes from './routes/auth.js';
+import bookRoutes from './routes/books.js';
+import orderRoutes from './routes/orders.js';
+import paymentRoutes from './routes/payment.js';
+import contactRoutes from './routes/contact.js';
+import reviewRoutes from './routes/reviews.js';
+import uploadRoutes from './routes/upload.js';
+import phonePeRoutes from './routes/phonepe.js';
+import cartRoutes from './routes/cart.js';
+import adminRoutes from './routes/admin.js';
+import aiRoutes from './routes/ai.js';
+import discoveryRoutes from './routes/discoveryRoutes.js';
+import adminDiscoveryRoutes from './routes/adminDiscovery.js';
+import wishlistRoutes from './routes/wishlist.js';
+import { seedDiscovery } from './data/seedDiscovery.js';
+import { enrichBookCovers } from './utils/enrichBookCovers.js';
 
- dotenv.config();
+dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -46,22 +62,6 @@ app.use((req, res, next) => {
 });
 
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
-
-import authRoutes from './routes/auth.js';
-import bookRoutes from './routes/books.js';
-import orderRoutes from './routes/orders.js';
-import paymentRoutes from './routes/payment.js';
-import contactRoutes from './routes/contact.js';
-import reviewRoutes from './routes/reviews.js';
-import uploadRoutes from './routes/upload.js';
-import phonePeRoutes from './routes/phonepe.js';
-import cartRoutes from './routes/cart.js';
-import adminRoutes from './routes/admin.js';
-import aiRoutes from './routes/ai.js';
-import discoveryRoutes from './routes/discoveryRoutes.js';
-import adminDiscoveryRoutes from './routes/adminDiscovery.js';
-import wishlistRoutes from './routes/wishlist.js';
-import { seedDiscovery } from './data/seedDiscovery.js';
 
 app.use('/api/auth', authRoutes);
 app.use('/api/books', bookRoutes);
@@ -103,6 +103,10 @@ connectDB()
             await seedDiscovery();
             console.log('🌱 Explicit discovery seed completed.');
         }
+
+        // Replace the demo text/colour placeholders once with real published
+        // book covers. Stored covers are reused on later restarts.
+        await enrichBookCovers();
     })
     .catch((error) => console.error('❌ Database unavailable:', error.message));
 
