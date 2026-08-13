@@ -2,6 +2,7 @@ import express from 'express';
 import path from 'path';
 import dotenv from 'dotenv';
 import cors from 'cors';
+import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import authorRoutes from './routes/authorRoutes.js';
 import publisherRoutes from './routes/publisherRoutes.js';
@@ -30,7 +31,6 @@ const isVercelOrigin = (origin: string) => {
 app.use(cors({
     origin: (origin, callback) => {
         if (!origin) {
-            console.log('✅ CORS: No origin (Allowed)');
             return callback(null, true);
         }
 
@@ -38,7 +38,6 @@ app.use(cors({
         const isAllowed = allowedOrigins.includes(cleanedOrigin) || isVercelOrigin(cleanedOrigin);
 
         if (isAllowed) {
-            console.log(`✅ CORS: Allowed origin: ${origin}`);
             return callback(null, true);
         }
 
@@ -94,7 +93,7 @@ app.use('/api/discovery', discoveryRoutes);
 app.use('/api/recommendations', recommendationRoutes);
 app.use('/api/admin/discovery', adminDiscoveryRoutes);
 
-// ------------------- PHASE 1 NEW ROUTES -------------------
+// ------------------- DISCOVERY ROUTES -------------------
 app.use('/api/authors', authorRoutes);
 app.use('/api/publishers', publisherRoutes);
 app.use('/api/upcoming-books', upcomingBookRoutes);
@@ -106,7 +105,11 @@ app.get('/', (_req, res) => {
 });
 
 app.get('/health', (_req, res) => {
-    res.status(200).json({ status: 'ok' });
+    const databaseReady = mongoose.connection.readyState === 1;
+    res.status(databaseReady ? 200 : 503).json({
+        status: databaseReady ? 'ok' : 'degraded',
+        database: databaseReady ? 'connected' : 'unavailable'
+    });
 });
 
 // ------------------- START SERVER -------------------
@@ -115,7 +118,13 @@ app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 connectDB()
     .then(async () => {
         console.log('✅ Database connected');
-        await seedDiscovery();
+
+        // Discovery data is never created automatically in production.
+        // Set SEED_DISCOVERY_DATA=true explicitly when starter data is desired.
+        if (process.env.SEED_DISCOVERY_DATA === 'true') {
+            await seedDiscovery();
+            console.log('🌱 Explicit discovery seed completed.');
+        }
     })
     .catch((error) => {
         console.error('❌ Database unavailable:', error.message);
