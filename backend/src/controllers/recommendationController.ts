@@ -20,17 +20,31 @@ export const getPersonalizedRecommendations = async (req: AuthRequest, res: Resp
     try {
         const orders = await Order.find({ user: req.user?.id }).sort({ createdAt: -1 }).limit(10);
         const purchasedIds = orders.flatMap(order => order.items.map(item => String(item.bookId)));
-        // Do not imply personalization unless at least two prior purchases exist.
         if (purchasedIds.length < 2) return getGeneralRecommendations(req, res);
 
-        const history = await Book.find({ $or: [{ _id: { $in: purchasedIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id)) } }, { id: { $in: purchasedIds } }] });
+        const validObjectIds = purchasedIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id));
+        const history = await Book.find({
+            $or: [
+                ...(validObjectIds.length ? [{ _id: { $in: validObjectIds } }] : []),
+                { id: { $in: purchasedIds } }
+            ]
+        });
+
         const genres = [...new Set(history.map(book => book.genre).filter(Boolean))];
         const authors = [...new Set(history.map(book => book.author).filter(Boolean))];
-        const books = await Book.find({
-            _id: { $nin: history.map(book => book._id) },
+        const excludedIds = history.map(book => book._id);
+        const refresh = req.query.refresh === 'true';
+        const match = {
+            _id: { $nin: excludedIds },
+            availability: { $ne: 'Out of Stock' },
             $or: [{ genre: { $in: genres } }, { author: { $in: authors } }]
-        }).sort({ rating: -1, reviews: -1 }).limit(12);
-        res.json({ basis: 'history', label: 'Because you like…', books: serialize(books), signals: { genres, authors } });
+        };
+
+        const books = refresh
+            ? await Book.aggregate([{ $match: match }, { $sample: { size: 12 } }])
+            : await Book.find(match).sort({ rating: -1, reviews: -1, createdAt: -1 }).limit(12);
+
+        res.json({ basis: 'history', label: refresh ? 'More picks based on your reading' : 'Because you like…', books: serialize(books), signals: { genres, authors } });
     } catch (error: any) { res.status(500).json({ message: error.message }); }
 };
 
