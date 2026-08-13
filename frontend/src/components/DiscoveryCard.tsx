@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IImageAsset } from '../types';
-import { getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
+import { DISCOVERY_FALLBACKS, getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
 
 interface DiscoveryCardProps {
   title: string;
@@ -11,11 +11,30 @@ interface DiscoveryCardProps {
   badge?: string;
   label?: string;
   to: string;
+  /** Stable per-card seed used when the backend does not provide a usable image. */
+  fallbackSeed?: string;
+  /** Optional position within a discovery grid. This guarantees distinct local fallbacks. */
+  fallbackIndex?: number;
 }
 
-const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, description, image, badge, label, to }) => {
-  const seed = useMemo(() => `${title}:${subtitle}`, [title, subtitle]);
-  const fallbackImage = useMemo(() => getDiscoveryFallback(seed), [seed]);
+const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
+  title,
+  subtitle,
+  description,
+  image,
+  badge,
+  label,
+  to,
+  fallbackSeed,
+  fallbackIndex,
+}) => {
+  const seed = useMemo(() => fallbackSeed || `${title}:${subtitle}`, [fallbackSeed, title, subtitle]);
+  const fallbackImage = useMemo(() => {
+    if (typeof fallbackIndex === 'number' && DISCOVERY_FALLBACKS.length > 0) {
+      return DISCOVERY_FALLBACKS[fallbackIndex % DISCOVERY_FALLBACKS.length];
+    }
+    return getDiscoveryFallback(seed);
+  }, [fallbackIndex, seed]);
   const resolvedImage = resolveDiscoveryImage(image, fallbackImage);
   const [imageSrc, setImageSrc] = useState(resolvedImage);
 
@@ -23,20 +42,10 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, descript
     setImageSrc(resolvedImage);
   }, [resolvedImage]);
 
-  useEffect(() => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-discovery-image-url]'));
-    const duplicateCount = cards.filter(card => card.dataset.discoveryImageUrl === resolvedImage).length;
-    if (duplicateCount <= 1) return;
-
-    const usedImages = new Set(cards.map(card => card.dataset.discoveryImageUrl).filter(Boolean) as string[]);
-    usedImages.delete(resolvedImage);
-    setImageSrc(getDiscoveryFallback(seed, usedImages));
-  }, [resolvedImage, seed]);
-
   const handleImageError = () => {
-    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-discovery-image-url]'));
-    const usedImages = new Set(cards.map(card => card.dataset.discoveryImageUrl).filter(Boolean) as string[]);
-    usedImages.delete(imageSrc);
+    const usedImages = new Set<string>();
+    const current = imageSrc;
+    if (current) usedImages.add(current);
     setImageSrc(getDiscoveryFallback(seed, usedImages));
   };
 
