@@ -18,12 +18,11 @@ const findByIdOr404 = async (model: any, id: string, res: Response) => {
 
 export const getAuthors = async (req: Request, res: Response) => {
     try {
-        const { keyword, language, genre, classification } = req.query;
+        const { keyword, language, genre } = req.query;
         const query: any = {};
         if (keyword) query.$or = [{ name: { $regex: keyword, $options: 'i' } }, { bio: { $regex: keyword, $options: 'i' } }];
         if (language) query.language = { $in: [String(language)] };
         if (genre) query.genres = { $in: [String(genre)] };
-        if (classification) query.classification = String(classification);
         const authors = await Author.find(query).sort({ isFeatured: -1, createdAt: -1 }).limit(20);
         res.json(authors);
     } catch (error: any) {
@@ -33,10 +32,9 @@ export const getAuthors = async (req: Request, res: Response) => {
 
 export const getPublishers = async (req: Request, res: Response) => {
     try {
-        const { keyword, language, genre } = req.query;
+        const { keyword, genre } = req.query;
         const query: any = {};
         if (keyword) query.$or = [{ name: { $regex: keyword, $options: 'i' } }, { description: { $regex: keyword, $options: 'i' } }];
-        if (language) query.genres = { $in: [String(language)] };
         if (genre) query.genres = { $in: [String(genre)] };
         const publishers = await Publisher.find(query).sort({ isFeatured: -1, createdAt: -1 }).limit(20);
         res.json(publishers);
@@ -105,7 +103,8 @@ export const getAuthorById = async (req: Request, res: Response) => {
     try {
         const author = await findByIdOr404(Author, String(req.params.id), res);
         if (!author) return;
-        const books = await Book.find({ $or: [{ authorId: author._id }, { author: new RegExp(`^${author.name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}$`, 'i') }] }).limit(30);
+        const escapedName = author.name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+        const books = await Book.find({ $or: [{ authorId: author._id }, { author: new RegExp(`^${escapedName}$`, 'i') }] }).limit(30);
         res.json({ ...author.toObject(), books });
     } catch (error: any) { res.status(400).json({ message: error.message }); }
 };
@@ -114,7 +113,8 @@ export const getPublisherById = async (req: Request, res: Response) => {
     try {
         const publisher = await findByIdOr404(Publisher, String(req.params.id), res);
         if (!publisher) return;
-        const books = await Book.find({ $or: [{ publisherId: publisher._id }, { publisher: new RegExp(`^${publisher.name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&')}$`, 'i') }] }).limit(30);
+        const escapedName = publisher.name.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+        const books = await Book.find({ $or: [{ publisherId: publisher._id }, { publisher: new RegExp(`^${escapedName}$`, 'i') }] }).limit(30);
         res.json({ ...publisher.toObject(), books });
     } catch (error: any) { res.status(400).json({ message: error.message }); }
 };
@@ -133,11 +133,14 @@ export const getBoothById = async (req: Request, res: Response) => {
         const booth = await Booth.findById(req.params.id).populate('fairId').populate('publisherId');
         if (!booth) return res.status(404).json({ message: 'Booth not found' });
         const featuredIds = (booth.featuredBooks || []).map(String);
-        const objectIds = featuredIds.filter((id) => mongoose.isValidObjectId(id));
-        const books = await Book.find({ $or: [
-            ...(objectIds.length ? [{ _id: { $in: objectIds } }] : []),
-            ...(featuredIds.length ? [{ id: { $in: featuredIds } }] : [])
-        ] });
+        const objectIds = featuredIds.filter(mongoose.isValidObjectId);
+        const bookQuery = featuredIds.length
+            ? { $or: [
+                ...(objectIds.length ? [{ _id: { $in: objectIds } }] : []),
+                { id: { $in: featuredIds } }
+            ] }
+            : { _id: { $in: [] } };
+        const books = await Book.find(bookQuery);
         res.json({ ...booth.toObject(), books });
     } catch (error: any) { res.status(400).json({ message: error.message }); }
 };
