@@ -37,6 +37,14 @@ const Publishers: React.FC = () => {
             .filter(Boolean).join(' ').toLowerCase().includes(term));
     }, [publishers, searchTerm]);
 
+    const usedImageUrls = new Set<string>();
+    const uniquePublisherImage = (publisher: IPublisher): string | undefined => {
+        const candidate = publisher.logo?.url?.trim() || publisher.logoUrl?.trim();
+        if (!candidate || usedImageUrls.has(candidate)) return undefined;
+        usedImageUrls.add(candidate);
+        return candidate;
+    };
+
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
@@ -52,7 +60,7 @@ const Publishers: React.FC = () => {
                     <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 text-center border border-slate-200 dark:border-slate-800 shadow-sm"><div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-4xl mb-6 mx-auto">🏢</div><h3 className="font-outfit text-xl font-bold text-slate-900 dark:text-white mb-2">No publishers found</h3><p className="text-slate-500 dark:text-slate-400">Publisher profiles will appear here once they are onboarded.</p></div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {visiblePublishers.map(publisher => <DiscoveryCard key={publisher._id} title={publisher.name} subtitle={publisher.headquarters || publisher.country || 'Location not listed'} description={publisher.description} image={publisher.logo || publisher.logoUrl} badge={publisher.isVerified ? 'Verified' : publisher.genres?.[0] || 'Publisher'} label={publisher.establishedYear ? `Est. ${publisher.establishedYear}` : undefined} to={`/publishers/${publisher._id}`} />)}
+                        {visiblePublishers.map((publisher, index) => <DiscoveryCard key={publisher._id} title={publisher.name} subtitle={publisher.headquarters || publisher.country || 'Location not listed'} description={publisher.description} image={uniquePublisherImage(publisher)} fallbackSeed={`publisher:${publisher._id}:${index}`} fallbackIndex={index} badge={publisher.isVerified ? 'Verified' : publisher.genres?.[0] || 'Publisher'} label={publisher.establishedYear ? `Est. ${publisher.establishedYear}` : undefined} to={`/publishers/${publisher._id}`} />)}
                     </div>
                 )}
             </div>
