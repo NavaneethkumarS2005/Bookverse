@@ -22,7 +22,7 @@ const Navbar: React.FC = () => {
     const isDiscoverActive = ['/upcoming-books', '/authors', '/publishers', '/book-fairs'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
 
     return (
-        <nav className="absolute top-0 left-0 w-full z-50 font-outfit bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[80px]">
+        <nav className="relative w-full z-50 font-outfit bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[80px]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                 <Link to="/" className="flex items-center gap-2.5 group shrink-0" onClick={closeMenu}>
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300"><FiBook className="text-xl" /></div>
