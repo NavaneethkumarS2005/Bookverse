@@ -47,6 +47,16 @@ const Authors: React.FC = () => {
         });
     }, [authors, searchTerm, selectedGenre]);
 
+    // Keep real backend images when they are unique; duplicate backend URLs fall back to
+    // the existing local BookVerse visuals so adjacent cards never show the same image.
+    const usedImageUrls = new Set<string>();
+    const uniqueAuthorImage = (author: IAuthor): string | undefined => {
+        const candidate = author.photo?.url?.trim() || author.avatarUrl?.trim();
+        if (!candidate || usedImageUrls.has(candidate)) return undefined;
+        usedImageUrls.add(candidate);
+        return candidate;
+    };
+
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
@@ -78,8 +88,8 @@ const Authors: React.FC = () => {
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                        {visibleAuthors.map(author => (
-                            <DiscoveryCard key={author._id} title={author.name} subtitle={author.nationality || 'Region not listed'} description={author.bio} image={author.photo || author.avatarUrl} badge={author.isFeatured ? 'Featured' : author.genres?.[0] || 'Author'} label={author.language?.join(', ') || undefined} to={`/authors/${author._id}`} />
+                        {visibleAuthors.map((author, index) => (
+                            <DiscoveryCard key={author._id} title={author.name} subtitle={author.nationality || 'Region not listed'} description={author.bio} image={uniqueAuthorImage(author)} fallbackSeed={`author:${author._id}:${index}`} fallbackIndex={index} badge={author.isFeatured ? 'Featured' : author.genres?.[0] || 'Author'} label={author.language?.join(', ') || undefined} to={`/authors/${author._id}`} />
                         ))}
                     </div>
                 )}
