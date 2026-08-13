@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { IImageAsset } from '../types';
-import { DISCOVERY_IMAGE_FALLBACK, getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
+import { DISCOVERY_FALLBACKS, DISCOVERY_IMAGE_FALLBACK, getDiscoveryFallback, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
 
 interface DiscoveryCardProps {
   title: string;
@@ -14,7 +14,8 @@ interface DiscoveryCardProps {
 }
 
 const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, description, image, badge, label, to }) => {
-  const fallbackImage = useMemo(() => getDiscoveryFallback(`${title}:${subtitle}`), [title, subtitle]);
+  const seed = useMemo(() => `${title}:${subtitle}`, [title, subtitle]);
+  const fallbackImage = useMemo(() => getDiscoveryFallback(seed), [seed]);
   const resolvedImage = resolveDiscoveryImage(image, fallbackImage);
   const [imageSrc, setImageSrc] = useState(resolvedImage);
 
@@ -22,18 +23,35 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, descript
     setImageSrc(resolvedImage);
   }, [resolvedImage]);
 
+  useEffect(() => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-discovery-image-url]'));
+    const usedImages = new Set(cards.map(card => card.dataset.discoveryImageUrl).filter(Boolean) as string[]);
+
+    // The current card is already in the DOM by the time this effect runs, so exclude its current value.
+    usedImages.delete(resolvedImage);
+    if (!usedImages.has(resolvedImage)) return;
+
+    const preferred = getDiscoveryFallback(seed, usedImages);
+    setImageSrc(preferred);
+  }, [resolvedImage, seed]);
+
+  const handleImageError = () => {
+    const cards = Array.from(document.querySelectorAll<HTMLElement>('[data-discovery-image-url]'));
+    const usedImages = new Set(cards.map(card => card.dataset.discoveryImageUrl).filter(Boolean) as string[]);
+    usedImages.delete(imageSrc);
+    setImageSrc(getDiscoveryFallback(seed, usedImages));
+  };
+
   return (
     <Link to={to} className="group block rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-shadow duration-300">
       <div className="relative aspect-[4/3] overflow-hidden bg-slate-100 dark:bg-slate-800">
         <img
           src={imageSrc}
           alt={title}
+          data-discovery-image-url={imageSrc}
           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           loading="lazy"
-          onError={() => {
-            if (imageSrc !== fallbackImage) setImageSrc(fallbackImage);
-            else if (imageSrc !== DISCOVERY_IMAGE_FALLBACK) setImageSrc(DISCOVERY_IMAGE_FALLBACK);
-          }}
+          onError={handleImageError}
         />
         {badge && (
           <span className="absolute left-4 top-4 rounded-full bg-indigo-600 text-white text-xs px-3 py-1 font-semibold shadow-lg">
