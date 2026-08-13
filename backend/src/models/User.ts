@@ -14,6 +14,7 @@ export interface IUser extends Document {
         bookId: mongoose.Types.ObjectId;
         quantity: number;
     }[];
+    wishlist: mongoose.Types.ObjectId[];
 }
 
 const userSchema: Schema = new Schema({
@@ -30,7 +31,8 @@ const userSchema: Schema = new Schema({
             bookId: { type: Schema.Types.ObjectId, ref: 'Book' },
             quantity: { type: Number, default: 1 }
         }
-    ]
+    ],
+    wishlist: [{ type: Schema.Types.ObjectId, ref: 'Book' }]
 });
 
 // Pre-save hook to hash password
