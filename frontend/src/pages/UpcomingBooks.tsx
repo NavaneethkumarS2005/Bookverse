@@ -4,7 +4,7 @@ import { API_URL } from '../config';
 import DiscoveryCard from '../components/DiscoveryCard';
 import { IAuthor, IPublisher, IUpcomingBook } from '../types';
 
-const FALLBACK_COVER = 'https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=400&h=600&q=80';
+const FALLBACK_COVER = '/images/hero-book.png';
 
 const nameOf = (ref?: string | IAuthor | IPublisher): string =>
     typeof ref === 'object' && ref !== null ? ref.name : '';
