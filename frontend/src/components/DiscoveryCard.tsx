@@ -1,24 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { IImageAsset } from '../types';
+import { DISCOVERY_IMAGE_FALLBACK, resolveDiscoveryImage } from '../utils/discoveryCompatibility';
 
 interface DiscoveryCardProps {
   title: string;
   subtitle: string;
   description?: string;
-  image?: string;
+  image?: string | IImageAsset | null;
   badge?: string;
   label?: string;
   to: string;
 }
 
-const DISCOVERY_IMAGE_FALLBACK = '/images/hero-book.png';
-
 const DiscoveryCard: React.FC<DiscoveryCardProps> = ({ title, subtitle, description, image, badge, label, to }) => {
-  const [imageSrc, setImageSrc] = useState(image || DISCOVERY_IMAGE_FALLBACK);
+  const resolvedImage = resolveDiscoveryImage(image);
+  const [imageSrc, setImageSrc] = useState(resolvedImage);
 
   useEffect(() => {
-    setImageSrc(image || DISCOVERY_IMAGE_FALLBACK);
-  }, [image]);
+    setImageSrc(resolvedImage);
+  }, [resolvedImage]);
 
   return (
     <Link to={to} className="group block rounded-3xl overflow-hidden border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm hover:shadow-xl transition-shadow duration-300">

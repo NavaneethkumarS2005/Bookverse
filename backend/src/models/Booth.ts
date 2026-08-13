@@ -4,13 +4,11 @@ export interface IBooth extends Document {
   boothNumber: string;
   fairId: mongoose.Types.ObjectId;
   publisherId: mongoose.Types.ObjectId;
+  /** Optional booth-specific image; existing records can omit it. */
+  image?: { url: string; publicId: string };
   section?: string;
   floor?: string;
-  size?: {
-    width: number;
-    height: number;
-    unit: string;
-  };
+  size?: { width: number; height: number; unit: string };
   capacity?: number;
   isBooked?: boolean;
   bookingDate?: Date;
@@ -23,54 +21,23 @@ export interface IBooth extends Document {
 
 const boothSchema = new Schema<IBooth>(
   {
-    boothNumber: {
-      type: String,
-      required: true,
-      unique: true,
-      index: true,
-    },
-    fairId: {
-      type: Schema.Types.ObjectId,
-      ref: 'BookFair',
-      required: true,
-      index: true,
-    },
-    publisherId: {
-      type: Schema.Types.ObjectId,
-      ref: 'Publisher',
-      required: true,
-    },
+    boothNumber: { type: String, required: true, unique: true, index: true },
+    fairId: { type: Schema.Types.ObjectId, ref: 'BookFair', required: true, index: true },
+    publisherId: { type: Schema.Types.ObjectId, ref: 'Publisher', required: true },
+    image: { url: String, publicId: String },
     section: String,
     floor: String,
-    size: {
-      width: Number,
-      height: Number,
-      unit: { type: String, default: 'meters' },
-    },
+    size: { width: Number, height: Number, unit: { type: String, default: 'meters' } },
     capacity: Number,
-    isBooked: {
-      type: Boolean,
-      default: true,
-    },
+    isBooked: { type: Boolean, default: false },
     bookingDate: Date,
     bookingReference: String,
     amenities: [String],
     specialNotes: String,
-    featuredBooks: [
-      {
-        type: Schema.Types.ObjectId,
-        ref: 'Book',
-      },
-    ],
-    status: {
-      type: String,
-      enum: ['AVAILABLE', 'BOOKED', 'MAINTENANCE', 'RESERVED'],
-      default: 'AVAILABLE',
-    },
+    featuredBooks: [{ type: Schema.Types.ObjectId, ref: 'Book' }],
+    status: { type: String, enum: ['AVAILABLE', 'BOOKED', 'MAINTENANCE', 'RESERVED'], default: 'AVAILABLE' },
   },
-  {
-    timestamps: true,
-  }
+  { timestamps: true }
 );
 
 boothSchema.index({ fairId: 1, boothNumber: 1 });
