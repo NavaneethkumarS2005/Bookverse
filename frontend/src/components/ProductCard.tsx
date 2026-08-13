@@ -1,20 +1,30 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Book } from '../types';
+import { BOOK_IMAGE_FALLBACK } from '../utils/bookCompatibility';
 
 interface ProductCardProps {
     book: Book;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
+    const [imageSrc, setImageSrc] = useState(book.image || BOOK_IMAGE_FALLBACK);
+
+    useEffect(() => {
+        setImageSrc(book.image || BOOK_IMAGE_FALLBACK);
+    }, [book.image]);
+
     return (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-2 hover:border-indigo-500 hover:shadow-xl relative overflow-hidden group flex flex-col h-full">
             <div className="aspect-[2/3] w-full mb-4 overflow-hidden rounded-xl relative">
                 <img
-                    src={book.image}
+                    src={imageSrc}
                     alt={book.title}
                     className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     loading="lazy"
+                    onError={() => {
+                        if (imageSrc !== BOOK_IMAGE_FALLBACK) setImageSrc(BOOK_IMAGE_FALLBACK);
+                    }}
                 />
                 <span className="absolute top-2 right-2 bg-black/60 text-white backdrop-blur-sm px-2 py-1 rounded-md text-xs font-semibold">
                     {book.category}

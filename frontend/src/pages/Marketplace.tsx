@@ -5,6 +5,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { API_URL } from '../config';
 import ProductCard from '../components/ProductCard';
 import { Book } from '../types';
+import { normalizeBookCollection } from '../utils/bookCompatibility';
 
 const Marketplace: React.FC = () => {
     const [books, setBooks] = useState<Book[]>([]);
@@ -85,16 +86,10 @@ const Marketplace: React.FC = () => {
                 if (priceRange < 5000) params.maxPrice = priceRange;
 
                 const response = await axios.get(`${API_URL}/api/books`, { params });
+                const normalized = normalizeBookCollection(response.data);
 
-                // Handle different response structures (array vs object with metadata)
-                if (Array.isArray(response.data)) {
-                    // Fallback for legacy simple implementation or seed data
-                    setBooks(response.data);
-                    setTotalPages(1);
-                } else {
-                    setBooks(response.data.books);
-                    setTotalPages(response.data.pages);
-                }
+                setBooks(normalized.books);
+                setTotalPages(normalized.pages);
             } catch (err) {
                 console.error('Error fetching books:', err);
                 setError('Failed to load books. Please try again later.');
@@ -258,8 +253,8 @@ const Marketplace: React.FC = () => {
                         ) : (
                             <>
                                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-10">
-                                    {books.map(book => (
-                                        <ProductCard key={book.id || (book as any)._id} book={book} />
+                                    {books.map((book, index) => (
+                                        <ProductCard key={book._id || book.id || index} book={book} />
                                     ))}
                                 </div>
 
