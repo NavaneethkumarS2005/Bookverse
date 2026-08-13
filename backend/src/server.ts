@@ -94,6 +94,22 @@ app.get('/health', (_req, res) => {
     });
 });
 
+// Manual cover refresh for the local demo catalogue. This does not create books;
+// it only replaces placeholder images on existing Book documents.
+app.post('/api/books/enrich-covers', async (_req, res) => {
+    if (process.env.NODE_ENV === 'production') {
+        return res.status(403).json({ message: 'Cover enrichment is disabled in production.' });
+    }
+
+    try {
+        await enrichBookCovers();
+        return res.json({ message: 'Book cover enrichment completed.' });
+    } catch (error) {
+        console.error('❌ Cover enrichment failed:', error);
+        return res.status(500).json({ message: 'Cover enrichment failed.' });
+    }
+});
+
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 
 connectDB()
@@ -104,9 +120,12 @@ connectDB()
             console.log('🌱 Explicit discovery seed completed.');
         }
 
-        // Replace the demo text/colour placeholders once with real published
-        // book covers. Stored covers are reused on later restarts.
-        await enrichBookCovers();
+        console.log('🖼️ Starting existing-book cover enrichment...');
+        try {
+            await enrichBookCovers();
+        } catch (error) {
+            console.error('❌ Cover enrichment failed during startup:', error);
+        }
     })
     .catch((error) => console.error('❌ Database unavailable:', error.message));
 
