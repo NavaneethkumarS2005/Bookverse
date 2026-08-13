@@ -3,8 +3,8 @@ import { IAuthor, IImageAsset, IPublisher, IUpcomingBook } from '../types';
 /** BookVerse-local fallback shared by every discovery surface. */
 export const DISCOVERY_IMAGE_FALLBACK = '/images/hero-book.png';
 
-/** Existing BookVerse visuals used only when a discovery record has no usable image. */
-const DISCOVERY_FALLBACKS = [
+/** Existing BookVerse visuals used only when a discovery record has no usable image or duplicates another card. */
+export const DISCOVERY_FALLBACKS = [
     '/images/hero-book.png',
     '/images/future library.jpeg',
     '/images/reading corner.jpeg',
@@ -21,7 +21,14 @@ const fallbackIndex = (seed?: string): number => {
     return Math.abs(hash) % DISCOVERY_FALLBACKS.length;
 };
 
-export const getDiscoveryFallback = (seed?: string): string => DISCOVERY_FALLBACKS[fallbackIndex(seed)];
+export const getDiscoveryFallback = (seed?: string, usedImages: Set<string> = new Set()): string => {
+    const start = fallbackIndex(seed);
+    for (let offset = 0; offset < DISCOVERY_FALLBACKS.length; offset += 1) {
+        const candidate = DISCOVERY_FALLBACKS[(start + offset) % DISCOVERY_FALLBACKS.length];
+        if (!usedImages.has(candidate)) return candidate;
+    }
+    return DISCOVERY_FALLBACKS[start];
+};
 
 /** Accept both current asset objects and legacy plain URL strings from MongoDB. */
 export const resolveDiscoveryImage = (
