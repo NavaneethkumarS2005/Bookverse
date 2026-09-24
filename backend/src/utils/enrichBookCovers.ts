@@ -1,4 +1,5 @@
 import Book from '../models/Book.js';
+import { generateBookCoverSvg } from './coverArt.js';
 
 const GOOGLE_BOOKS_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
 const PLACEHOLDER_MARKERS = [
@@ -7,6 +8,7 @@ const PLACEHOLDER_MARKERS = [
   'placeholder.com',
   'loremflickr.com',
   '/images/hero-book.png',
+  '/images/bookstore-hero-editorial.png',
   'text='
 ];
 
@@ -91,9 +93,11 @@ export const enrichBookCovers = async (): Promise<void> => {
         || match?.volumeInfo?.imageLinks?.thumbnail
       );
 
-      if (!image || isPlaceholder(image)) continue;
+      const finalImage = image && !isPlaceholder(image)
+        ? image
+        : generateBookCoverSvg(book.title, book.author, book.genre || 'Featured');
 
-      await Book.updateOne({ _id: book._id }, { $set: { image } });
+      await Book.updateOne({ _id: book._id }, { $set: { image: finalImage } });
       updated += 1;
     } catch (error) {
       console.warn(`⚠️ Cover lookup skipped for "${book.title}": ${(error as Error).message}`);

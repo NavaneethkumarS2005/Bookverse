@@ -93,6 +93,10 @@ export interface IProduct {
     price: number;
     /** URL of the book's cover image. */
     image: string;
+    /** Additional gallery images for used-book condition photos. */
+    images?: string[];
+    /** Condition of a used book listing. */
+    condition?: string;
     /** Category or genre of the book (e.g., Fiction, Sci-Fi). */
     category?: string;
     /** Genre of the book (Backend uses this field). */

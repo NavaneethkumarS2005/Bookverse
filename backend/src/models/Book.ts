@@ -9,6 +9,8 @@ export interface IBook extends Document {
   price: number;
   genre: string;
   image: string;
+  images?: string[];
+  condition?: string;
   rating?: number;
   reviews?: number;
   buyLink?: string;
@@ -41,6 +43,7 @@ export interface IBook extends Document {
   };
   isFeatured?: boolean;
   featuredOrder?: number;
+  embedding?: number[];
 }
 
 const bookSchema = new Schema<IBook>(
@@ -78,6 +81,14 @@ const bookSchema = new Schema<IBook>(
     image: {
       type: String,
       default: '',
+    },
+    images: {
+      type: [String],
+      default: [],
+    },
+    condition: {
+      type: String,
+      default: 'Good',
     },
     rating: {
       type: Number,
@@ -173,6 +184,10 @@ const bookSchema = new Schema<IBook>(
     featuredOrder: {
       type: Number,
       default: 999,
+    },
+    embedding: {
+      type: [Number],
+      default: [],
     },
   },
   {

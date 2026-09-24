@@ -6,11 +6,15 @@ import UpcomingBook from '../models/UpcomingBook.js';
 import BookFair from '../models/BookFair.js';
 import Booth from '../models/Booth.js';
 import { body, validationResult } from 'express-validator';
+import { generateEmbedding } from '../utils/embeddings.js';
 
 const router = express.Router();
 
-// ─── GEMINI AI SETUP ────────────────────────────────────────────────────────
+// ─── MODEL PROVIDER SETUP ─────────────────────────────────────────────────────
+const getOpenRouterApiKey = () => process.env.OPENROUTER_API_KEY?.trim() || process.env.OPENROUTER_KEY?.trim();
+const getOpenRouterModel = () => process.env.OPENROUTER_MODEL?.trim() || 'openai/gpt-4o-mini';
 const getGeminiApiKey = () => process.env.GEMINI_API_KEY?.trim() || process.env.GOOGLE_API_KEY?.trim();
+const getGeminiModel = () => process.env.GEMINI_MODEL?.trim() || 'gemini-2.0-flash';
 
 type DiscoveryIntent = 'books' | 'upcoming_books' | 'authors' | 'publishers' | 'fairs' | 'booths';
 
@@ -28,6 +32,146 @@ const toSafeSearchRegex = (message: string) => {
     const ignored = new Set(['show', 'find', 'book', 'books', 'about', 'with', 'from', 'that', 'this', 'please', 'where', 'available', 'availability']);
     const words = message.replace(/[^\w\s-]/g, '').split(/\s+/).filter(word => word.length > 2 && !ignored.has(word.toLowerCase())).slice(0, 6);
     return words.length ? new RegExp(words.map(word => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|'), 'i') : /.*/i;
+};
+
+const extractBudget = (message: string): number | null => {
+    const normalized = message.toLowerCase();
+    const priceMatch = normalized.match(/(?:under|below|within|upto|up to|less than|\<=)\s*₹?\s*(\d{2,6})/i)
+        || normalized.match(/₹\s*(\d{2,6})/i);
+
+    if (!priceMatch) return null;
+    const value = Number(priceMatch[1]);
+    return Number.isFinite(value) ? value : null;
+};
+
+const extractKeywords = (message: string): string[] => {
+    const stopWords = new Set(['recommend', 'recommendation', 'suggest', 'suggestion', 'book', 'books', 'read', 'reader', 'please', 'show', 'find', 'me', 'want', 'good', 'best', 'under', 'budget', 'for', 'about', 'novel', 'story', 'from', 'with', 'that', 'this', 'i', 'a', 'an', 'the', 'and', 'or']);
+    return message
+        .toLowerCase()
+        .replace(/[^a-z0-9\s₹]/g, ' ')
+        .split(/\s+/)
+        .filter(word => word.length > 2 && !stopWords.has(word))
+        .slice(0, 8);
+};
+
+const inferPreferredMood = (message: string, history: any[] = []): string => {
+    const combined = `${message} ${history.map((entry: any) => entry?.text || '').join(' ')}`.toLowerCase();
+    const moodMap: Array<[RegExp, string]> = [
+        [/fantasy|magic|dragons|myth|epic/, 'fantasy'],
+        [/thriller|suspense|mystery|detective|crime/, 'thriller'],
+        [/romance|love|heartwarming|feel-good/, 'romance'],
+        [/self-help|motivation|growth|mindset|productivity/, 'self-help'],
+        [/non-fiction|history|biography|science|business/, 'non-fiction'],
+        [/horror|scary|spooky|dark/, 'horror'],
+        [/humor|funny|comedy|light/, 'lighthearted'],
+        [/poetry|literature|classic|philosophy/, 'literary'],
+        [/tech|ai|startup|programming|coding/, 'tech'],
+    ];
+
+    for (const [pattern, label] of moodMap) {
+        if (pattern.test(combined)) return label;
+    }
+
+    const keywords = extractKeywords(message);
+    return keywords[0] || 'popular';
+};
+
+const GENRE_ALIASES: Record<string, string[]> = {
+    fantasy: ['fantasy', 'magic', 'dragon', 'myth', 'epic', 'adventure'],
+    thriller: ['thriller', 'suspense', 'mystery', 'detective', 'crime', 'whodunit'],
+    romance: ['romance', 'love', 'lovestory', 'heartwarming', 'feel good', 'relationship'],
+    'self-help': ['self help', 'self-help', 'motivation', 'mindset', 'growth', 'productivity'],
+    'non-fiction': ['non-fiction', 'non fiction', 'history', 'biography', 'science', 'business', 'essay', 'memoir'],
+    horror: ['horror', 'scary', 'spooky', 'dark', 'ghost', 'haunting'],
+    literary: ['poetry', 'literature', 'classic', 'philosophy', 'literary', 'poem'],
+    tech: ['technology', 'tech', 'ai', 'artificial intelligence', 'coding', 'programming', 'startup', 'software'],
+    'sci-fi': ['sci-fi', 'scifi', 'science fiction', 'future', 'space', 'dystopian', 'cyberpunk'],
+    fiction: ['fiction', 'novel', 'story', 'contemporary', 'drama'],
+    mystery: ['mystery', 'murder', 'intrigue', 'puzzle', 'secret'],
+    history: ['history', 'historical', 'ancient', 'war', 'empire'],
+    classic: ['classic', 'timeless', 'literary classic'],
+};
+
+const getGenreSignals = (message: string): string[] => {
+    const normalized = message.toLowerCase();
+    const hits = new Set<string>();
+
+    Object.entries(GENRE_ALIASES).forEach(([canonical, aliases]) => {
+        const matched = aliases.some(alias => normalized.includes(alias));
+        if (matched) hits.add(canonical);
+    });
+
+    return Array.from(hits);
+};
+
+const scoreBookForQuery = (book: any, message: string, queryTerms: string[] = []): number => {
+    const text = `${book.title || ''} ${book.author || ''} ${(book.genre || '')} ${(book.genres || []).join(' ')} ${book.description || ''} ${book.metadata?.publisherSummary || ''}`.toLowerCase();
+    const signals = [...new Set([...(queryTerms.length ? queryTerms : getGenreSignals(message)), ...getGenreSignals(message)])];
+
+    let score = 0;
+
+    for (const term of signals) {
+        const aliases = new Set([term, ...(GENRE_ALIASES[term] || [])]);
+        const matches = [...aliases].some(alias => text.includes(alias.toLowerCase()));
+        if (matches) score += 30;
+
+        if ((book.genre || '').toLowerCase().includes(term) || (book.genres || []).some((g: string) => g.toLowerCase().includes(term))) {
+            score += 20;
+        }
+
+        if ((book.title || '').toLowerCase().includes(term)) score += 12;
+        if ((book.author || '').toLowerCase().includes(term)) score += 8;
+    }
+
+    for (const term of queryTerms) {
+        if (!term) continue;
+        if (text.includes(term.toLowerCase())) score += 10;
+    }
+
+    if (typeof book.price === 'number' && Number(book.price) <= 1500) score += 3;
+    if (typeof book.rating === 'number' && book.rating >= 4.5) score += 2;
+
+    return score;
+};
+
+const rankBooksForMessage = async (message: string, budget: number | null) => {
+    const allBooks = await Book.find()
+        .select('title author genre genres price description rating metadata')
+        .lean();
+
+    const requestedTerms = extractKeywords(message);
+    const genreSignals = getGenreSignals(message);
+    const signalTerms = [...new Set([...requestedTerms, ...genreSignals])];
+
+    const ranked = allBooks
+        .map((book: any) => ({
+            book,
+            score: scoreBookForQuery(book, message, signalTerms) + (budget && Number(book.price) <= budget ? 8 : 0)
+        }))
+        .filter((entry) => entry.score > 0 || signalTerms.length === 0)
+        .sort((a, b) => (b.score - a.score) || (Number(b.book.rating || 0) - Number(a.book.rating || 0)))
+        .map((entry) => entry.book)
+        .slice(0, 6);
+
+    return ranked;
+};
+
+const buildRecommendationReply = (books: any[], message: string, budget: number | null, history: any[] = []) => {
+    const mood = inferPreferredMood(message, history);
+    const budgetText = budget ? ` under ₹${budget}` : '';
+
+    if (!books.length) {
+        return `I couldn’t find an exact ${mood}${budgetText} match, but I can still point you toward some strong picks from our bestselling shelf.`;
+    }
+
+    const top = books.slice(0, 3).map((book) => {
+        const title = book.title || 'Untitled book';
+        const author = book.author || 'Unknown author';
+        const price = typeof book.price === 'number' ? `₹${book.price}` : 'Price available';
+        return `${title} by ${author} (${price})`;
+    }).join(', ');
+
+    return `I’d go with ${top}. They match the ${mood} vibe you’re looking for${budgetText}, and I can narrow it even more if you want something darker, lighter, or more emotional.`;
 };
 
 const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
@@ -123,40 +267,56 @@ const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
 };
 
 // ─── BOOKSTORE SYSTEM PROMPT ──────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are "BookBot", the expert AI assistant for BookVerse, an online bookstore based in India.
+const SYSTEM_PROMPT = `You are an elite, highly conversational, deeply knowledgeable AI Book Concierge for BookVerse in India.
 
-Your personality:
-- Warm, helpful, and knowledgeable about books
-- Concise — your replies should be short and to the point (3-5 sentences max)
-- You always recommend books available in the store when relevant
-- You speak with enthusiasm about books
+Your intelligence profile matches frontier assistants like ChatGPT and Gemini.
 
-Rules you MUST follow:
-1. ONLY answer questions related to books, reading, the BookVerse store, purchases, orders, shipping, or returns.
-2. If someone asks something completely unrelated, politely redirect them.
-3. Always use ₹ (Indian Rupee) for prices.
-4. If a user asks for recommendations, use the BOOK CATALOG provided below.
-5. For store policy questions:
-   - Shipping: Free on all orders, 3-5 business days
-   - Returns: 7-day return policy for undamaged books
-   - Payment: PhonePe, Credit/Debit Card (Stripe), and Cash on Delivery
+USER PROFILE:
+- Current logged-in customer: {USER_NAME}
+- If the customer name is "Guest", politely ask for their name early in the conversation so you can personalize the experience.
 
-BOOK CATALOG (current inventory):
+KNOWLEDGE BASE & LIVE INVENTORY:
+Here is the real-time catalog fetched directly from our store's database:
 {BOOK_CATALOG}
 
-Always be helpful. If you don't find an exact match, suggest the closest alternatives.`;
+OPERATIONAL CAPABILITIES:
+1. EXPLAIN & ANSWER: If a user asks about literary themes, genres, writing styles, or cultural ideas, provide deep, insightful, and easy-to-read explanations.
+2. RECOMMENDATION ENGINE: Actively analyze the user's preferences. Cross-reference their taste with the provided inventory list's descriptions, genres, ratings, and price points to find the best matches.
+3. INVENTORY AWARENESS: Recommend only books that exist in the live inventory above. Never invent books, pricing, stock, or facts. If a title is low in stock, subtlely mention it without making up numbers.
+
+RESPONSE GUIDELINES:
+- Maintain a warm, intellectual, and helpful tone.
+- Never invent books or facts not present in the inventory list.
+- Use clean Markdown formatting for titles and lists so it renders perfectly on the screen.
+- Keep replies concise but rich, usually 2-6 sentences or a short bullet list.
+- Use a personal, human touch: "I’d recommend...", "This one fits your vibe...", "If you like..."
+- Use ₹ currency formatting.
+- If the user asks a non-book question, gently redirect back to books, reading experience, or store policies.
+
+STORE POLICIES:
+- Shipping: Free on all orders, 3-5 business days
+- Returns: 7-day return policy for undamaged books
+- Payment: PhonePe, Credit/Debit Card via Stripe, and Cash on Delivery
+
+Always greet the customer warmly by their name if it is provided.`;
 
 // ─── ROUTE ───────────────────────────────────────────────────────────────────
 router.post('/chat', [
     body('message').isString().trim().isLength({ min: 1, max: 500 }).withMessage('Message must be between 1 and 500 characters.'),
+    body('customerName').optional().isString().trim().isLength({ min: 1, max: 80 }).withMessage('Customer name must be between 1 and 80 characters.'),
     body('history').optional().isArray({ max: 10 }).withMessage('History must contain no more than 10 messages.')
 ], async (req: Request, res: Response) => {
     try {
         const { message, history } = req.body;
+        const customerName = typeof req.body?.customerName === 'string' && req.body.customerName.trim()
+            ? req.body.customerName.trim()
+            : (typeof req.body?.userName === 'string' && req.body.userName.trim() ? req.body.userName.trim() : 'Guest');
         const errors = validationResult(req);
         if (!errors.isEmpty()) return res.status(400).json({ success: false, message: errors.array()[0].msg });
         
+        const openRouterApiKey = getOpenRouterApiKey();
         const geminiApiKey = getGeminiApiKey();
+        const useOpenRouter = Boolean(openRouterApiKey);
         const useGemini = Boolean(geminiApiKey && geminiApiKey !== 'your_gemini_api_key_here');
 
         if (!message) {
@@ -177,16 +337,45 @@ router.post('/chat', [
             });
         }
 
-        // Fetch book catalog
-        const books = await Book.find()
-            .select('title author genres price description')
-            .limit(50);
-        
-        const bookCatalog = books.length > 0
-            ? books.map(b => `- "${b.title}" by ${b.author} | Genres: ${(b.genres || []).join(', ')} | Price: ₹${b.price}${b.description ? ` | About: ${b.description.substring(0, 80)}` : ''}`).join('\n')
-            : "The catalog is currently empty.";
+        let booksFound: any[] = [];
+        let bookCatalog = "The catalog is currently empty.";
 
-        const systemPromptWithCatalog = SYSTEM_PROMPT.replace('{BOOK_CATALOG}', bookCatalog);
+        try {
+            // Generate embedding for user query
+            const queryVector = await generateEmbedding(message);
+            
+            // Perform vector search
+            if (queryVector && queryVector.length > 0 && queryVector.some(v => v !== 0)) {
+                booksFound = await Book.aggregate([
+                    {
+                        $vectorSearch: {
+                            index: 'vector_index',
+                            path: 'embedding',
+                            queryVector: queryVector,
+                            numCandidates: 100,
+                            limit: 10
+                        }
+                    }
+                ]);
+            }
+        } catch (err) {
+            console.warn('Vector search failed in AI chat (missing index?), falling back to classic search.', err);
+        }
+
+        if (booksFound.length === 0) {
+            booksFound = await rankBooksForMessage(message, extractBudget(message));
+            if (booksFound.length === 0) {
+                booksFound = await Book.find().limit(10);
+            }
+        }
+
+        if (booksFound.length > 0) {
+            bookCatalog = booksFound.map(b => `- "${b.title}" by ${b.author} | Genres: ${(b.genres || []).join(', ')} | Price: ₹${b.price}${b.description ? ` | About: ${b.description.substring(0, 80)}` : ''}`).join('\n');
+        }
+
+        const systemPromptWithCatalog = SYSTEM_PROMPT
+            .replace('{USER_NAME}', customerName || 'Guest')
+            .replace('{BOOK_CATALOG}', bookCatalog);
 
         // FAQ responses
         const faqResponses: { [key: string]: string } = {
@@ -211,12 +400,67 @@ router.post('/chat', [
         }
 
         let isGeminiFallback = false;
+        let fallbackReason: string | undefined;
 
-        // Try Gemini AI
-        if (useGemini) {
+        // Try OpenRouter first, because it is the active key configured for this project.
+        if (useOpenRouter) {
+            try {
+                const providerHistory = Array.isArray(history)
+                    ? history.filter((h: any) => typeof h?.text === 'string' && h.text.length <= 500).map((h: any) => ({
+                        role: h.isBot ? 'assistant' : 'user',
+                        content: h.text
+                    }))
+                    : [];
+
+                const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${openRouterApiKey}`,
+                        'Content-Type': 'application/json',
+                        'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:5173',
+                        'X-Title': 'LuminaBook AI'
+                    },
+                    body: JSON.stringify({
+                        model: getOpenRouterModel(),
+                        messages: [
+                            { role: 'system', content: systemPromptWithCatalog },
+                            ...providerHistory,
+                            { role: 'user', content: message }
+                        ],
+                        temperature: 0.7,
+                        max_tokens: 700
+                    })
+                });
+
+                const payload = await response.json();
+                if (!response.ok) {
+                    throw new Error(payload?.error?.message || 'OpenRouter request failed');
+                }
+
+                const reply = payload?.choices?.[0]?.message?.content;
+                if (!reply || typeof reply !== 'string' || !reply.trim()) {
+                    throw new Error('OpenRouter returned an empty response');
+                }
+
+                const result = await queryDiscovery('books', message);
+                return res.json({
+                    success: true,
+                    reply,
+                    intent: 'books',
+                    results: result.items.map((book: any) => ({ type: 'book', data: book.toObject(), actions: result.actions })),
+                    powered_by: 'openrouter'
+                });
+
+            } catch (openRouterError: any) {
+                console.error('OpenRouter API Error:', openRouterError.message);
+                isGeminiFallback = true;
+                fallbackReason = 'gemini_unavailable';
+            }
+        } else if (useGemini) {
             try {
                 const { GoogleGenAI } = await import('@google/genai');
                 const ai = new GoogleGenAI({ apiKey: geminiApiKey });
+                const geminiModel = getGeminiModel();
 
                 const chatHistory = Array.isArray(history) ? history.filter((h: any) => typeof h?.text === 'string' && h.text.length <= 500).map((h: any) => ({
                     role: h.isBot ? 'model' : 'user',
@@ -224,7 +468,7 @@ router.post('/chat', [
                 })) : [];
 
                 const response = await ai.models.generateContent({
-                    model: 'gemini-3.6-flash',
+                    model: geminiModel,
                     contents: [
                         ...chatHistory,
                         { role: 'user', parts: [{ text: message }] }
@@ -264,51 +508,30 @@ router.post('/chat', [
             } catch (geminiError: any) {
                 console.error("Gemini API Error:", geminiError.message);
                 isGeminiFallback = true;
+                fallbackReason = 'gemini_unavailable';
             }
         } else {
             isGeminiFallback = true;
+            fallbackReason = 'gemini_unavailable';
         }
 
-        // Fallback: local search
-        const stopWords = ['i', 'want', 'a', 'book', 'books', 'about', 'some', 'the', 'is', 'are', 'do', 'you',
-            'have', 'any', 'can', 'get', 'show', 'me', 'recommend', 'suggest', 'please', 'find', 'based', 'on', 'for'];
-        const words = message.toLowerCase().replace(/[^\w\s-]/g, '').split(/\s+/);
-        const searchTerms = words.filter((w: string) => !stopWords.includes(w) && w.length > 2);
-
-        const regexQueries = searchTerms.length > 0
-            ? searchTerms.map((term: string) => ({
-                $or: [
-                    { title: { $regex: term, $options: 'i' } },
-                    { author: { $regex: term, $options: 'i' } },
-                    { genres: { $regex: term, $options: 'i' } },
-                    { description: { $regex: term, $options: 'i' } }
-                ]
-            }))
-            : [];
-
-        let booksFound: any[] = [];
-        if (regexQueries.length > 0) {
-            booksFound = await Book.find({ $or: regexQueries }).limit(5);
-        }
+        // Fallback if LLM failed
+        let fallbackBooksFound = booksFound;
 
         let isSearchFallback = false;
-        if (booksFound.length === 0) {
-            booksFound = await Book.find().limit(5);
+        if (fallbackBooksFound.length === 0) {
+            const broadQuery: any = {};
+            const budget = extractBudget(message);
+            if (budget) broadQuery.price = { $lte: budget };
+            fallbackBooksFound = await Book.find(broadQuery).sort({ rating: -1, price: 1 }).limit(5);
             isSearchFallback = true;
         }
 
         let reply = '';
-        if (booksFound.length > 0) {
-            reply = isSearchFallback
-                ? "I couldn't find exact matches, but here are some great books from our collection:\n\n"
-                : "Here are some great books from our collection:\n\n";
-
-            booksFound.forEach(book => {
-                reply += `📚 "${book.title}" by ${book.author} — ₹${book.price}\n`;
-            });
-
+        if (fallbackBooksFound.length > 0) {
+            reply = buildRecommendationReply(fallbackBooksFound, message, extractBudget(message), history || []);
             if (isGeminiFallback) {
-                reply += "\nThese results are from the local catalog.";
+                reply += "\n\nThese are local catalog suggestions for you right now.";
             }
         } else {
             reply = "I'm sorry, our store is currently empty. Please check back soon!";
@@ -318,8 +541,9 @@ router.post('/chat', [
             success: true,
             reply,
             intent: 'books',
-            results: booksFound.map(book => ({ type: 'book', data: book.toObject(), actions: ['view', 'add_to_cart', 'wishlist'] })),
-            powered_by: 'fallback'
+            results: fallbackBooksFound.map(book => ({ type: 'book', data: typeof book.toObject === 'function' ? book.toObject() : book, actions: ['view', 'add_to_cart', 'wishlist'] })),
+            powered_by: 'fallback',
+            fallback_reason: fallbackReason || 'local_search'
         });
 
     } catch (error: any) {

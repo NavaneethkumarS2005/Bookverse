@@ -17,14 +17,28 @@ interface DiscoveryResult { type: 'book' | 'upcoming_book' | 'author' | 'publish
 const AIChatbot: React.FC = () => {
     const navigate = useNavigate();
     const { addToCart } = useCart();
+    const getCustomerName = () => {
+        try {
+            const savedUser = JSON.parse(localStorage.getItem('user') || 'null');
+            return savedUser?.name?.trim() || 'Guest';
+        } catch {
+            return 'Guest';
+        }
+    };
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState<Message[]>([
-        { id: '1', text: 'Hello! I am your BookVerse AI assistant. How can I help you today?', isBot: true }
+        {
+            id: '1',
+            text: getCustomerName() === 'Guest'
+                ? 'Hi! I’m your LuminaBook reading buddy. Tell me your name and what kind of book mood you’re in today, and I’ll suggest something worth your time.'
+                : `Hi ${getCustomerName()}! I’m your LuminaBook reading buddy. Tell me what kind of book mood you’re in today, and I’ll suggest something worth your time.`,
+            isBot: true
+        }
     ]);
     const [input, setInput] = useState('');
     const [isListening, setIsListening] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
-    const [botStatus, setBotStatus] = useState<string>('Ready to answer your BookVerse questions');
+    const [botStatus, setBotStatus] = useState<string>('Ready to help you discover your next favorite read');
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<any>(null);
@@ -88,16 +102,23 @@ const AIChatbot: React.FC = () => {
         setIsTyping(true);
         setBotStatus('Thinking...');
 
+        const controller = new AbortController();
+        const timeout = window.setTimeout(() => controller.abort(), 20000);
         try {
             const res = await fetch(`${API_URL}/api/ai/chat`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
+                signal: controller.signal,
                 body: JSON.stringify({
                     message: textToSubmit,
-                    history: updatedMessages.slice(-10) // Send last 10 messages as context
+                    customerName: getCustomerName(),
+                    history: updatedMessages.slice(-8).map((entry) => ({
+                        text: entry.text,
+                        isBot: entry.isBot
+                    }))
                 })
             });
-            const data = await res.json();
+            const data = await res.json().catch(() => ({}));
             if (!res.ok) {
                 throw new Error(data.message || 'The chatbot service is unavailable.');
             }
@@ -116,10 +137,6 @@ const AIChatbot: React.FC = () => {
                         metaParts.push('Local catalog fallback');
                     }
                 }
-                if (data.gemini_error) {
-                    metaParts.push('Error: ' + data.gemini_error);
-                }
-
                 const statusLabel = metaParts.length ? metaParts.join(' · ') : 'Replied successfully';
                 setBotStatus(statusLabel);
 
@@ -136,8 +153,11 @@ const AIChatbot: React.FC = () => {
             }
         } catch (error: any) {
             setIsTyping(false);
-            setBotStatus('Unable to connect');
-            setMessages(prev => [...prev, { id: Date.now().toString(), text: error.message || "Network error. Please try again later.", isBot: true, meta: 'Error' }]);
+            const timedOut = error?.name === 'AbortError';
+            setBotStatus(timedOut ? 'Response timed out' : 'Unable to connect');
+            setMessages(prev => [...prev, { id: Date.now().toString(), text: timedOut ? 'The assistant took too long to respond. Please try again.' : "I couldn’t connect right now. Please try again shortly.", isBot: true, meta: 'Connection issue' }]);
+        } finally {
+            window.clearTimeout(timeout);
         }
     };
 
@@ -151,7 +171,7 @@ const AIChatbot: React.FC = () => {
                         <div className="flex items-center gap-2">
                             <span className="text-2xl">🤖</span>
                             <div>
-                                <h3 className="font-bold text-lg">BookVerse AI</h3>
+                                <h3 className="font-bold text-lg">LuminaBook AI</h3>
                                 <p className="text-xs text-indigo-100">{botStatus}</p>
                             </div>
                         </div>

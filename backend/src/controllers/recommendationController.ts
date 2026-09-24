@@ -32,6 +32,9 @@ export const getPersonalizedRecommendations = async (req: AuthRequest, res: Resp
 
         const genres = [...new Set(history.map(book => book.genre).filter(Boolean))];
         const authors = [...new Set(history.map(book => book.author).filter(Boolean))];
+        // A valid purchase record alone is not sufficient for a truthful personal
+        // recommendation. Fall back if its referenced book data cannot be matched.
+        if (!history.length || (!genres.length && !authors.length)) return getGeneralRecommendations(req, res);
         const excludedIds = history.map(book => book._id);
         const refresh = req.query.refresh === 'true';
         const match = {
@@ -44,6 +47,7 @@ export const getPersonalizedRecommendations = async (req: AuthRequest, res: Resp
             ? await Book.aggregate([{ $match: match }, { $sample: { size: 12 } }])
             : await Book.find(match).sort({ rating: -1, reviews: -1, createdAt: -1 }).limit(12);
 
+        if (!books.length) return getGeneralRecommendations(req, res);
         res.json({ basis: 'history', label: refresh ? 'More picks based on your reading' : 'Because you like…', books: serialize(books), signals: { genres, authors } });
     } catch (error: any) { res.status(500).json({ message: error.message }); }
 };

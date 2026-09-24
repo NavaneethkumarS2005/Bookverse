@@ -24,9 +24,12 @@ import BookFairs from './pages/BookFairs';
 import DiscoveryDetails from './pages/DiscoveryDetails';
 import BoothDetails from './pages/BoothDetails';
 import Wishlist from './pages/Wishlist';
+import IndustryGuide from './pages/IndustryGuide';
 
 import CartDrawer from './components/CartDrawer';
 import AIChatbot from './components/AIChatbot';
+import LiveSupport from './components/LiveSupport';
+import LiveRecommendationsSidebar from './components/LiveRecommendationsSidebar';
 
 function App() {
   return (
@@ -37,32 +40,37 @@ function App() {
             <div className="app-container">
               <CartDrawer />
               <AIChatbot />
+              <LiveSupport />
+              <LiveRecommendationsSidebar />
               <Navbar />
-              <Routes>
-                <Route path="/" element={<Home />} />
-                <Route path="/sell" element={<SellBook />} />
-                <Route path="/contact" element={<Contact />} />
-                <Route path="/marketplace" element={<Marketplace />} />
-                <Route path="/categories" element={<Categories />} />
-                <Route path="/upcoming-books" element={<UpcomingBooks />} />
-                <Route path="/authors" element={<Authors />} />
-                <Route path="/publishers" element={<Publishers />} />
-                <Route path="/book-fairs" element={<BookFairs />} />
-                <Route path="/authors/:id" element={<DiscoveryDetails kind="authors" />} />
-                <Route path="/publishers/:id" element={<DiscoveryDetails kind="publishers" />} />
-                <Route path="/book-fairs/:id" element={<DiscoveryDetails kind="book-fairs" />} />
-                <Route path="/booths/:id" element={<BoothDetails />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/cart" element={<Cart />} />
-                <Route path="/wishlist" element={<Wishlist />} />
-                <Route path="/orders" element={<Orders />} />
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/book/:id" element={<BookDetails />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/forgot-password" element={<ForgotPassword />} />
-                <Route path="/reset-password/:token" element={<ResetPassword />} />
-                <Route path="/community" element={<div style={{ paddingTop: '100px', textAlign: 'center' }}>Community Coming Soon</div>} />
-              </Routes>
+              <div className="app-shell">
+                <Routes>
+                  <Route path="/" element={<Home />} />
+                  <Route path="/sell" element={<SellBook />} />
+                  <Route path="/contact" element={<Contact />} />
+                  <Route path="/marketplace" element={<Marketplace />} />
+                  <Route path="/categories" element={<Categories />} />
+                  <Route path="/upcoming-books" element={<UpcomingBooks />} />
+                  <Route path="/authors" element={<Authors />} />
+                  <Route path="/publishers" element={<Publishers />} />
+                  <Route path="/book-fairs" element={<BookFairs />} />
+                  <Route path="/industry-guide" element={<IndustryGuide />} />
+                  <Route path="/authors/:id" element={<DiscoveryDetails kind="authors" />} />
+                  <Route path="/publishers/:id" element={<DiscoveryDetails kind="publishers" />} />
+                  <Route path="/book-fairs/:id" element={<DiscoveryDetails kind="book-fairs" />} />
+                  <Route path="/booths/:id" element={<BoothDetails />} />
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/cart" element={<Cart />} />
+                  <Route path="/wishlist" element={<Wishlist />} />
+                  <Route path="/orders" element={<Orders />} />
+                  <Route path="/admin" element={<AdminDashboard />} />
+                  <Route path="/book/:id" element={<BookDetails />} />
+                  <Route path="/profile" element={<Profile />} />
+                  <Route path="/forgot-password" element={<ForgotPassword />} />
+                  <Route path="/reset-password/:token" element={<ResetPassword />} />
+                  <Route path="/community" element={<div style={{ paddingTop: '100px', textAlign: 'center' }}>Community Coming Soon</div>} />
+                </Routes>
+              </div>
               <Footer />
             </div>
           </Router>

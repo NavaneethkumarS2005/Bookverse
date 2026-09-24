@@ -44,6 +44,14 @@ body {
   background-image: radial-gradient(circle at 10% 20%, rgba(79, 70, 229, 0.02), transparent 40%), radial-gradient(circle at 90% 80%, rgba(236, 72, 153, 0.02), transparent 40%);
   transition: background-color 0.3s ease, color 0.3s ease;
 }
+
+.app-container {
+  min-height: 100vh;
+}
+
+.app-shell {
+  padding-top: 80px;
+}
 h1,h2,h3,h4,h5,h6 { font-family: 'Outfit', sans-serif; color: var(--text-main); line-height: 1.1; letter-spacing: -0.02em; font-weight: 700; }
 a { text-decoration: none; transition: all 0.2s ease; }
 img { max-width: 100%; display: block; height: auto; }

@@ -10,6 +10,10 @@ interface BookFormData {
     price: string | number;
     genre: string;
     image: string;
+    images: string[];
+    isbn?: string;
+    condition?: string;
+    description?: string;
     reviews: number;
     rating: number;
 }
@@ -26,11 +30,15 @@ const SellBook: React.FC = () => {
         price: '',
         genre: '',
         image: '',
+        images: [],
+        isbn: '',
+        condition: 'Good',
+        description: '',
         reviews: 0,
         rating: 4.5
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
@@ -39,7 +47,6 @@ const SellBook: React.FC = () => {
         setIsLoading(true);
         setPageMessage(null);
 
-        // Basic Validation
         if (!formData.title || !formData.author || !formData.price || !formData.genre) {
             setPageMessage({ type: 'error', text: 'Please fill in all required fields.' });
             setIsLoading(false);
@@ -64,6 +71,10 @@ const SellBook: React.FC = () => {
                 body: JSON.stringify({
                     ...formData,
                     price: Number(formData.price),
+                    condition: formData.condition || 'Good',
+                    description: formData.description || `Used copy of ${formData.title} by ${formData.author}`,
+                    image: formData.image || '/images/bookstore-hero-editorial.png',
+                    images: formData.images.length ? formData.images : [formData.image || '/images/bookstore-hero-editorial.png']
                 })
             });
 
@@ -75,7 +86,7 @@ const SellBook: React.FC = () => {
                 setPageMessage({ type: 'error', text: `Failed to list book: ${data.message}` });
             }
         } catch (error) {
-            console.error("Error listing book:", error);
+            console.error('Error listing book:', error);
             setPageMessage({ type: 'error', text: 'Error listing book. Please try again.' });
         } finally {
             setIsLoading(false);
@@ -83,27 +94,68 @@ const SellBook: React.FC = () => {
     };
 
     const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (!files.length) return;
 
         const uploadData = new FormData();
-        uploadData.append('image', file);
+        files.forEach((file) => {
+            uploadData.append('images', file);
+        });
 
         try {
             setIsLoading(true);
-            setPageMessage({ type: 'info', text: 'Uploading image...' });
+            setPageMessage({ type: 'info', text: files.length > 1 ? 'Uploading condition photos...' : 'Uploading used-book image...' });
             const res = await fetch(`${API_URL}/api/upload`, {
                 method: 'POST',
                 body: uploadData
             });
             const data = await res.json();
-            if (data.imageUrl) {
-                setFormData(prev => ({ ...prev, image: data.imageUrl }));
-                setPageMessage({ type: 'success', text: 'Image uploaded successfully.' });
+
+            const uploaded = data.images || data.imageUrls || [data.imageUrl];
+            if (uploaded?.length) {
+                setFormData(prev => ({
+                    ...prev,
+                    image: uploaded[0],
+                    images: uploaded
+                }));
+                setPageMessage({ type: 'success', text: files.length > 1 ? 'Condition photos uploaded successfully.' : 'Image uploaded successfully.' });
+            } else {
+                setPageMessage({ type: 'error', text: 'Upload succeeded but no image URL was returned.' });
             }
         } catch (err) {
-            console.error("Upload error:", err);
-            setPageMessage({ type: 'error', text: 'Failed to upload image.' });
+            console.error('Upload error:', err);
+            setPageMessage({ type: 'error', text: 'Failed to upload image. Please try another file.' });
+        } finally {
+            setIsLoading(false);
+            e.target.value = '';
+        }
+    };
+
+    const handleISBNFetch = async () => {
+        if (!formData.isbn) {
+            setPageMessage({ type: 'info', text: 'Enter an ISBN to auto-fill the cover image.' });
+            return;
+        }
+
+        try {
+            setIsLoading(true);
+            setPageMessage({ type: 'info', text: 'Finding the official book cover...' });
+            const res = await fetch(`${API_URL}/api/upload/isbn-cover`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ isbn: formData.isbn })
+            });
+
+            const data = await res.json();
+            if (data.imageUrl) {
+                setFormData(prev => ({ ...prev, image: data.imageUrl }));
+                setPageMessage({ type: 'success', text: 'Official cover fetched successfully.' });
+            } else {
+                setPageMessage({ type: 'error', text: data.message || 'No cover found for this ISBN.' });
+            }
+        } catch (err) {
+            console.error('ISBN fetch error:', err);
+            setPageMessage({ type: 'error', text: 'Could not fetch cover for this ISBN.' });
         } finally {
             setIsLoading(false);
         }
@@ -189,26 +241,92 @@ const SellBook: React.FC = () => {
                             </div>
                         </div>
 
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div>
+                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">ISBN (Optional)</label>
+                                <input
+                                    type="text"
+                                    name="isbn"
+                                    value={formData.isbn}
+                                    onChange={handleChange}
+                                    placeholder="9780000000000"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Condition</label>
+                                <select
+                                    name="condition"
+                                    value={formData.condition}
+                                    onChange={handleChange}
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                >
+                                    <option value="Like New">Like New</option>
+                                    <option value="Good">Good</option>
+                                    <option value="Fair">Fair</option>
+                                    <option value="Damaged">Damaged</option>
+                                </select>
+                            </div>
+                        </div>
+
                         <div>
-                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Cover Image *</label>
+                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Book Description</label>
+                            <textarea
+                                name="description"
+                                value={formData.description}
+                                onChange={handleChange}
+                                rows={4}
+                                placeholder="Briefly describe the book condition and edition"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                            />
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Cover & Condition Images *</label>
                             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
                                     <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
                                         <span className="font-semibold text-indigo-600">Click to upload</span> or drag and drop
                                     </p>
-                                    <p className="text-xs text-slate-400">SVG, PNG, JPG (MAX. 5MB)</p>
+                                    <p className="text-xs text-slate-400">Upload 1 cover photo + up to 5 condition photos (PNG, JPG, WEBP; MAX. 5MB each)</p>
                                 </div>
                                 <input
                                     type="file"
                                     className="hidden"
                                     accept="image/*"
+                                    multiple
                                     onChange={handleImageUpload}
                                 />
                             </label>
 
+                            {formData.images.length > 0 && (
+                                <div className="mt-4 flex flex-wrap gap-3">
+                                    {formData.images.map((img, index) => (
+                                        <div key={`${img}-${index}`} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl inline-block">
+                                            <img src={img} alt={`Condition ${index + 1}`} className="h-20 w-20 rounded-lg object-cover" onError={(e) => {
+                                                (e.currentTarget as HTMLImageElement).src = '/images/bookstore-hero-editorial.png';
+                                            }} />
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div className="mt-4 flex gap-3 items-center">
+                                <button
+                                    type="button"
+                                    onClick={handleISBNFetch}
+                                    className="px-4 py-2 rounded-xl border border-indigo-200 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors text-sm font-semibold"
+                                >
+                                    Fetch official cover
+                                </button>
+                                <span className="text-xs text-slate-500 dark:text-slate-400">Uses ISBN lookup when available.</span>
+                            </div>
+
                             {formData.image && (
                                 <div className="mt-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl inline-block">
-                                    <img src={formData.image} alt="Preview" className="h-24 rounded-lg object-cover" />
+                                    <img src={formData.image} alt="Preview" className="h-24 rounded-lg object-cover" onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).src = '/images/bookstore-hero-editorial.png';
+                                    }} />
                                 </div>
                             )}
                         </div>

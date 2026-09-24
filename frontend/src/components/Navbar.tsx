@@ -24,7 +24,7 @@ const Navbar: React.FC = () => {
         window.dispatchEvent(new Event('bookverse-auth-changed'));
         window.location.href = '/login';
     };
-    const isDiscoverActive = ['/upcoming-books', '/authors', '/publishers', '/book-fairs'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
+    const isDiscoverActive = ['/upcoming-books', '/authors', '/publishers', '/book-fairs', '/industry-guide'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
 
     useEffect(() => {
         setIsDiscoverOpen(false);
@@ -40,11 +40,14 @@ const Navbar: React.FC = () => {
     }, []);
 
     return (
-        <nav className="relative w-full z-50 font-outfit bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[80px]">
+        <nav className="fixed top-0 left-0 right-0 z-50 font-outfit bg-white/95 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 shadow-sm h-[80px]">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3">
                 <Link to="/" className="flex items-center gap-2.5 group shrink-0" onClick={closeMenu}>
                     <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform duration-300"><FiBook className="text-xl" /></div>
-                    <span className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-700 dark:from-white dark:to-slate-300 tracking-tight">BookVerse</span>
+                    <div className="flex flex-col leading-none">
+                        <span className="text-lg font-black tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-300 dark:to-purple-300">LuminaBook</span>
+                        <span className="text-[9px] uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">AI</span>
+                    </div>
                 </Link>
 
                 <div className="hidden lg:flex min-w-0 items-center justify-center gap-1">
@@ -56,7 +59,7 @@ const Navbar: React.FC = () => {
                             <FiCompass /><span>Discover</span><FiChevronDown className={`transition-transform ${isDiscoverOpen ? 'rotate-180' : ''}`} />
                         </button>
                         {isDiscoverOpen && <div className="absolute right-0 mt-2 w-48 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-2 shadow-xl" role="menu">
-                            <ExploreLink to="/upcoming-books" label="Upcoming books" /><ExploreLink to="/authors" label="Authors" /><ExploreLink to="/publishers" label="Publishers" /><ExploreLink to="/book-fairs" label="Book fairs" />
+                            <ExploreLink to="/upcoming-books" label="Upcoming books" /><ExploreLink to="/authors" label="Authors" /><ExploreLink to="/publishers" label="Publishers" /><ExploreLink to="/book-fairs" label="Book fairs" /><ExploreLink to="/industry-guide" label="Industry guide" />
                         </div>}
                     </div>
                     <NavLink to="/contact" icon={<FiPhone />} label="Contact" active={location.pathname === '/contact'} />
@@ -73,7 +76,7 @@ const Navbar: React.FC = () => {
             </div>
 
             <div className={`absolute inset-x-0 top-full bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shadow-xl lg:hidden transition-all duration-300 ease-in-out origin-top ${isMenuOpen ? 'opacity-100 scale-y-100' : 'opacity-0 scale-y-0 h-0 overflow-hidden'}`}>
-                <div className="px-4 py-6 space-y-2"><MobileNavLink to="/" icon={<FiBook />} label="Home" onClick={closeMenu} /><MobileNavLink to="/marketplace" icon={<FiShoppingBag />} label="Marketplace" onClick={closeMenu} /><MobileNavLink to="/categories" icon={<FiGrid />} label="Categories" onClick={closeMenu} /><MobileNavLink to="/upcoming-books" icon={<FiBook />} label="Upcoming books" onClick={closeMenu} /><MobileNavLink to="/authors" icon={<FiUser />} label="Authors" onClick={closeMenu} /><MobileNavLink to="/publishers" icon={<FiPackage />} label="Publishers" onClick={closeMenu} /><MobileNavLink to="/book-fairs" icon={<FiGrid />} label="Book fairs" onClick={closeMenu} /><MobileNavLink to="/contact" icon={<FiPhone />} label="Contact" onClick={closeMenu} />{user && <><div className="my-4 border-t border-slate-100 dark:border-slate-800"></div><MobileNavLink to="/profile" icon={<FiUser />} label="My Profile" onClick={closeMenu} /><MobileNavLink to="/wishlist" icon={<FiHeart />} label="My Wishlist" onClick={closeMenu} /><MobileNavLink to="/orders" icon={<FiPackage />} label="My Orders" onClick={closeMenu} /><div className="pt-2"><button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 font-medium transition-colors"><FiLogOut className="text-lg" /><span>Logout</span></button></div></>}{!user && <div className="pt-4"><Link to="/login" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-500/20" onClick={closeMenu}><FiUser /><span>Login / Register</span></Link></div>}</div>
+                <div className="px-4 py-6 space-y-2"><MobileNavLink to="/" icon={<FiBook />} label="Home" onClick={closeMenu} /><MobileNavLink to="/marketplace" icon={<FiShoppingBag />} label="Marketplace" onClick={closeMenu} /><MobileNavLink to="/categories" icon={<FiGrid />} label="Categories" onClick={closeMenu} /><MobileNavLink to="/upcoming-books" icon={<FiBook />} label="Upcoming books" onClick={closeMenu} /><MobileNavLink to="/authors" icon={<FiUser />} label="Authors" onClick={closeMenu} /><MobileNavLink to="/publishers" icon={<FiPackage />} label="Publishers" onClick={closeMenu} /><MobileNavLink to="/book-fairs" icon={<FiGrid />} label="Book fairs" onClick={closeMenu} /><MobileNavLink to="/industry-guide" icon={<FiBook />} label="Industry guide" onClick={closeMenu} /><MobileNavLink to="/contact" icon={<FiPhone />} label="Contact" onClick={closeMenu} />{user && <><div className="my-4 border-t border-slate-100 dark:border-slate-800"></div><MobileNavLink to="/profile" icon={<FiUser />} label="My Profile" onClick={closeMenu} /><MobileNavLink to="/wishlist" icon={<FiHeart />} label="My Wishlist" onClick={closeMenu} /><MobileNavLink to="/orders" icon={<FiPackage />} label="My Orders" onClick={closeMenu} /><div className="pt-2"><button onClick={logout} className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 font-medium transition-colors"><FiLogOut className="text-lg" /><span>Logout</span></button></div></>}{!user && <div className="pt-4"><Link to="/login" className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-all shadow-md shadow-indigo-500/20" onClick={closeMenu}><FiUser /><span>Login / Register</span></Link></div>}</div>
             </div>
         </nav>
     );

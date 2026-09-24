@@ -48,8 +48,45 @@ const Publishers: React.FC = () => {
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
-                    <div><h1 className="font-outfit text-4xl font-bold text-slate-900 dark:text-white mb-2">Publishers</h1><p className="text-slate-500 dark:text-slate-400">Publishing houses, their catalogues and fair presence.</p></div>
+                <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 p-6 shadow-2xl shadow-slate-200/40 dark:border-slate-800 dark:shadow-none sm:p-8 lg:p-10">
+                    <div className="absolute inset-0">
+                        <img
+                            src="https://images.unsplash.com/photo-1524995997946-a1c2e315a42f?auto=format&fit=crop&q=80"
+                            alt="Publishers banner"
+                            className="h-full w-full object-cover opacity-30"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-indigo-950/80" />
+                    </div>
+
+                    <div className="relative z-10 grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
+                        <div>
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-300">Publishing houses</p>
+                            <h1 className="mb-3 text-4xl font-black tracking-tight text-white md:text-5xl">Discover the publishers shaping the shelf.</h1>
+                            <p className="max-w-xl text-base text-slate-300 md:text-lg">
+                                Explore catalogues, key imprint identities, and the publishing houses behind the titles readers love and revisit.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                            {[
+                                { label: 'Profiles', value: `${publishers.length}+` },
+                                { label: 'Imprints', value: 'Curated' },
+                                { label: 'Trust', value: 'Verified' }
+                            ].map((stat) => (
+                                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                                    <div className="text-2xl font-black text-white">{stat.value}</div>
+                                    <div className="mt-1 text-sm text-slate-300">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <div className="mt-8 flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+                    <div>
+                        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Houses</p>
+                        <h2 className="font-outfit text-3xl font-bold text-slate-900 dark:text-white mb-2">Publishers</h2>
+                    </div>
                     <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search publishers..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
                 </div>
                 {loading ? (

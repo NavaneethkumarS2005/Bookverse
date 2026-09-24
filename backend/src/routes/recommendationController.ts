@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import mongoose from 'mongoose';
 import Book from '../models/Book.js';
 import UserInteraction from '../models/UserInteraction.js';
 
@@ -76,16 +77,41 @@ export const getSimilarBooks = async (req: Request, res: Response) => {
             });
         }
 
-        const similarBooks = await Book.find({
-            _id: { $ne: bookId },
-            genres: { $in: book.genres || [] }
-        })
-        .limit(6)
-        .lean();
+        let similarBooks: any[] = [];
+
+        if (book.embedding && book.embedding.length > 0) {
+            try {
+                similarBooks = await Book.aggregate([
+                    {
+                        $vectorSearch: {
+                            index: 'vector_index',
+                            path: 'embedding',
+                            queryVector: book.embedding,
+                            numCandidates: 100,
+                            limit: 7
+                        }
+                    },
+                    {
+                        $match: { _id: { $ne: new mongoose.Types.ObjectId(bookId) } }
+                    }
+                ]);
+            } catch (err) {
+                console.warn('Vector search failed (likely missing index), falling back to genre search.');
+            }
+        }
+
+        if (similarBooks.length === 0) {
+            similarBooks = await Book.find({
+                _id: { $ne: bookId },
+                genres: { $in: book.genres || [] }
+            })
+            .limit(6)
+            .lean();
+        }
 
         res.status(200).json({
             success: true,
-            data: similarBooks
+            data: similarBooks.slice(0, 6)
         });
     } catch (error) {
         console.error('Error in similar books:', error);

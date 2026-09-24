@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { FaInstagram, FaGithub, FaLinkedin } from 'react-icons/fa6';
+import { FaInstagram, FaGithub, FaLinkedin, FaWhatsapp } from 'react-icons/fa6';
 
 const Footer: React.FC = () => {
     return (
@@ -10,10 +10,10 @@ const Footer: React.FC = () => {
                     {/* Column 1: Brand */}
                     <div className="col-span-1 md:col-span-2">
                         <Link to="/" className="inline-block font-outfit text-3xl font-extrabold tracking-tighter bg-gradient-to-br from-indigo-600 to-pink-500 bg-clip-text text-transparent mb-4">
-                            BookVerse
+                            LuminaBook AI
                         </Link>
                         <p className="text-slate-500 dark:text-slate-400 leading-relaxed max-w-xs transition-colors">
-                            Your premier destination for discovering, buying, and selling books. Join our community of readers today.
+                            Discover books by mood, trade used treasures, and read with an AI-native bookstore built for modern readers.
                         </p>
                     </div>
 
@@ -23,6 +23,7 @@ const Footer: React.FC = () => {
                     <div>
                         <h4 className="font-outfit font-bold text-lg text-slate-800 dark:text-white mb-6">Connect</h4>
                         <div className="flex gap-4 mb-6">
+                            <a href="https://wa.me/918015050605?text=Hello%20BookVerse%2C%20I%20need%20help%20finding%20a%20book." target="_blank" rel="noreferrer" className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 flex items-center justify-center text-slate-600 dark:text-slate-400 hover:bg-emerald-500 hover:border-emerald-500 hover:text-white transition-all transform hover:-translate-y-1 shadow-sm" aria-label="WhatsApp support"><FaWhatsapp /></a>
                             <a
                                 href="https://www.linkedin.com/in/navaneeth-kumar-s-98751b399/"
                                 target="_blank"

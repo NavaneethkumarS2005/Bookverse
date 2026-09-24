@@ -7,6 +7,7 @@ import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
 import { Book, IReview } from '../types';
 import InlineAlert from '../components/InlineAlert';
+import { BOOK_IMAGE_FALLBACK, resolveBookImage } from '../utils/bookCompatibility';
 
 const BookDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -35,11 +36,12 @@ const BookDetails: React.FC = () => {
                 const typedBook: Book = {
                     ...bookData,
                     _id: (bookData._id || bookData.id || '').toString(),
-                    category: bookData.category || bookData.genre
+                    category: bookData.category || bookData.genre,
+                    image: resolveBookImage(bookData.image, bookData.title, bookData.author, bookData.category || bookData.genre)
                 };
 
                 setBook(typedBook);
-                setActiveImage(typedBook.image);
+                setActiveImage(resolveBookImage(typedBook.image, typedBook.title, typedBook.author, typedBook.category));
 
                 // 2. Fetch Recommendations (from all/random/filtered)
                 // For simplicity/performance, we might just query by category if endpoint existed, 
@@ -57,7 +59,7 @@ const BookDetails: React.FC = () => {
                     const filteredRecs = recs
                         .filter(b => (b._id !== typedBook._id && b.id !== typedBook.id))
                         .slice(0, 4)
-                        .map(b => ({ ...b, _id: b._id || b.id, category: b.category || b.genre }));
+                        .map(b => ({ ...b, _id: b._id || b.id, category: b.category || b.genre, image: resolveBookImage(b.image, b.title, b.author, b.category || b.genre) }));
 
                     setSimilarBooks(filteredRecs);
 
@@ -180,21 +182,31 @@ const BookDetails: React.FC = () => {
                     <div className="md:col-span-5 lg:col-span-5 space-y-4">
                         <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 group">
                             <img
-                                src={activeImage}
+                                src={resolveBookImage(activeImage)}
                                 alt={book.title}
                                 className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+                                onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).src = BOOK_IMAGE_FALLBACK;
+                                }}
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                         </div>
                         {/* Thumbnail Strip */}
                         <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-                            {[book.image, ...similarBooks.slice(0, 3).map(b => b.image)].map((img, idx) => (
+                            {[resolveBookImage(book.image, book.title, book.author, book.category), ...similarBooks.slice(0, 3).map(b => resolveBookImage(b.image, b.title, b.author, b.category))].map((img, idx) => (
                                 <button
                                     key={idx}
                                     onClick={() => setActiveImage(img)}
                                     className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? 'border-indigo-600 ring-2 ring-indigo-600/20' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600'}`}
                                 >
-                                    <img src={img} alt="Thumbnail" className="w-full h-full object-cover" />
+                                    <img
+                                        src={img}
+                                        alt="Thumbnail"
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                            (e.currentTarget as HTMLImageElement).src = BOOK_IMAGE_FALLBACK;
+                                        }}
+                                    />
                                 </button>
                             ))}
                         </div>
@@ -202,26 +214,33 @@ const BookDetails: React.FC = () => {
 
                     {/* RIGHT COLUMN: PRODUCT DETAILS */}
                     <div className="md:col-span-7 lg:col-span-7 flex flex-col">
-                        <div className="mb-2">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
                             <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider">
                                 {book.category}
+                            </span>
+                            <span className="inline-flex items-center px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+                                Verified quality
                             </span>
                         </div>
 
                         <h1 className="mb-4 leading-tight">{book.title}</h1>
 
-                        <div className="flex items-center gap-4 mb-6">
-                            <div className="flex text-amber-400 text-sm">{'★'.repeat(5)}</div>
-                            <span className="text-slate-400 text-sm border-l border-slate-300 dark:border-slate-700 pl-4">{reviews.length} Reviews</span>
-                            <span className="text-slate-400 text-sm border-l border-slate-300 dark:border-slate-700 pl-4">In Stock</span>
+                        <div className="flex flex-wrap items-center gap-4 mb-6 text-sm">
+                            <div className="flex items-center gap-1 text-amber-400">{'★'.repeat(5)}</div>
+                            <span className="text-slate-500 dark:text-slate-400">4.8 rating</span>
+                            <span className="text-slate-400 border-l border-slate-300 dark:border-slate-700 pl-4">{reviews.length} Reviews</span>
+                            <span className="text-slate-400 border-l border-slate-300 dark:border-slate-700 pl-4">In Stock</span>
                         </div>
 
                         <div className="text-3xl font-extrabold text-slate-900 dark:text-white mb-8">
                             ₹{book.price} <span className="text-lg font-normal text-slate-500 line-through ml-2">₹{book.price + 150}</span>
                         </div>
 
-                        <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 mb-10">
-                            <p>{book.description || "Immerse yourself in this captivating story. A masterpiece of storytelling that weaves together complex characters and thrilling plot twists."}</p>
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 mb-8">
+                            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Book summary</p>
+                            <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 mt-3">
+                                <p>{book.description || "Immerse yourself in this captivating story. A masterpiece of storytelling that weaves together complex characters and thrilling plot twists."}</p>
+                            </div>
                         </div>
 
                         {/* ACTIONS */}

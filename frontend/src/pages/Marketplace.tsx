@@ -70,6 +70,14 @@ const Marketplace: React.FC = () => {
     ];
     const currentSortLabel = sortOptions.find(opt => opt.value === sortOption)?.label || 'Newest Arrivals';
 
+    const isExternalPlatformBook = (book: Book) => {
+        const link = (book.buyLink || '').toLowerCase();
+        return Boolean(link && /(amazon|flipkart|snapdeal|ebay|shopify|myntra|bookshop|online)/.test(link));
+    };
+
+    const websiteBooks = books.filter((book) => !isExternalPlatformBook(book));
+    const platformBooks = books.filter((book) => isExternalPlatformBook(book));
+
     useEffect(() => {
         const fetchBooks = async () => {
             setLoading(true);
@@ -109,11 +117,44 @@ const Marketplace: React.FC = () => {
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
+                <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 p-6 shadow-2xl shadow-slate-200/40 dark:border-slate-800 dark:shadow-none sm:p-8 lg:p-10">
+                    <div className="absolute inset-0">
+                        <img
+                            src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80"
+                            alt="Marketplace banner"
+                            className="h-full w-full object-cover opacity-30"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-indigo-950/80" />
+                    </div>
 
-                <div className="flex flex-col md:flex-row justify-between items-end md:items-center mb-10 gap-4">
+                    <div className="relative z-10 grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
+                        <div>
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-300">Curated market</p>
+                            <h1 className="mb-3 text-4xl font-black tracking-tight text-white md:text-5xl">Find your next beloved read.</h1>
+                            <p className="max-w-xl text-base text-slate-300 md:text-lg">
+                                Browse in-house LuminaBook titles and trusted external storefront listings in one premium, easy-to-shop marketplace.
+                            </p>
+                        </div>
+
+                        <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
+                            {[
+                                { label: 'Titles', value: `${books.length}+` },
+                                { label: 'Verified', value: '4.9/5' },
+                                { label: 'Sellers', value: '1.2k+' }
+                            ].map((stat) => (
+                                <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+                                    <div className="text-2xl font-black text-white">{stat.value}</div>
+                                    <div className="mt-1 text-sm text-slate-300">{stat.label}</div>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+
+                <div className="mt-8 flex flex-col md:flex-row justify-between items-end md:items-center mb-10 gap-4">
                     <div>
-                        <h1 className="font-outfit text-4xl font-bold text-slate-900 dark:text-white mb-2">Marketplace</h1>
-                        <p className="text-slate-500 dark:text-slate-400">Discover rare finds and popular bestsellers.</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Browse shelves</p>
+                        <h2 className="font-outfit text-3xl font-bold text-slate-900 dark:text-white mb-2">Marketplace</h2>
                     </div>
                     <Link to="/sell" className="px-6 py-2.5 rounded-full font-semibold text-white bg-gradient-to-r from-pink-500 to-indigo-600 hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-md flex items-center gap-2">
                         <span>+</span> Sell a Book
@@ -252,11 +293,39 @@ const Marketplace: React.FC = () => {
                             </div>
                         ) : (
                             <>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-10">
-                                    {books.map((book, index) => (
-                                        <ProductCard key={book._id || book.id || index} book={book} />
-                                    ))}
-                                </div>
+                                {websiteBooks.length > 0 && (
+                                    <section className="mb-12">
+                                        <div className="mb-5 flex items-center justify-between gap-4">
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">In-house collection</p>
+                                                <h2 className="mt-2 font-outfit text-2xl font-bold text-slate-900 dark:text-white">Website Books</h2>
+                                            </div>
+                                            <span className="rounded-full border border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600 dark:border-indigo-900 dark:bg-indigo-950/40 dark:text-indigo-300">{websiteBooks.length} curated titles</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-10">
+                                            {websiteBooks.map((book, index) => (
+                                                <ProductCard key={book._id || book.id || `${book.title}-${index}`} book={book} />
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
+
+                                {platformBooks.length > 0 && (
+                                    <section>
+                                        <div className="mb-5 flex items-center justify-between gap-4">
+                                            <div>
+                                                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-amber-500">External marketplace</p>
+                                                <h2 className="mt-2 font-outfit text-2xl font-bold text-slate-900 dark:text-white">Amazon, Flipkart & Online Platform Books</h2>
+                                            </div>
+                                            <span className="rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-600 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">{platformBooks.length} partner links</span>
+                                        </div>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-6 mb-10">
+                                            {platformBooks.map((book, index) => (
+                                                <ProductCard key={book._id || book.id || `${book.title}-${index}`} book={book} />
+                                            ))}
+                                        </div>
+                                    </section>
+                                )}
 
                                 {/* Pagination Controls */}
                                 {totalPages > 1 && (
