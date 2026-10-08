@@ -99,7 +99,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     ? book.authorId
     : undefined;
   const category = book.category || book.genre || (Array.isArray(book.genres) ? book.genres[0] : undefined);
-  const stock = book.stock ?? book.quantity ?? undefined;
+  const stock = book.stock;
 
   return {
     _id,

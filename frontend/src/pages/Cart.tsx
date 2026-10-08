@@ -282,24 +282,24 @@ const Cart: React.FC = () => {
                         {/* Cart Items */}
                         <div className="flex-1 space-y-6">
                             {cart.map((item) => {
-                                const quantity = (item as any).quantity || 1;
-                                const lineTotal = item.price * quantity;
-                                const itemId = item.id ? String(item.id) : (item as any)._id;
+                                const quantity = item.quantity;
+                                const lineTotal = item.book.price * quantity;
+                                const itemId = item.bookId;
                                 return (
-                                    <div key={item.id || (item as any)._id} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
+                                    <div key={item.bookId} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
                                         <img
-                                            src={item.image}
-                                            alt={item.title}
+                                            src={item.book.image}
+                                            alt={item.book.title}
                                             className="w-20 h-28 object-cover rounded-xl shadow-md"
                                         />
                                         <div className="flex-1 space-y-2">
                                             <div>
-                                                <h3 className="font-outfit font-bold text-lg text-slate-900 dark:text-white mb-1 line-clamp-1">{item.title}</h3>
-                                                <p className="text-slate-500 text-sm mb-1">{item.author}</p>
+                                                <h3 className="font-outfit font-bold text-lg text-slate-900 dark:text-white mb-1 line-clamp-1">{item.book.title}</h3>
+                                                <p className="text-slate-500 text-sm mb-1">{item.book.author}</p>
                                             </div>
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">₹{item.price}</span>
+                                                    <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">₹{item.book.price}</span>
                                                     <span className="text-xs text-slate-500 dark:text-slate-400">
                                                         × {quantity} = <span className="font-semibold text-slate-800 dark:text-slate-100">₹{lineTotal}</span>
                                                     </span>
@@ -309,7 +309,7 @@ const Cart: React.FC = () => {
                                                 <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">
                                                     <button
                                                         type="button"
-                                                        onClick={() => updateQuantity(item as any, quantity - 1)}
+                                                        onClick={() => updateQuantity(item, quantity - 1)}
                                                         className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm"
                                                         aria-label="Decrease quantity"
                                                     >
@@ -320,7 +320,7 @@ const Cart: React.FC = () => {
                                                     </span>
                                                     <button
                                                         type="button"
-                                                        onClick={() => updateQuantity(item as any, quantity + 1)}
+                                                        onClick={() => updateQuantity(item, quantity + 1)}
                                                         className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm"
                                                         aria-label="Increase quantity"
                                                     >
@@ -350,7 +350,7 @@ const Cart: React.FC = () => {
                                 <span>
                                     Items (
                                     {cart.reduce(
-                                        (sum, item) => sum + ((item as any).quantity || 1),
+                                        (sum, item) => sum + item.quantity,
                                         0
                                     )}
                                     )

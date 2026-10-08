@@ -159,60 +159,47 @@ export interface IProduct {
 }
 
 /**
- * Represents a single item within an order.
+ * Represents a single item within the canonical Phase 2 order response.
  */
 export interface IOrderItem {
-    /** The product being ordered. */
-    product: string | IProduct;
-    /** The quantity of the product ordered. */
+    /** Catalog identifier for the book. */
+    bookId: string;
+    /** Display title from the catalog at purchase time. */
+    title: string;
+    /** Quantity ordered. */
     quantity: number;
-    /** The price of the product at the time of purchase. */
+    /** Catalog price at purchase time. */
     price: number;
 }
 
 /**
- * Represents a customer order.
+ * Represents the canonical customer order response.
  */
 export interface IOrder {
     /** Unique identifier for the order (MongoDB ObjectId). */
     _id: string;
-    /** The user who placed the order. */
-    user: string | IUser;
-    /** List of items included in the order. */
+    /** User identifier who placed the order. */
+    user: string;
+    /** Items included in the order. */
     orderItems: IOrderItem[];
     /** Shipping address for the order. */
-    shippingAddress: {
-        street: string;
+    shippingAddress?: {
+        address: string;
         city: string;
-        state: string;
-        zipCode: string; // Consistent naming
-        country: string;
+        zip: string;
+        phone: string;
     };
-    /** The payment method used (e.g., 'Stripe', 'PhonePe'). */
-    paymentMethod: string;
-    /** The result of the payment process. */
+    /** Final total amount paid by the customer. */
+    totalPrice: number;
+    /** Payment reference and current status. */
     paymentResult?: {
         id: string;
         status: string;
-        update_time: string;
-        email_address: string;
     };
-    /** Current status of the payment. */
-    paymentStatus: PaymentStatus;
-    /** Total price of the items before tax/shipping. */
-    itemsPrice: number;
-    /** Tax amount applied to the order. */
-    taxPrice: number;
-    /** Shipping cost for the order. */
-    shippingPrice: number;
-    /** Final total amount paid by the customer. */
-    totalPrice: number;
-    /** Current status of the order fulfillment. */
-    status: OrderStatus; // Renamed from isPaid/isDelivered boolean flags to a robust enum
-    /** Date when the order was paid. */
-    paidAt?: string;
-    /** Date when the order was delivered. */
-    deliveredAt?: string;
+    /** Payment method used. */
+    paymentMethod: string;
+    /** Current order status. */
+    status: string;
     /** Date when the order was created. */
     createdAt: string;
 }

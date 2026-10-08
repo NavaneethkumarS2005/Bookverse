@@ -63,9 +63,11 @@ test('normalizeCartItem returns a stable cart contract', () => {
       publisherId: undefined,
       publisher: undefined,
       description: undefined,
-      stock: 2,
+      stock: undefined,
     },
   });
+  assert.equal(item.quantity, 2);
+  assert.equal(item.book.stock, undefined);
 });
 
 test('normalizeOrderInput accepts legacy checkout fields and validates quantities', () => {
