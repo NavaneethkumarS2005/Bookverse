@@ -5,6 +5,8 @@ import crypto from 'crypto';
 import { auth } from '../middleware/auth';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
+import Book from '../models/Book';
+import { normalizeOrderItems } from '../utils/contracts';
 
 const router = express.Router();
 
@@ -85,27 +87,31 @@ const verifyAndRedirect = async (merchantTransactionId: string, clientBaseUrl: s
 // 1. INITIATE PAYMENT
 router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
     try {
-        const { amount, items, shippingDetails } = req.body;
+        const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
+        const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
+            const id = item.bookId ?? item.id;
+            if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
+            if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
+            if (typeof id === 'number') return Book.findOne({ id: id });
+            return null;
+        }));
+        const { orderItems: normalizedItems, totalPrice } = normalizeOrderItems(orderItems, catalogBooks);
+        const shippingAddress = req.body.shippingAddress ?? req.body.shippingDetails;
         const backendBaseUrl = getBackendBaseUrl(req as Request);
         const userId = req.user.id; // From auth middleware
 
         // Transaction ID must be unique
         const merchantTransactionId = `MT${Date.now()}`;
 
-        // Create a Pending Order
+        // Create a Pending Order with server-authoritative catalog values.
         const newOrder = new Order({
             user: userId,
-            items: items.map((item: any) => ({
-                bookId: item.bookId,
-                title: item.title,
-                quantity: item.quantity,
-                price: item.price
-            })),
-            totalAmount: amount, // Frontend sent amount (already processed if needed, but schema expects number)
+            orderItems: normalizedItems,
+            totalPrice,
             paymentId: merchantTransactionId,
             paymentMethod: 'PhonePe',
             status: 'Pending',
-            shippingDetails: shippingDetails
+            shippingAddress
         });
 
         await newOrder.save();
@@ -114,12 +120,12 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
             merchantId: MERCHANT_ID,
             merchantTransactionId: merchantTransactionId,
             merchantUserId: userId,
-            amount: Math.round(amount * 100), // Convert to Paise
+            amount: Math.round(totalPrice * 100), // Convert to Paise
             // Include the merchantTransactionId in redirect and callback so QR/code flows carry the txn id
             redirectUrl: `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`,
             redirectMode: "POST",
             callbackUrl: `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`,
-            mobileNumber: shippingDetails?.phone || "9999999999",
+            mobileNumber: shippingAddress?.phone || "9999999999",
             paymentInstrument: {
                 type: "PAY_PAGE"
             }

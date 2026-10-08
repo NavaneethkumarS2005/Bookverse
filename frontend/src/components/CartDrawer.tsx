@@ -70,20 +70,19 @@ const CartDrawer: React.FC = () => {
                         </div>
                     ) : (
                         cart.map((item) => {
-                            const quantity = (item as any).quantity || 1;
-                            const lineTotal = item.price * quantity;
-                            const itemId = item.id ? String(item.id) : (item as any)._id;
+                            const quantity = item.quantity;
+                            const lineTotal = item.book.price * quantity;
                             return (
-                                <div key={item.id || (item as any)._id} className="flex gap-4 animate-fadeIn">
+                                <div key={item.bookId} className="flex gap-4 animate-fadeIn">
                                     <div className="w-20 h-28 flex-shrink-0 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-                                        <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
+                                        <img src={item.book.image} alt={item.book.title} className="w-full h-full object-cover" />
                                     </div>
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
-                                            <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item.title}</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.author}</p>
+                                            <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item.book.title}</h4>
+                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.book.author}</p>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">₹{item.price}</span>
+                                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">₹{item.book.price}</span>
                                                 <span className="text-[11px] text-slate-500 dark:text-slate-400">
                                                     Total: <span className="font-semibold text-slate-800 dark:text-slate-100">₹{lineTotal}</span>
                                                 </span>
@@ -113,7 +112,7 @@ const CartDrawer: React.FC = () => {
                                                 </button>
                                             </div>
                                             <button
-                                                onClick={() => removeFromCart(itemId)}
+                                                onClick={() => removeFromCart(item.bookId)}
                                                 className="text-xs font-medium text-red-500 hover:text-red-600 transition-colors"
                                             >
                                                 Remove

@@ -3,6 +3,7 @@ import Stripe from 'stripe';
 import Book from '../models/Book';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
+import { normalizeOrderInput, normalizeOrderItems, serializeOrder } from '../utils/contracts';
 // @ts-ignore
 import sendEmail from '../utils/emailService';
 // @ts-ignore
@@ -22,51 +23,36 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response) => {
         if (!process.env.STRIPE_SECRET_KEY) {
             return res.status(500).json({ message: 'Stripe Config Missing' });
         }
-        const { items } = req.body;
-        if (!items || !items.length) return res.status(400).json({ message: 'No items provided' });
+        const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
+        const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
+            const id = item.bookId ?? item.id;
+            if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
+            if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
+            if (typeof id === 'number') return Book.findOne({ id: id });
+            return null;
+        }));
+        const { totalPrice } = normalizeOrderItems(orderItems, catalogBooks);
 
-        let totalAmount = 0;
-        for (const item of items) {
-            const id = item.bookId || item.id;
-            let book;
-
-            // 1. Try finding by custom numeric 'id'
-            if (!isNaN(Number(id))) {
-                book = await Book.findOne({ id: Number(id) });
-            }
-
-            // 2. If not found, try finding by MongoDB '_id'
-            if (!book && typeof id === 'string' && id.length === 24) {
-                book = await Book.findById(id);
-            }
-
-            if (!book) {
-                console.error(`Error: Book not found for ID: ${id}`);
-                return res.status(404).json({ message: `Book with ID ${id} not found` });
-            }
-
-            totalAmount += book.price * (item.quantity || 1);
-        }
-
-        if (totalAmount < 1) return res.status(400).json({ message: "Invalid amount" });
+        if (totalPrice < 1) return res.status(400).json({ message: "Invalid amount" });
 
         const paymentIntent = await getStripe().paymentIntents.create({
-            amount: totalAmount * 100,
+            amount: Math.round(totalPrice * 100),
             currency: "inr",
             automatic_payment_methods: { enabled: true },
-            metadata: { userId: req.user.id }
+            metadata: { userId: req.user.id, totalPrice: String(totalPrice) }
         });
 
         res.send({ clientSecret: paymentIntent.client_secret });
-    } catch (err) {
+    } catch (err: any) {
         console.error("Stripe Error:", err);
-        res.status(500).json({ message: 'Payment init failed' });
+        res.status(400).json({ message: err.message || 'Payment init failed' });
     }
 };
 
 export const saveOrder = async (req: AuthRequest, res: Response) => {
     try {
-        const { paymentIntentId, items, paymentMethod, shippingDetails } = req.body;
+        const paymentMethod = String(req.body.paymentMethod ?? 'Stripe');
+        const paymentIntentId = req.body.paymentIntentId;
         let status = 'Paid';
         let paymentId = paymentIntentId;
 
@@ -82,59 +68,42 @@ export const saveOrder = async (req: AuthRequest, res: Response) => {
             paymentId = 'COD_' + Date.now();
         }
 
-        let totalAmount = 0;
-        const orderItems = [];
-        for (const item of items) {
-            const id = item.bookId || item.id;
-            let book;
-
-            // 1. Try finding by custom numeric 'id'
-            if (!isNaN(Number(id))) {
-                book = await Book.findOne({ id: Number(id) });
-            }
-
-            // 2. If not found, try finding by MongoDB '_id'
-            if (!book && typeof id === 'string' && id.length === 24) {
-                book = await Book.findById(id);
-            }
-
-            if (book) {
-                totalAmount += book.price * (item.quantity || 1);
-                orderItems.push({
-                    bookId: book.id, // Save the numeric ID for consistency
-                    title: book.title,
-                    quantity: item.quantity || 1,
-                    price: book.price
-                });
-            } else {
-                console.error(`Skipping item, book not found for ID: ${id}`);
-            }
-        }
+        const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
+        const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
+            const id = item.bookId ?? item.id;
+            if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
+            if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
+            if (typeof id === 'number') return Book.findOne({ id: id });
+            return null;
+        }));
+        const normalized = normalizeOrderInput({
+            orderItems,
+            shippingAddress: req.body.shippingAddress ?? req.body.shippingDetails,
+            paymentMethod,
+            paymentResult: paymentIntentId ? { id: paymentIntentId, status } : undefined,
+        }, catalogBooks);
 
         const newOrder = new Order({
             user: req.user.id,
-            items: orderItems,
-            totalAmount,
+            orderItems: normalized.orderItems,
+            totalPrice: normalized.totalPrice,
             paymentId,
             status,
-            paymentMethod: paymentMethod || 'Stripe',
-            shippingDetails
+            paymentMethod,
+            shippingAddress: normalized.shippingAddress,
         });
 
         await newOrder.save();
-
-        // Send Order Confirmation Email (Non-blocking)
-        // Send Order Confirmation Email (Non-blocking - Fire & Forget)
         sendEmail(
             req.user.email,
             "Order Confirmation - BookVerse",
-            orderTemplate(newOrder._id.toString(), orderItems, totalAmount)
+            orderTemplate(newOrder._id.toString(), normalized.orderItems, normalized.totalPrice)
         ).catch(emailErr => console.error("Email sending failed (background):", emailErr));
 
-        res.json({ success: true, message: 'Order Saved', orderId: newOrder._id });
+        res.json({ success: true, message: 'Order Saved', orderId: newOrder._id, order: serializeOrder(newOrder) });
     } catch (err: any) {
         console.error("Save Order Error:", err);
-        res.status(500).json({ message: err.message || 'Error saving order' });
+        res.status(400).json({ message: err.message || 'Error saving order' });
     }
 };
 
@@ -143,7 +112,7 @@ import mongoose from 'mongoose';
 export const getOrders = async (req: AuthRequest, res: Response) => {
     try {
         const orders = await Order.find({ user: new mongoose.Types.ObjectId(req.user.id) }).sort({ createdAt: -1 });
-        res.json(orders);
+        res.json(orders.map(serializeOrder));
     } catch (err) {
         res.status(500).json({ message: 'Error fetching orders' });
     }

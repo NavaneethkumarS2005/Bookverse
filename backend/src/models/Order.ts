@@ -17,27 +17,43 @@ export interface IShippingDetails {
 
 export interface IOrder extends Document {
     user: IUser['_id'];
-    items: IOrderItem[];
-    totalAmount: number;
+    orderItems: IOrderItem[];
+    items?: IOrderItem[];
+    totalPrice: number;
+    totalAmount?: number;
     paymentId: string;
     paymentMethod: string;
     status: string;
+    shippingAddress?: IShippingDetails;
     shippingDetails?: IShippingDetails;
     createdAt: Date;
 }
 
 const orderSchema: Schema = new Schema({
     user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-    items: [{
-        bookId: { type: mongoose.Schema.Types.Mixed, required: true }, // Store original book ID (could be number or string depending on Book model)
+    orderItems: [{
+        bookId: { type: mongoose.Schema.Types.Mixed, required: true },
         title: { type: String, required: true },
         quantity: { type: Number, required: true, default: 1 },
         price: { type: Number, required: true }
     }],
-    totalAmount: { type: Number, required: true },
-    paymentId: { type: String, required: true }, // Razorpay Payment ID or 'COD'
+    items: [{
+        bookId: { type: mongoose.Schema.Types.Mixed, required: true },
+        title: { type: String, required: true },
+        quantity: { type: Number, required: true, default: 1 },
+        price: { type: Number, required: true }
+    }],
+    totalPrice: { type: Number, required: true },
+    totalAmount: { type: Number },
+    paymentId: { type: String, required: true },
     paymentMethod: { type: String, default: 'Razorpay' },
     status: { type: String, default: 'Paid' },
+    shippingAddress: {
+        address: { type: String },
+        city: { type: String },
+        zip: { type: String },
+        phone: { type: String }
+    },
     shippingDetails: {
         address: { type: String },
         city: { type: String },

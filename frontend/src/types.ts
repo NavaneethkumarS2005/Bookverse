@@ -451,4 +451,21 @@ export interface IBookMetadata {
 
 // Ensure compatibility with existing code where simpler interfaces might be used temporarily
 export type Book = IProduct;
-export type CartItem = IProduct & { quantity: number };
+
+export interface CartItem {
+    bookId: string;
+    quantity: number;
+    book: Book;
+}
+
+export interface CartApiItem {
+    bookId?: string;
+    quantity?: number;
+    book?: Book;
+    _id?: string;
+    id?: string | number;
+    title?: string;
+    author?: string;
+    price?: number;
+    image?: string;
+}

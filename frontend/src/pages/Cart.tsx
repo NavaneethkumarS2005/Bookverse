@@ -91,11 +91,9 @@ const Cart: React.FC = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    items: cart.map(item => ({
-                        bookId: item.id || item._id,
-                        title: item.title,
-                        price: item.price,
-                        quantity: (item as any).quantity || 1
+                    orderItems: cart.map(item => ({
+                        bookId: item.bookId,
+                        quantity: item.quantity
                     }))
                 })
             });
@@ -173,14 +171,12 @@ const Cart: React.FC = () => {
                     'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify({
-                    items: cart.map(item => ({
-                        bookId: item.id || item._id,
-                        title: item.title,
-                        price: item.price,
-                        quantity: (item as any).quantity || 1
+                    orderItems: cart.map(item => ({
+                        bookId: item.bookId,
+                        quantity: item.quantity
                     })),
                     paymentMethod: 'COD',
-                    shippingDetails: shippingDetails
+                    shippingAddress: shippingDetails
                 })
             });
 
@@ -227,13 +223,11 @@ const Cart: React.FC = () => {
                 body: JSON.stringify({
                     amount: getCartTotal(),
                     userId: "USER_" + Date.now(),
-                    items: cart.map(item => ({
-                        bookId: item.id || item._id,
-                        title: item.title,
-                        price: item.price,
-                        quantity: (item as any).quantity || 1
+                    orderItems: cart.map(item => ({
+                        bookId: item.bookId,
+                        quantity: item.quantity
                     })),
-                    shippingDetails: shippingDetails
+                    shippingAddress: shippingDetails
                 })
             });
 
@@ -443,12 +437,8 @@ const Cart: React.FC = () => {
                                             <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night', labels: 'floating' } }}>
                                                 <CheckoutForm
                                                     clientSecret={clientSecret}
-                                                    cartItems={cart.map(item => ({
-                                                        bookId: item.id || item._id,
-                                                        title: item.title,
-                                                        price: item.price,
-                                                        quantity: (item as any).quantity || 1
-                                                    }))}
+                                                    cartItems={cart}
+                                                    shippingAddress={shippingDetails}
                                                     onSuccess={handleStripeSuccess}
                                                     onCancel={() => setClientSecret('')}
                                                 />

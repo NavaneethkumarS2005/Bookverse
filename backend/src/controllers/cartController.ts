@@ -2,6 +2,7 @@ import { Response } from 'express';
 import User from '../models/User';
 import Book from '../models/Book';
 import { AuthRequest } from '../types';
+import { normalizeCartItem } from '../utils/contracts';
 
 // Get Cart
 export const getCart = async (req: AuthRequest, res: Response) => {
@@ -9,18 +10,14 @@ export const getCart = async (req: AuthRequest, res: Response) => {
         const user = await User.findById(req.user.id).populate('cart.bookId');
         if (!user) return res.status(404).json({ message: 'User not found' });
 
-        // Transform to cleaner format & Filter out nulls (defensive)
+        // Normalize the database-backed cart at the API boundary so the
+        // frontend receives one stable shape regardless of legacy book fields.
         const cartItems = user.cart
-            .filter((item: any) => item.bookId) // Remove stale/deleted books
-            .map((item: any) => ({
-                _id: item.bookId._id,
-                title: item.bookId.title,
-                author: item.bookId.author,
-                price: item.bookId.price,
-                image: item.bookId.image,
+            .filter((item: any) => item.bookId)
+            .map((item: any) => normalizeCartItem({
+                bookId: item.bookId._id,
                 quantity: item.quantity,
-                // Add id for frontend logic compatibility
-                id: item.bookId.id || item.bookId._id
+                book: item.bookId,
             }));
 
         res.json(cartItems);
@@ -81,15 +78,12 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
         // Return updated cart (populate for immediate UI update)
         const populatedUser = await user.populate('cart.bookId');
-        // @ts-ignore
         const updatedCart = populatedUser.cart
             .filter((item: any) => item.bookId)
-            .map((item: any) => ({
-                _id: item.bookId._id,
-                title: item.bookId.title,
-                price: item.bookId.price,
-                image: item.bookId.image,
-                quantity: item.quantity
+            .map((item: any) => normalizeCartItem({
+                bookId: item.bookId._id,
+                quantity: item.quantity,
+                book: item.bookId,
             }));
 
         res.status(200).json({ message: 'Added to cart', cart: updatedCart });

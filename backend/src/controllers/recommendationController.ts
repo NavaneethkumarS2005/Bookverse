@@ -19,7 +19,7 @@ export const getGeneralRecommendations = async (req: Request, res: Response) => 
 export const getPersonalizedRecommendations = async (req: AuthRequest, res: Response) => {
     try {
         const orders = await Order.find({ user: req.user?.id }).sort({ createdAt: -1 }).limit(10);
-        const purchasedIds = orders.flatMap(order => order.items.map(item => String(item.bookId)));
+        const purchasedIds = orders.flatMap(order => (order.orderItems ?? order.items ?? []).map(item => String(item.bookId)));
         if (purchasedIds.length < 2) return getGeneralRecommendations(req, res);
 
         const validObjectIds = purchasedIds.filter(id => /^[0-9a-fA-F]{24}$/.test(id));

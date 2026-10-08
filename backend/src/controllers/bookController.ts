@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Book, { IBook } from '../models/Book';
 import User from '../models/User';
+import { normalizeBook } from '../utils/contracts';
 
 import { seedBooks } from '../data/seedBooks';
 
@@ -84,9 +85,13 @@ export const getBooks = async (req: Request, res: Response) => {
             ];
         }
 
-        // 2. Filter by Category
+        // 2. Filter by Category. The persisted schema uses `genre`; the API
+        // contract uses `category`, so normalize the filter at the boundary.
         if (category && category !== 'All') {
-            query.genre = category; // Note: Frontend sends 'category', DB uses 'genre'
+            query.$or = [
+                { genre: category },
+                { genres: category },
+            ];
         }
 
         // 3. Filter by Price
@@ -122,7 +127,7 @@ export const getBooks = async (req: Request, res: Response) => {
         const total = await Book.countDocuments(query);
 
         res.json({
-            books,
+            books: books.map(book => normalizeBook(book)),
             total,
             page: pageNum,
             pages: Math.ceil(total / limitNum)
@@ -180,7 +185,7 @@ export const getBookById = async (req: Request, res: Response) => {
         }
 
         if (!book) return res.status(404).json({ message: 'Book not found' });
-        res.json(book);
+        res.json(normalizeBook(book));
     } catch (err: any) {
         console.error("Error in getBookById:", err);
         res.status(500).json({ message: err.message });

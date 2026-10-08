@@ -2,15 +2,22 @@ import React, { useState } from 'react';
 import { PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 // @ts-ignore
 import { API_URL } from '../config';
+import { CartItem } from '../types';
 
 interface CheckoutFormProps {
     clientSecret: string;
-    cartItems: any[]; // Define a stricter type if possible, or use CartItem[]
+    cartItems: CartItem[];
+    shippingAddress: {
+        address: string;
+        city: string;
+        zip: string;
+        phone: string;
+    };
     onSuccess: (paymentId?: string) => void;
     onCancel: () => void;
 }
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, onSuccess, onCancel }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress, onSuccess, onCancel }) => {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -51,7 +58,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, onSuccess, onCan
                     },
                     body: JSON.stringify({
                         paymentIntentId: paymentIntent.id,
-                        items: cartItems
+                        paymentMethod: 'Stripe',
+                        orderItems: cartItems.map(item => ({
+                            bookId: item.bookId,
+                            quantity: item.quantity
+                        })),
+                        shippingAddress
                     })
                 });
                 const data = await res.json();

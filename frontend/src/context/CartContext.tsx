@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { API_URL } from '../config';
-import { Book, CartItem } from '../types';
+import { Book, CartApiItem, CartItem } from '../types';
+import { normalizeBook } from '../utils/bookCompatibility';
 
 interface CartContextType {
     cart: CartItem[];
@@ -14,6 +15,25 @@ interface CartContextType {
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
+
+const normalizeCartItem = (item: CartApiItem, index: number): CartItem => {
+    const book = item.book ?? normalizeBook({
+        _id: item.bookId ?? item._id ?? `legacy-cart-${index}`,
+        id: item.id,
+        title: item.title ?? 'Untitled book',
+        author: item.author ?? 'Unknown author',
+        price: item.price ?? 0,
+        image: item.image ?? '',
+    }, index);
+    const bookId = item.bookId ?? item._id ?? item.id;
+    if (!bookId) throw new Error('Cart response is missing a book identifier.');
+
+    return {
+        bookId: String(bookId),
+        quantity: Math.max(1, Number(item.quantity ?? 1)),
+        book,
+    };
+};
 
 export const useCart = () => {
     const context = useContext(CartContext);
@@ -43,7 +63,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
             });
             if (res.ok) {
                 const data = await res.json();
-                setCart(data);
+                const items = Array.isArray(data) ? data : Array.isArray(data.cart) ? data.cart : [];
+                setCart(items.map(normalizeCartItem));
             }
         } catch (err) {
             console.error("Failed to fetch cart", err);
@@ -59,21 +80,19 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         // Optimistic Update: increment quantity if item already exists
         setCart(prev => {
             const targetId = String(book._id || (book as any).id);
-            const existingIndex = prev.findIndex(item =>
-                String(item._id || (item as any).id) === targetId
-            );
+            const existingIndex = prev.findIndex(item => item.bookId === targetId);
 
             if (existingIndex > -1) {
                 const updated = [...prev];
                 const current = updated[existingIndex];
                 updated[existingIndex] = {
                     ...current,
-                    quantity: (current.quantity || 1) + 1,
+                    quantity: current.quantity + 1,
                 };
                 return updated;
             }
 
-            return [...prev, { ...(book as any), quantity: 1 }];
+            return [...prev, { bookId: targetId, quantity: 1, book }];
         });
         setIsCartOpen(true);
 
@@ -104,11 +123,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         const token = getToken();
         const targetId = String(bookId);
         // Optimistic Update
-        setCart(prev => prev.filter(item => {
-            const itemMongoId = item._id ? String(item._id) : '';
-            const itemCustomId = item.id !== undefined && item.id !== null ? String(item.id) : '';
-            return itemMongoId !== targetId && itemCustomId !== targetId;
-        }));
+        setCart(prev => prev.filter(item => item.bookId !== targetId));
 
         if (token) {
             try {
@@ -141,21 +156,20 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     };
 
     const getCartTotal = () => {
-        return cart.reduce((total, item) => total + (item.price * (item.quantity || 1)), 0);
+        return cart.reduce((total, item) => total + (item.book.price * item.quantity), 0);
     };
 
     const toggleCart = () => setIsCartOpen(!isCartOpen);
 
     const updateQuantity = async (item: CartItem, quantity: number) => {
         const token = getToken();
-        const targetId = String(item._id || (item as any).id);
+        const targetId = item.bookId;
 
         // Optimistic local update
         setCart(prev =>
             prev
                 .map(ci => {
-                    const ciId = String(ci._id || (ci as any).id);
-                    if (ciId !== targetId) return ci;
+                    if (ci.bookId !== targetId) return ci;
                     if (quantity <= 0) return null;
                     return { ...ci, quantity };
                 })
