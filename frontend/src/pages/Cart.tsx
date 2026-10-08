@@ -60,8 +60,7 @@ const Cart: React.FC = () => {
     const handleCheckout = () => {
         if (cart.length === 0) return;
 
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             const msg = { type: 'error' as CheckoutMessageType, text: 'You must be logged in to checkout. Redirecting to login...' };
             setCheckoutMessage(msg);
             setPersistedMessage(msg);
@@ -75,8 +74,7 @@ const Cart: React.FC = () => {
     };
 
     const fetchPaymentIntent = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             setCheckoutMessage({ type: 'error', text: 'You must be logged in to checkout. Redirecting to login...' });
             navigate('/login');
             return;
@@ -86,10 +84,8 @@ const Cart: React.FC = () => {
         try {
             const response = await fetch(`${API_URL}/api/payment/create-payment-intent`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     orderItems: cart.map(item => ({
                         bookId: item.bookId,
@@ -101,7 +97,6 @@ const Cart: React.FC = () => {
             if (!response.ok) {
                 if (response.status === 401) {
                     setCheckoutMessage({ type: 'error', text: 'Session expired. Please log in again.' });
-                    localStorage.removeItem('token');
                     navigate('/login');
                     return;
                 }
@@ -145,8 +140,7 @@ const Cart: React.FC = () => {
     };
 
     const handleCOD = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             const msg = { type: 'error' as CheckoutMessageType, text: 'Your session has expired. Please log in again to place an order.' };
             setCheckoutMessage(msg);
             setPersistedMessage(msg);
@@ -166,10 +160,8 @@ const Cart: React.FC = () => {
         try {
             const res = await fetch(`${API_URL}/api/payment/save-order`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     orderItems: cart.map(item => ({
                         bookId: item.bookId,
@@ -199,8 +191,7 @@ const Cart: React.FC = () => {
     };
 
     const handlePhonePe = async () => {
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             const msg = { type: 'error' as CheckoutMessageType, text: 'Your session has expired. Please log in again to continue payment.' };
             setCheckoutMessage(msg);
             setPersistedMessage(msg);
@@ -216,10 +207,8 @@ const Cart: React.FC = () => {
 
             const res = await fetch(`${API_URL}/api/phonepe/pay`, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                },
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     amount: getCartTotal(),
                     userId: "USER_" + Date.now(),

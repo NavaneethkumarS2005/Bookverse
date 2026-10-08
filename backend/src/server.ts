@@ -8,6 +8,7 @@ import helmet from 'helmet';
 // @ts-ignore
 import mongoSanitize from 'express-mongo-sanitize';
 import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
 import mongoose from 'mongoose';
 import connectDB from './config/db.js';
 import authorRoutes from './routes/authorRoutes.js';
@@ -106,6 +107,7 @@ export const createApp = (): express.Express => {
         credentials: true
     }));
 
+    app.use(cookieParser());
     app.use(express.urlencoded({ extended: true, limit: '1mb' }));
     app.use('/api/payment/webhook', express.raw({ type: 'application/json', limit: '1mb' }));
     app.use('/api/phonepe/callback', express.raw({ type: '*/*', limit: '1mb' }));

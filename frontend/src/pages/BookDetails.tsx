@@ -105,8 +105,7 @@ const BookDetails: React.FC = () => {
 
     const handleReviewSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
-        if (!token) {
+        if (!localStorage.getItem('user')) {
             setAlertMessage({ type: 'error', text: 'Please login to write a review.' });
             navigate('/login');
             return;
@@ -116,9 +115,7 @@ const BookDetails: React.FC = () => {
         try {
             if (!book) return;
             const targetId = book._id;
-            const res = await axios.post(`${API_URL}/api/reviews/${targetId}`, newReview, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axios.post(`${API_URL}/api/reviews/${targetId}`, newReview, { withCredentials: true });
 
             setReviews([res.data, ...reviews]);
             setNewReview({ rating: 5, comment: '' });

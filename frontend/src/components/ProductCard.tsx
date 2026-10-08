@@ -27,7 +27,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
         event.preventDefault();
         event.stopPropagation();
 
-        if (!localStorage.getItem('token')) {
+        if (!localStorage.getItem('user')) {
             window.location.href = '/login';
             return;
         }

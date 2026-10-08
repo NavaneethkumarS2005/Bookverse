@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useTheme } from '../context/ThemeContext';
 import { useWishlist } from '../context/WishlistContext';
+import { API_URL } from '../config';
 import { FiBook, FiShoppingCart, FiSun, FiMoon, FiMenu, FiX, FiUser, FiLogOut, FiShoppingBag, FiGrid, FiPhone, FiPackage, FiCompass, FiChevronDown, FiHeart } from 'react-icons/fi';
 
 interface User { name: string; email: string; role: 'user' | 'admin'; }
@@ -18,11 +19,14 @@ const Navbar: React.FC = () => {
     const user = JSON.parse(localStorage.getItem('user') || 'null') as User | null;
 
     const closeMenu = () => setIsMenuOpen(false);
-    const logout = () => {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        window.dispatchEvent(new Event('bookverse-auth-changed'));
-        window.location.href = '/login';
+    const logout = async () => {
+        try {
+            await fetch(`${API_URL}/api/auth/logout`, { method: 'POST', credentials: 'include' });
+        } finally {
+            localStorage.removeItem('user');
+            window.dispatchEvent(new Event('bookverse-auth-changed'));
+            window.location.href = '/login';
+        }
     };
     const isDiscoverActive = ['/upcoming-books', '/authors', '/publishers', '/book-fairs', '/industry-guide'].some(path => location.pathname === path || location.pathname.startsWith(`${path}/`));
 

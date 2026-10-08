@@ -51,17 +51,14 @@ const Login: React.FC = () => {
                 ? { email: formData.email, password: formData.password }
                 : formData;
 
-            const response = await axios.post(url, payload);
+            const response = await axios.post(url, payload, { withCredentials: true });
 
             if (isLogin) {
-                // Save user info/token
                 localStorage.setItem('user', JSON.stringify(response.data.user));
-                localStorage.setItem('token', response.data.token);
                 window.dispatchEvent(new Event('bookverse-auth-changed'));
                 setMessage('Login successful! Redirecting...');
                 setTimeout(() => {
                     navigate('/marketplace');
-                    // window.location.reload(); // Removed to preserve SPA state. Ensure Navbar listens to storage or context.
                 }, 1000);
             } else {
                 setMessage('Registration successful! Please login.');

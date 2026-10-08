@@ -73,16 +73,13 @@ const Orders: React.FC = () => {
     useEffect(() => {
         const fetchOrders = async () => {
             try {
-                const token = localStorage.getItem('token');
-                if (!token) {
+                if (!localStorage.getItem('user')) {
                     setError('Please login to view orders.');
                     setLoading(false);
                     return;
                 }
 
-                const response = await axios.get(`${API_URL}/api/orders`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                const response = await axios.get(`${API_URL}/api/orders`, { withCredentials: true });
                 setOrders(response.data);
             } catch (err) {
                 setError('Failed to fetch orders.');

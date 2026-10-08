@@ -50,8 +50,7 @@ const Profile: React.FC = () => {
     const fetchUserData = async () => {
         setLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const ordersRes = await axios.get(`${API_URL}/api/orders`, { headers: { Authorization: `Bearer ${token}` } });
+            const ordersRes = await axios.get(`${API_URL}/api/orders`, { withCredentials: true });
             setOrders(ordersRes.data);
         } catch (error) {
             console.error("Error fetching user data", error);
@@ -60,11 +59,14 @@ const Profile: React.FC = () => {
         }
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        navigate('/');
-        window.location.reload();
+    const handleLogout = async () => {
+        try {
+            await axios.post(`${API_URL}/api/auth/logout`, {}, { withCredentials: true });
+        } finally {
+            localStorage.removeItem('user');
+            navigate('/');
+            window.location.reload();
+        }
     };
 
     if (!user) return null;

@@ -55,16 +55,16 @@ const Home: React.FC = () => {
     const fetchRecommendations = async (refresh = false) => {
         setRecommendationLoading(true);
         try {
-            const token = localStorage.getItem('token');
-            const endpoint = token ? '/api/recommendations/personalized' : '/api/recommendations/general';
+            const isAuthenticated = Boolean(localStorage.getItem('user'));
+            const endpoint = isAuthenticated ? '/api/recommendations/personalized' : '/api/recommendations/general';
             let response;
             try {
                 response = await axios.get(`${API_URL}${endpoint}`, {
-                    headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+                    withCredentials: true,
                     params: refresh ? { refresh: 'true' } : undefined
                 });
             } catch (personalizedError) {
-                if (!token) throw personalizedError;
+                if (!isAuthenticated) throw personalizedError;
                 response = await axios.get(`${API_URL}/api/recommendations/general`, { params: refresh ? { refresh: 'true' } : undefined });
             }
             const rawBooks = Array.isArray(response.data?.books) ? response.data.books : [];

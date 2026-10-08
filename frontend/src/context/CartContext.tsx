@@ -50,17 +50,14 @@ interface CartProviderProps {
 export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     const [cart, setCart] = useState<CartItem[]>([]);
     const [isCartOpen, setIsCartOpen] = useState(false);
-    const getToken = () => localStorage.getItem('token');
+    const isAuthenticated = () => Boolean(localStorage.getItem('user'));
 
     // Fetch Cart from Backend
     const fetchCart = async () => {
-        const token = getToken();
-        if (!token) return;
+        if (!isAuthenticated()) return;
         try {
             // @ts-ignore
-            const res = await fetch(`${API_URL}/api/cart`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await fetch(`${API_URL}/api/cart`, { credentials: 'include' });
             if (res.ok) {
                 const data = await res.json();
                 const items = Array.isArray(data) ? data : Array.isArray(data.cart) ? data.cart : [];
@@ -76,7 +73,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }, []);
 
     const addToCart = async (book: Book) => {
-        const token = getToken();
         // Optimistic Update: increment quantity if item already exists
         setCart(prev => {
             const targetId = String(book._id || (book as any).id);
@@ -96,15 +92,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         });
         setIsCartOpen(true);
 
-        if (token) {
+        if (isAuthenticated()) {
             try {
                 // @ts-ignore
                 const response = await fetch(`${API_URL}/api/cart/add`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ bookId: (book as any)._id || (book as any).id, quantity: 1 })
                 });
                 if (!response.ok) {
@@ -120,17 +114,16 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     };
 
     const removeFromCart = async (bookId: string | number) => {
-        const token = getToken();
         const targetId = String(bookId);
         // Optimistic Update
         setCart(prev => prev.filter(item => item.bookId !== targetId));
 
-        if (token) {
+        if (isAuthenticated()) {
             try {
                 // @ts-ignore
                 await fetch(`${API_URL}/api/cart/remove/${bookId}`, {
                     method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` }
+                    credentials: 'include'
                 });
                 await fetchCart(); // Sync
             } catch (err) {
@@ -140,14 +133,13 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     };
 
     const clearCart = async () => {
-        const token = getToken();
         setCart([]);
-        if (token) {
+        if (isAuthenticated()) {
             try {
                 // @ts-ignore
                 await fetch(`${API_URL}/api/cart/clear`, {
                     method: 'DELETE',
-                    headers: { Authorization: `Bearer ${token}` }
+                    credentials: 'include'
                 });
             } catch (err) {
                 console.error("Clear cart failed", err);
@@ -162,7 +154,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     const toggleCart = () => setIsCartOpen(!isCartOpen);
 
     const updateQuantity = async (item: CartItem, quantity: number) => {
-        const token = getToken();
         const targetId = item.bookId;
 
         // Optimistic local update
@@ -176,24 +167,22 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
                 .filter(Boolean) as CartItem[]
         );
 
-        if (!token) return;
+        if (!isAuthenticated()) return;
 
         try {
             // Simplest robust approach: remove existing item, then add with new quantity
             // @ts-ignore
             await fetch(`${API_URL}/api/cart/remove/${targetId}`, {
                 method: 'DELETE',
-                headers: { Authorization: `Bearer ${token}` }
+                credentials: 'include'
             });
 
             if (quantity > 0) {
                 // @ts-ignore
                 await fetch(`${API_URL}/api/cart/add`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        Authorization: `Bearer ${token}`
-                    },
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         bookId: targetId,
                         quantity

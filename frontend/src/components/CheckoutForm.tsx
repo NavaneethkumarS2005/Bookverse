@@ -49,13 +49,10 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
         } else if (paymentIntent && paymentIntent.status === 'succeeded') {
             // Payment successful! Now save order on backend
             try {
-                const token = localStorage.getItem('token');
                 const res = await fetch(`${API_URL}/api/payment/save-order`, {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
                         paymentIntentId: paymentIntent.id,
                         paymentMethod: 'Stripe',

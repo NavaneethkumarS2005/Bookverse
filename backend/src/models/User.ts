@@ -7,7 +7,7 @@ export interface IUser extends Document {
     password: string;
     role: 'user' | 'admin';
     createdAt: Date;
-    resetPasswordToken?: string;
+    resetPasswordTokenHash?: string;
     resetPasswordExpires?: Date;
     refreshTokens: string[];
     cart: {
@@ -18,12 +18,12 @@ export interface IUser extends Document {
 }
 
 const userSchema: Schema = new Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
+    name: { type: String, required: true, trim: true },
+    email: { type: String, required: true, unique: true, lowercase: true, trim: true },
+    password: { type: String, required: true, select: false },
     role: { type: String, enum: ['user', 'admin'], default: 'user' },
     createdAt: { type: Date, default: Date.now },
-    resetPasswordToken: { type: String },
+    resetPasswordTokenHash: { type: String },
     resetPasswordExpires: { type: Date },
     refreshTokens: [{ type: String }],
     cart: [
@@ -33,13 +33,23 @@ const userSchema: Schema = new Schema({
         }
     ],
     wishlist: [{ type: Schema.Types.ObjectId, ref: 'Book' }]
+}, {
+    toJSON: {
+        transform(_document, returnedObject) {
+            delete returnedObject.password;
+            delete returnedObject.resetPasswordTokenHash;
+            delete returnedObject.resetPasswordExpires;
+            delete returnedObject.refreshTokens;
+            delete returnedObject.__v;
+            return returnedObject;
+        }
+    }
 });
 
-// Pre-save hook to hash password
 userSchema.pre<IUser>('save', async function (next) {
     if (!this.isModified('password')) return next();
     try {
-        const salt = await bcrypt.genSalt(10);
+        const salt = await bcrypt.genSalt(12);
         this.password = await bcrypt.hash(this.password, salt);
         next();
     } catch (err: any) {

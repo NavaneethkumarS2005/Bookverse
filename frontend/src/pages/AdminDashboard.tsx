@@ -67,7 +67,6 @@ const AdminDashboard: React.FC = () => {
 
     const fetchAdminData = async () => {
         try {
-            const token = localStorage.getItem('token');
             const user = JSON.parse(localStorage.getItem('user') || '{}');
 
             if (!user || user.role !== 'admin') {
@@ -76,7 +75,7 @@ const AdminDashboard: React.FC = () => {
             }
 
             const [statsRes, booksRes] = await Promise.all([
-                axios.get(`${API_URL}/api/admin/stats`, { headers: { Authorization: `Bearer ${token}` } }),
+                axios.get(`${API_URL}/api/admin/stats`, { withCredentials: true }),
                 axios.get(`${API_URL}/api/books`)
             ]);
 
@@ -98,10 +97,7 @@ const AdminDashboard: React.FC = () => {
     const handleDeleteBook = async (id: string) => {
         if (!window.confirm("Are you sure you want to delete this book?")) return;
         try {
-            const token = localStorage.getItem('token');
-            await axios.delete(`${API_URL}/api/books/${id}`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            await axios.delete(`${API_URL}/api/books/${id}`, { withCredentials: true });
             setBooks(books.filter(b => b.id !== id && (b as any)._id !== id));
             setAlertMessage({ type: 'success', text: 'Book deleted successfully!' });
         } catch (err) {
@@ -113,10 +109,7 @@ const AdminDashboard: React.FC = () => {
     const handleAddBook = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
-            const token = localStorage.getItem('token');
-            const res = await axios.post(`${API_URL}/api/books`, { ...newBook, price: Number(newBook.price) }, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const res = await axios.post(`${API_URL}/api/books`, { ...newBook, price: Number(newBook.price) }, { withCredentials: true });
             setBooks([...books, res.data]);
             setShowBookModal(false);
             setNewBook({ title: '', author: '', price: '', genre: '', image: '', desc: '', buyLink: '' });

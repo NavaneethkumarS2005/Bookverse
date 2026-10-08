@@ -13,7 +13,7 @@ interface WishlistContextValue {
 }
 
 const WishlistContext = createContext<WishlistContextValue | undefined>(undefined);
-const getToken = () => localStorage.getItem('token');
+const isAuthenticated = () => Boolean(localStorage.getItem('user'));
 const idOf = (book: Book) => String(book._id || book.id);
 
 export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -21,17 +21,14 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     const [loading, setLoading] = useState(false);
 
     const refreshWishlist = useCallback(async () => {
-        const token = getToken();
-        if (!token) {
+        if (!isAuthenticated()) {
             setWishlist([]);
             return;
         }
 
         setLoading(true);
         try {
-            const { data } = await axios.get(`${API_URL}/api/wishlist`, {
-                headers: { Authorization: `Bearer ${token}` }
-            });
+            const { data } = await axios.get(`${API_URL}/api/wishlist`, { withCredentials: true });
             const books = Array.isArray(data?.books) ? data.books : [];
             setWishlist(books.map((book: unknown, index: number) => normalizeBook(book, index)));
         } catch (error) {
@@ -58,8 +55,7 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     }, [wishlist]);
 
     const toggleWishlist = useCallback(async (book: Book) => {
-        const token = getToken();
-        if (!token) throw new Error('Please log in to use your wishlist.');
+        if (!isAuthenticated()) throw new Error('Please log in to use your wishlist.');
 
         const bookId = idOf(book);
         const currentlyWishlisted = wishlist.some(item => idOf(item) === bookId);
@@ -68,13 +64,9 @@ export const WishlistProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         try {
             if (currentlyWishlisted) {
-                await axios.delete(`${API_URL}/api/wishlist/${encodeURIComponent(bookId)}`, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await axios.delete(`${API_URL}/api/wishlist/${encodeURIComponent(bookId)}`, { withCredentials: true });
             } else {
-                await axios.post(`${API_URL}/api/wishlist`, { bookId }, {
-                    headers: { Authorization: `Bearer ${token}` }
-                });
+                await axios.post(`${API_URL}/api/wishlist`, { bookId }, { withCredentials: true });
             }
         } catch (error) {
             setWishlist(previous);
