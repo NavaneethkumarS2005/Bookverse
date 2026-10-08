@@ -1,5 +1,6 @@
 import { Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import { getJwtSecret } from '../config/env';
 import { AuthRequest } from '../types';
 
 export const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -10,7 +11,7 @@ export const auth = (req: AuthRequest, res: Response, next: NextFunction) => {
             return res.status(401).json({ message: 'Authentication required' });
         }
 
-        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_for_demo');
+        const decoded = jwt.verify(token, getJwtSecret());
         req.user = decoded;
         next();
     } catch (err) {

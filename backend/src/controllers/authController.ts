@@ -3,6 +3,7 @@ import User, { IUser } from '../models/User';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import bcrypt from 'bcryptjs';
+import { getJwtSecret } from '../config/env';
 // @ts-ignore
 import sendEmail from '../utils/emailService';
 // @ts-ignore
@@ -38,7 +39,7 @@ export const login = async (req: Request, res: Response) => {
 
         const token = jwt.sign(
             { id: user._id, email: user.email, name: user.name },
-            process.env.JWT_SECRET || 'fallback_secret_for_demo',
+            getJwtSecret(),
             { expiresIn: '7d' }
         );
 
