@@ -26,10 +26,12 @@ export const errorHandler: ErrorRequestHandler = (
         : 500;
     const isProduction = process.env.NODE_ENV === 'production';
 
-    if (!isProduction && statusCode >= 500) {
+    if (statusCode >= 500) {
         console.error('Unhandled server error', {
             requestId: req.id,
-            error: normalizedError
+            statusCode,
+            code: normalizedError.code || 'INTERNAL_ERROR',
+            errorName: normalizedError.name || 'Error'
         });
     }
 

@@ -8,15 +8,13 @@ import { AuthRequest } from '../types';
 
 const router = express.Router();
 
-// PHONEPE CREDENTIALS
-// Use Env Vars for Production, fallback to UAT (Test) defaults
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || "PGTESTPAYUAT86";
-const SALT_KEY = process.env.PHONEPE_SALT_KEY || "96434309-7796-489d-8924-ab56988a6076";
+const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || "";
+const SALT_KEY = process.env.PHONEPE_SALT_KEY || "";
 const SALT_INDEX = 1;
 const PHONEPE_HOST_URL = process.env.PHONEPE_HOST_URL || "https://api-preprod.phonepe.com/apis/pg-sandbox";
 
-if (!process.env.PHONEPE_MERCHANT_ID) {
-    console.warn("⚠️ PhonePe running in TEST MODE (UAT). Add PHONEPE_MERCHANT_ID for production.");
+if (!process.env.PHONEPE_MERCHANT_ID || !process.env.PHONEPE_SALT_KEY) {
+    console.warn("⚠️ PhonePe credentials are not configured. Payment requests will fail until they are supplied.");
 }
 
 const getRequestBaseUrl = (req: Request) => {
