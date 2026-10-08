@@ -346,7 +346,7 @@ router.post('/chat', [
             
             // Perform vector search
             if (queryVector && queryVector.length > 0 && queryVector.some(v => v !== 0)) {
-                booksFound = await Book.aggregate([
+                booksFound = await Book.aggregate<any>([
                     {
                         $vectorSearch: {
                             index: 'vector_index',
@@ -356,7 +356,7 @@ router.post('/chat', [
                             limit: 10
                         }
                     }
-                ]);
+                ] as any);
             }
         } catch (err) {
             console.warn('Vector search failed in AI chat (missing index?), falling back to classic search.', err);

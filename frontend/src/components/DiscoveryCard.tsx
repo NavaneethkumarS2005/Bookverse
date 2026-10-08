@@ -127,6 +127,7 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
             Explore →
           </span>
         </div>
+      </div>
       </Link>
 
       {/* Back Face */}

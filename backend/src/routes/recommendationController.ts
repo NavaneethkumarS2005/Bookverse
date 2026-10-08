@@ -66,7 +66,7 @@ export const getPersonalizedRecommendations = async (req: Request, res: Response
 
 export const getSimilarBooks = async (req: Request, res: Response) => {
     try {
-        const { bookId } = req.params;
+        const bookId = String(req.params.bookId);
         
         const book = await Book.findById(bookId).lean();
         
@@ -81,7 +81,7 @@ export const getSimilarBooks = async (req: Request, res: Response) => {
 
         if (book.embedding && book.embedding.length > 0) {
             try {
-                similarBooks = await Book.aggregate([
+                similarBooks = await Book.aggregate<any>([
                     {
                         $vectorSearch: {
                             index: 'vector_index',
@@ -94,7 +94,7 @@ export const getSimilarBooks = async (req: Request, res: Response) => {
                     {
                         $match: { _id: { $ne: new mongoose.Types.ObjectId(bookId) } }
                     }
-                ]);
+                ] as any);
             } catch (err) {
                 console.warn('Vector search failed (likely missing index), falling back to genre search.');
             }
