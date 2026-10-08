@@ -45,7 +45,7 @@ const orderSchema: Schema = new Schema({
     }],
     totalPrice: { type: Number, required: true },
     totalAmount: { type: Number },
-    paymentId: { type: String, required: true },
+    paymentId: { type: String, required: true, unique: true, index: true },
     paymentMethod: { type: String, default: 'Razorpay' },
     status: { type: String, default: 'Paid' },
     shippingAddress: {

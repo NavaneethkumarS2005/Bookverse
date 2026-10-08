@@ -15,9 +15,10 @@ interface CheckoutFormProps {
     };
     onSuccess: (paymentId?: string) => void;
     onCancel: () => void;
+    orderId: string;
 }
 
-const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress, onSuccess, onCancel }) => {
+const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress, orderId, onSuccess, onCancel }) => {
     const stripe = useStripe();
     const elements = useElements();
 
@@ -56,6 +57,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
                     body: JSON.stringify({
                         paymentIntentId: paymentIntent.id,
                         paymentMethod: 'Stripe',
+                        orderId,
                         orderItems: cartItems.map(item => ({
                             bookId: item.bookId,
                             quantity: item.quantity

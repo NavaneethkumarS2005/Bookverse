@@ -73,15 +73,24 @@ const paymentResultUrl = (clientBaseUrl: string, code: string | undefined, merch
     return `${clientBaseUrl}/?payment=pending&txnId=${encodeURIComponent(merchantTransactionId)}`;
 };
 
+const finalizePhonePeOrder = async (merchantTransactionId: string, providerResponse: any) => {
+    if (providerResponse.code !== 'PAYMENT_SUCCESS') return false;
+    const order = await Order.findOne({ paymentId: merchantTransactionId });
+    if (!order || order.status === 'Paid') return false;
+
+    const providerAmount = Number(providerResponse.amount ?? providerResponse.data?.amount);
+    const expectedAmount = Math.round(order.totalPrice * 100);
+    if (!Number.isFinite(providerAmount) || providerAmount !== expectedAmount) return false;
+
+    order.status = 'Paid';
+    await order.save();
+    return true;
+};
+
 const verifyAndRedirect = async (merchantTransactionId: string, clientBaseUrl: string, res: Response) => {
     const result = await getPhonePeStatus(merchantTransactionId);
-    const success = result.code === 'PAYMENT_SUCCESS';
-
-    if (success) {
-        await Order.findOneAndUpdate({ paymentId: merchantTransactionId }, { status: 'Paid' });
-    }
-
-    return res.redirect(paymentResultUrl(clientBaseUrl, result.code, merchantTransactionId));
+    const success = await finalizePhonePeOrder(merchantTransactionId, result);
+    return res.redirect(paymentResultUrl(clientBaseUrl, success ? 'PAYMENT_SUCCESS' : result.code, merchantTransactionId));
 };
 
 // 1. INITIATE PAYMENT
@@ -98,10 +107,8 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         const { orderItems: normalizedItems, totalPrice } = normalizeOrderItems(orderItems, catalogBooks);
         const shippingAddress = req.body.shippingAddress ?? req.body.shippingDetails;
         const backendBaseUrl = getBackendBaseUrl(req as Request);
-        const userId = req.user.id; // From auth middleware
-
-        // Transaction ID must be unique
-        const merchantTransactionId = `MT${Date.now()}`;
+        const userId = req.user.id;
+        const merchantTransactionId = `MT${crypto.randomUUID().replace(/-/g, '')}`;
 
         // Create a Pending Order with server-authoritative catalog values.
         const newOrder = new Order({
@@ -156,7 +163,8 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         res.json({
             success: true,
             url: response.data.data.instrumentResponse.redirectInfo.url,
-            merchantTransactionId: merchantTransactionId
+            merchantTransactionId,
+            orderId: newOrder._id.toString()
         });
 
     } catch (error: any) {
@@ -192,129 +200,17 @@ router.get('/callback', async (req: Request, res: Response) => {
 router.post('/callback', async (req: Request, res: Response) => {
     const clientBaseUrl = getClientBaseUrl(req);
     try {
-        console.log("🔔 PhonePe Callback Received (POST)");
-        console.log("🔗 Query:", req.query);
-        console.log("📚 Headers:", req.headers);
-
-        // req.body may be a parsed object, a Buffer (when express.raw used), or a string
-        console.log("📦 Raw Body (type):", Object.prototype.toString.call(req.body));
-
-        // Safely extract the PhonePe `response` field from a variety of incoming body shapes
-        let responseField: any = undefined;
-        try {
-            if (req.body === undefined || req.body === null) {
-                responseField = undefined;
-            } else if (Buffer.isBuffer(req.body)) {
-                const asText = req.body.toString('utf-8');
-                console.log("📦 Raw Buffer Body:", asText);
-                try {
-                    const parsed = JSON.parse(asText);
-                    responseField = parsed.response ?? parsed?.request ?? undefined;
-                } catch (e) {
-                    // not JSON — maybe urlencoded key=value pairs
-                    // attempt to find 'response=' substring
-                    const match = asText.match(/response=([^&]+)/);
-                    if (match) {
-                        responseField = decodeURIComponent(match[1]);
-                    }
-                }
-            } else if (typeof req.body === 'string') {
-                console.log("📦 String Body:", req.body);
-                try {
-                    const parsed = JSON.parse(req.body);
-                    responseField = parsed.response ?? parsed?.request ?? undefined;
-                } catch (e) {
-                    const match = req.body.match(/response=([^&]+)/);
-                    if (match) {
-                        responseField = decodeURIComponent(match[1]);
-                    }
-                }
-            } else if (typeof req.body === 'object') {
-                // Already parsed by express.json/urlencoded
-                responseField = (req.body as any).response ?? (req.body as any).request ?? undefined;
-            }
-        } catch (err) {
-            console.error('❌ Error while extracting body response:', err);
-        }
-
-        // ──────────────────────────────────────────────────────────────────
-        // QR CODE / EMPTY BODY FALLBACK
-        // When paying via QR code, PhonePe may redirect with an empty body
-        // but includes the transactionId in the query string. We fall back
-        // to the Status Check API to verify the payment.
-        // ──────────────────────────────────────────────────────────────────
-        if (!responseField) {
-            console.warn("⚠️ No 'response' field in callback body. Attempting status check via query param or pending orders...");
-
-            // PhonePe sometimes appends transactionId as a query param
-            const txnId = req.query.transactionId as string
-                || req.query.merchantTransactionId as string
-                || (req.query && (req.query.txnId as string));
-
-            if (txnId) {
-                console.log(`🔍 Falling back to status check for txnId: ${txnId}`);
-                return await verifyAndRedirect(txnId, clientBaseUrl, res);
-            }
-
-            // Last resort: redirect to a pending-orders verification page
-            console.error("❌ Could not determine transaction ID from callback.");
-            return res.redirect(`${clientBaseUrl}/orders?status=pending&reason=qr_callback`);
-        }
-
-        let data: any;
-        try {
-            // PhonePe sometimes wraps response as base64-encoded JSON
-            if (typeof responseField === 'string') {
-                // Try base64 decode
-                try {
-                    const decodedResponse = Buffer.from(responseField, 'base64').toString('utf-8');
-                    data = JSON.parse(decodedResponse);
-                    console.log("✅ Decoded PhonePe Data (from base64):", JSON.stringify(data, null, 2));
-                } catch (e) {
-                    // Not base64 JSON — attempt to parse directly
-                    try {
-                        data = JSON.parse(responseField as string);
-                        console.log("✅ Parsed PhonePe Data (string JSON):", JSON.stringify(data, null, 2));
-                    } catch (e2) {
-                        // Give up — treat as opaque
-                        data = { raw: responseField };
-                        console.warn('⚠️ Response field could not be parsed as JSON. Preserving raw value.');
-                    }
-                }
-            } else {
-                data = responseField;
-            }
-        } catch (parseError) {
-            console.error("❌ JSON Parse Error:", parseError);
-            return res.redirect(`${clientBaseUrl}/cart?status=error&reason=parse_error`);
-        }
-
-        const { code } = data;
-        const merchantTransactionId = data.merchantTransactionId
-            || req.query.merchantTransactionId
-            || req.query.transactionId
-            || req.query.txnId;
+        const merchantTransactionId = req.query.merchantTransactionId as string
+            || req.query.transactionId as string
+            || req.query.txnId as string
+            || (req.body as any)?.merchantTransactionId
+            || (req.body as any)?.transactionId;
 
         if (!merchantTransactionId) {
-            console.error("❌ PhonePe callback had no transaction id.");
             return res.redirect(`${clientBaseUrl}/cart?status=error&reason=missing_transaction`);
         }
 
-        if (code === 'PAYMENT_SUCCESS') {
-            console.log(`💰 Payment Success for: ${merchantTransactionId}`);
-            await Order.findOneAndUpdate(
-                { paymentId: merchantTransactionId },
-                { status: 'Paid' }
-            );
-            res.redirect(paymentResultUrl(clientBaseUrl, code, merchantTransactionId));
-        } else {
-            console.log(`⚠️ Payment Failed/Pending for: ${merchantTransactionId}, Code: ${code}`);
-            await Order.findOneAndUpdate(
-                { paymentId: merchantTransactionId },
-                { status: 'Failed' }
-            );
-            res.redirect(paymentResultUrl(clientBaseUrl, code, merchantTransactionId));
-        }
+        return await verifyAndRedirect(merchantTransactionId, clientBaseUrl, res);
 
     } catch (error: any) {
         console.error("Callback Fatal Error:", error.message);

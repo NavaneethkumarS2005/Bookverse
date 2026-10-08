@@ -4,6 +4,7 @@ const {
   normalizeBook,
   normalizeCartItem,
   normalizeOrderInput,
+  normalizeOrderItems,
   serializeOrder,
 } = require('../dist/utils/contracts.js');
 
@@ -84,6 +85,34 @@ test('normalizeOrderInput accepts legacy checkout fields and validates quantitie
   assert.equal(order.shippingAddress.address, '1 Main');
   assert.equal(order.totalPrice, 598);
   assert.equal(order.paymentMethod, 'COD');
+});
+
+test('normalizeOrderItems rejects unavailable books and duplicate items atomically', () => {
+  assert.throws(() => normalizeOrderItems([
+    { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
+    { bookId: '64f5d8a9b5e6d9a0f2c3d4e6', quantity: 1 },
+  ], [
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Available', price: 299, availability: 'In Stock' },
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e6', title: 'Unavailable', price: 199, availability: 'Out of Stock' },
+  ]), /unavailable/i);
+
+  assert.throws(() => normalizeOrderItems([
+    { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
+    { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
+  ], [
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Available', price: 299, availability: 'In Stock' },
+  ]), /duplicate/i);
+});
+
+test('normalizeOrderItems returns a server-calculated total without trusting client values', () => {
+  const order = normalizeOrderItems([
+    { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 2, price: 1, totalPrice: 1 },
+  ], [
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'The Book', price: 299, availability: 'In Stock' },
+  ]);
+
+  assert.equal(order.totalPrice, 598);
+  assert.equal(order.orderItems[0].price, 299);
 });
 
 test('serializeOrder returns canonical order fields and preserves legacy payment details', () => {

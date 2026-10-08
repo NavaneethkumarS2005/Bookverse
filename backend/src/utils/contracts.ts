@@ -168,14 +168,24 @@ export const normalizeOrderItems = (
     const normalized = normalizeBook(book);
     return [normalized._id, normalized];
   }));
+  const seenBookIds = new Set<string>();
   const orderItems = value.map((item: any) => {
     if (!item || typeof item !== 'object') throw new Error('Order item is invalid');
     const bookId = idOf(item.bookId ?? item.productId ?? item.id);
     if (!bookId) throw new Error('Order item book identifier is required');
+    if (seenBookIds.has(bookId)) throw new Error('Order items contain duplicate books');
+    seenBookIds.add(bookId);
+
     const catalogBook = catalog.get(bookId);
-    if (!catalogBook) throw new Error('One or more books are unavailable');
-    const quantity = Math.floor(asNumber(item.quantity, 1));
-    if (quantity < 1) throw new Error('Order item quantity must be at least 1');
+    if (!catalogBook || catalogBook.availability === 'Out of Stock' || (catalogBook.stock !== undefined && catalogBook.stock < 1)) {
+      throw new Error('One or more books are unavailable');
+    }
+
+    const rawQuantity = item.quantity;
+    const quantity = typeof rawQuantity === 'number' ? rawQuantity : Number(rawQuantity);
+    if (!Number.isInteger(quantity) || quantity < 1) throw new Error('Order item quantity must be a positive integer');
+    if (!Number.isFinite(catalogBook.price) || catalogBook.price <= 0) throw new Error('Book price is invalid');
+
     return {
       bookId,
       title: catalogBook.title,

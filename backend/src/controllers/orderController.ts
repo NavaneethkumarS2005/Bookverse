@@ -1,9 +1,11 @@
+import crypto from 'crypto';
 import { Response } from 'express';
+import mongoose from 'mongoose';
 import Stripe from 'stripe';
 import Book from '../models/Book';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
-import { normalizeOrderInput, normalizeOrderItems, serializeOrder } from '../utils/contracts';
+import { normalizeOrderInput, serializeOrder } from '../utils/contracts';
 // @ts-ignore
 import sendEmail from '../utils/emailService';
 // @ts-ignore
@@ -18,31 +20,56 @@ const getStripe = () => {
     } as any);
 };
 
+const getCatalogBooks = async (orderItems: any[]) => Promise.all(orderItems.map(async (item: any) => {
+    const id = item.bookId ?? item.id;
+    if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
+    if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
+    if (typeof id === 'number') return Book.findOne({ id: id });
+    return null;
+}));
+
+const loadNormalizedOrder = async (req: AuthRequest, orderItems: any[]) => {
+    const catalogBooks = await getCatalogBooks(orderItems);
+    return normalizeOrderInput({
+        orderItems,
+        shippingAddress: req.body.shippingAddress ?? req.body.shippingDetails,
+        paymentMethod: req.body.paymentMethod ?? 'Stripe',
+    }, catalogBooks);
+};
+
 export const createPaymentIntent = async (req: AuthRequest, res: Response) => {
     try {
         if (!process.env.STRIPE_SECRET_KEY) {
             return res.status(500).json({ message: 'Stripe Config Missing' });
         }
         const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
-        const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
-            const id = item.bookId ?? item.id;
-            if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
-            if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
-            if (typeof id === 'number') return Book.findOne({ id: id });
-            return null;
-        }));
-        const { totalPrice } = normalizeOrderItems(orderItems, catalogBooks);
-
-        if (totalPrice < 1) return res.status(400).json({ message: "Invalid amount" });
-
-        const paymentIntent = await getStripe().paymentIntents.create({
-            amount: Math.round(totalPrice * 100),
-            currency: "inr",
-            automatic_payment_methods: { enabled: true },
-            metadata: { userId: req.user.id, totalPrice: String(totalPrice) }
+        const normalized = await loadNormalizedOrder(req, orderItems);
+        const paymentId = `pi_${crypto.randomUUID().replace(/-/g, '')}`;
+        const order = await Order.create({
+            user: req.user.id,
+            orderItems: normalized.orderItems,
+            totalPrice: normalized.totalPrice,
+            paymentId,
+            paymentMethod: 'Stripe',
+            status: 'Pending',
+            shippingAddress: normalized.shippingAddress,
         });
 
-        res.send({ clientSecret: paymentIntent.client_secret });
+        const paymentIntent = await getStripe().paymentIntents.create({
+            amount: Math.round(normalized.totalPrice * 100),
+            currency: 'inr',
+            automatic_payment_methods: { enabled: true },
+            metadata: {
+                userId: req.user.id,
+                orderId: order._id.toString(),
+                paymentId,
+                totalPrice: String(normalized.totalPrice),
+            },
+        });
+        order.paymentId = paymentIntent.id;
+        await order.save();
+
+        res.send({ clientSecret: paymentIntent.client_secret, orderId: order._id.toString(), paymentId: paymentIntent.id });
     } catch (err: any) {
         console.error("Stripe Error:", err);
         res.status(400).json({ message: err.message || 'Payment init failed' });
@@ -52,62 +79,68 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response) => {
 export const saveOrder = async (req: AuthRequest, res: Response) => {
     try {
         const paymentMethod = String(req.body.paymentMethod ?? 'Stripe');
-        const paymentIntentId = req.body.paymentIntentId;
-        let status = 'Paid';
-        let paymentId = paymentIntentId;
+        const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
+        const normalized = await loadNormalizedOrder(req, orderItems);
 
-        if (paymentMethod !== 'COD') {
-            if (!process.env.STRIPE_SECRET_KEY) {
-                return res.status(500).json({ message: 'Stripe Config Missing' });
-            }
-            const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
-            if (paymentIntent.status !== 'succeeded') return res.status(400).json({ message: "Payment failed" });
-            paymentId = paymentIntent.id;
-        } else {
-            status = 'Placed';
-            paymentId = 'COD_' + Date.now();
+        if (paymentMethod === 'COD') {
+            const paymentId = `COD_${crypto.randomUUID().replace(/-/g, '')}`;
+            const newOrder = await Order.create({
+                user: req.user.id,
+                orderItems: normalized.orderItems,
+                totalPrice: normalized.totalPrice,
+                paymentId,
+                paymentMethod,
+                status: 'Placed',
+                shippingAddress: normalized.shippingAddress,
+            });
+            await sendOrderConfirmation(req, newOrder, normalized);
+            return res.json({ success: true, message: 'Order Saved', orderId: newOrder._id, order: serializeOrder(newOrder) });
         }
 
-        const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
-        const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
-            const id = item.bookId ?? item.id;
-            if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
-            if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
-            if (typeof id === 'number') return Book.findOne({ id: id });
-            return null;
-        }));
-        const normalized = normalizeOrderInput({
-            orderItems,
-            shippingAddress: req.body.shippingAddress ?? req.body.shippingDetails,
-            paymentMethod,
-            paymentResult: paymentIntentId ? { id: paymentIntentId, status } : undefined,
-        }, catalogBooks);
+        if (paymentMethod !== 'Stripe') {
+            return res.status(400).json({ message: 'Unsupported payment method' });
+        }
 
-        const newOrder = new Order({
-            user: req.user.id,
-            orderItems: normalized.orderItems,
-            totalPrice: normalized.totalPrice,
-            paymentId,
-            status,
-            paymentMethod,
-            shippingAddress: normalized.shippingAddress,
-        });
+        const paymentIntentId = req.body.paymentIntentId;
+        if (!paymentIntentId) return res.status(400).json({ message: 'Payment intent is required' });
+        const paymentIntent = await getStripe().paymentIntents.retrieve(paymentIntentId);
+        if (paymentIntent.status !== 'succeeded') return res.status(400).json({ message: 'Payment failed' });
+        if (paymentIntent.metadata?.userId !== req.user.id) return res.status(403).json({ message: 'Payment does not belong to this user' });
 
-        await newOrder.save();
-        sendEmail(
-            req.user.email,
-            "Order Confirmation - BookVerse",
-            orderTemplate(newOrder._id.toString(), normalized.orderItems, normalized.totalPrice)
-        ).catch(emailErr => console.error("Email sending failed (background):", emailErr));
+        const expectedAmount = Math.round(normalized.totalPrice * 100);
+        if (paymentIntent.amount !== expectedAmount) return res.status(400).json({ message: 'Payment amount does not match the order' });
+        const orderId = paymentIntent.metadata?.orderId;
+        if (!orderId || !mongoose.isValidObjectId(orderId)) return res.status(400).json({ message: 'Invalid order reference' });
 
-        res.json({ success: true, message: 'Order Saved', orderId: newOrder._id, order: serializeOrder(newOrder) });
+        const existingOrder = await Order.findOne({ _id: orderId, user: req.user.id });
+        if (!existingOrder) return res.status(404).json({ message: 'Order not found' });
+        if (existingOrder.status === 'Paid') {
+            return res.json({ success: true, message: 'Order already saved', orderId: existingOrder._id, order: serializeOrder(existingOrder) });
+        }
+
+        existingOrder.orderItems = normalized.orderItems;
+        existingOrder.totalPrice = normalized.totalPrice;
+        existingOrder.paymentId = paymentIntent.id;
+        existingOrder.paymentMethod = 'Stripe';
+        existingOrder.status = 'Paid';
+        existingOrder.shippingAddress = normalized.shippingAddress;
+        await existingOrder.save();
+        await sendOrderConfirmation(req, existingOrder, normalized);
+
+        res.json({ success: true, message: 'Order Saved', orderId: existingOrder._id, order: serializeOrder(existingOrder) });
     } catch (err: any) {
         console.error("Save Order Error:", err);
         res.status(400).json({ message: err.message || 'Error saving order' });
     }
 };
 
-import mongoose from 'mongoose';
+const sendOrderConfirmation = async (req: AuthRequest, order: any, normalized: Awaited<ReturnType<typeof loadNormalizedOrder>>) => {
+    await sendEmail(
+        req.user.email,
+        "Order Confirmation - BookVerse",
+        orderTemplate(order._id.toString(), normalized.orderItems, normalized.totalPrice)
+    ).catch(emailErr => console.error("Email sending failed (background):", emailErr));
+};
 
 export const getOrders = async (req: AuthRequest, res: Response) => {
     try {
@@ -116,6 +149,21 @@ export const getOrders = async (req: AuthRequest, res: Response) => {
     } catch (err) {
         res.status(500).json({ message: 'Error fetching orders' });
     }
+};
+
+const finalizeStripePayment = async (paymentIntent: Stripe.PaymentIntent) => {
+    if (paymentIntent.status !== 'succeeded') return;
+    const orderId = paymentIntent.metadata?.orderId;
+    if (!orderId || !mongoose.isValidObjectId(orderId)) return;
+
+    const order = await Order.findOne({ _id: orderId, paymentId: paymentIntent.id });
+    if (!order || order.status === 'Paid') return;
+    if (paymentIntent.metadata?.userId !== order.user.toString()) return;
+
+    order.paymentId = paymentIntent.id;
+    order.paymentMethod = 'Stripe';
+    order.status = 'Paid';
+    await order.save();
 };
 
 export const stripeWebhook = async (req: any, res: Response) => {
@@ -127,26 +175,14 @@ export const stripeWebhook = async (req: any, res: Response) => {
         return res.status(400).send('Webhook Error: Secret missing');
     }
 
-    let event;
-
     try {
-        event = getStripe().webhooks.constructEvent(req.body, sig as string, endpointSecret);
+        const event = getStripe().webhooks.constructEvent(req.body, sig as string, endpointSecret);
+        if (event.type === 'payment_intent.succeeded') {
+            await finalizeStripePayment(event.data.object as Stripe.PaymentIntent);
+        }
+        return res.send();
     } catch (err: any) {
         console.error(`⚠️ Webhook Signature Verification Failed: ${err.message}`);
         return res.status(400).send(`Webhook Error: ${err.message}`);
     }
-
-    // Handle the event
-    switch (event.type) {
-        case 'payment_intent.succeeded':
-            const paymentIntent = event.data.object;
-            console.log(`💰 PaymentIntent was successful! ID: ${paymentIntent.id}`);
-            // Logic to update order status could go here if we were creating orders BEFORE payment
-            // Currently saveOrder handles it from frontend, but this is good for redundancy or async flows.
-            break;
-        default:
-            console.log(`Unhandled event type ${event.type}`);
-    }
-
-    res.send();
 };

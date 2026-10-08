@@ -26,6 +26,7 @@ const Cart: React.FC = () => {
     const [paymentMethod, setPaymentMethod] = useState('phonepe'); // 'stripe', 'phonepe', 'cod'
     const [processing, setProcessing] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
+    const [orderId, setOrderId] = useState('');
     const [loadingSecret, setLoadingSecret] = useState(false);
     const [checkoutMessage, setCheckoutMessage] = useState<{ type: CheckoutMessageType; text: string } | null>(null);
     // Persist message even when cart becomes empty
@@ -105,6 +106,7 @@ const Cart: React.FC = () => {
             }
             const data = await response.json();
             setClientSecret(data.clientSecret);
+            setOrderId(data.orderId);
         } catch (error: any) {
             console.error("Payment Intent Error:", error);
             if (!window.location.href.includes('login')) {
@@ -210,8 +212,6 @@ const Cart: React.FC = () => {
                 credentials: 'include',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    amount: getCartTotal(),
-                    userId: "USER_" + Date.now(),
                     orderItems: cart.map(item => ({
                         bookId: item.bookId,
                         quantity: item.quantity
@@ -428,6 +428,7 @@ const Cart: React.FC = () => {
                                                     clientSecret={clientSecret}
                                                     cartItems={cart}
                                                     shippingAddress={shippingDetails}
+                                                    orderId={orderId}
                                                     onSuccess={handleStripeSuccess}
                                                     onCancel={() => setClientSecret('')}
                                                 />
