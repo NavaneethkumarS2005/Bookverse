@@ -7,6 +7,7 @@ import Order from '../models/Order';
 import { AuthRequest } from '../types';
 import Book from '../models/Book';
 import { normalizeOrderItems } from '../utils/contracts';
+import { decrementOrderStock } from '../utils/inventory';
 
 const router = express.Router();
 
@@ -82,7 +83,15 @@ const finalizePhonePeOrder = async (merchantTransactionId: string, providerRespo
     const expectedAmount = Math.round(order.totalPrice * 100);
     if (!Number.isFinite(providerAmount) || providerAmount !== expectedAmount) return false;
 
+    if (order.stockConsumed) {
+        order.status = 'Paid';
+        await order.save();
+        return true;
+    }
+
+    await decrementOrderStock(order.orderItems);
     order.status = 'Paid';
+    order.stockConsumed = true;
     await order.save();
     return true;
 };

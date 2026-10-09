@@ -6,6 +6,7 @@ import Book from '../models/Book';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
 import { normalizeOrderInput, serializeOrder } from '../utils/contracts';
+import { decrementOrderStock } from '../utils/inventory';
 // @ts-ignore
 import sendEmail from '../utils/emailService';
 // @ts-ignore
@@ -84,6 +85,7 @@ export const saveOrder = async (req: AuthRequest, res: Response) => {
 
         if (paymentMethod === 'COD') {
             const paymentId = `COD_${crypto.randomUUID().replace(/-/g, '')}`;
+            await decrementOrderStock(normalized.orderItems);
             const newOrder = await Order.create({
                 user: req.user.id,
                 orderItems: normalized.orderItems,
@@ -91,6 +93,7 @@ export const saveOrder = async (req: AuthRequest, res: Response) => {
                 paymentId,
                 paymentMethod,
                 status: 'Placed',
+                stockConsumed: true,
                 shippingAddress: normalized.shippingAddress,
             });
             await sendOrderConfirmation(req, newOrder, normalized);
@@ -118,13 +121,17 @@ export const saveOrder = async (req: AuthRequest, res: Response) => {
             return res.json({ success: true, message: 'Order already saved', orderId: existingOrder._id, order: serializeOrder(existingOrder) });
         }
 
+        if (existingOrder.stockConsumed) {
+            return res.json({ success: true, message: 'Order already saved', orderId: existingOrder._id, order: serializeOrder(existingOrder) });
+        }
+
         existingOrder.orderItems = normalized.orderItems;
         existingOrder.totalPrice = normalized.totalPrice;
         existingOrder.paymentId = paymentIntent.id;
         existingOrder.paymentMethod = 'Stripe';
         existingOrder.status = 'Paid';
         existingOrder.shippingAddress = normalized.shippingAddress;
-        await existingOrder.save();
+        await consumeStockOnce(existingOrder);
         await sendOrderConfirmation(req, existingOrder, normalized);
 
         res.json({ success: true, message: 'Order Saved', orderId: existingOrder._id, order: serializeOrder(existingOrder) });
@@ -140,6 +147,15 @@ const sendOrderConfirmation = async (req: AuthRequest, order: any, normalized: A
         "Order Confirmation - BookVerse",
         orderTemplate(order._id.toString(), normalized.orderItems, normalized.totalPrice)
     ).catch(emailErr => console.error("Email sending failed (background):", emailErr));
+};
+
+const consumeStockOnce = async (order: any) => {
+    if (!order || order.stockConsumed) return;
+    if (!Array.isArray(order.orderItems) || order.orderItems.length === 0) return;
+
+    await decrementOrderStock(order.orderItems);
+    order.stockConsumed = true;
+    await order.save();
 };
 
 export const getOrders = async (req: AuthRequest, res: Response) => {
@@ -163,6 +179,7 @@ const finalizeStripePayment = async (paymentIntent: Stripe.PaymentIntent) => {
     order.paymentId = paymentIntent.id;
     order.paymentMethod = 'Stripe';
     order.status = 'Paid';
+    await consumeStockOnce(order);
     await order.save();
 };
 

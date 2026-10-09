@@ -99,7 +99,8 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     ? book.authorId
     : undefined;
   const category = book.category || book.genre || (Array.isArray(book.genres) ? book.genres[0] : undefined);
-  const stock = book.stock;
+  const stock = Number.isFinite(Number(book.stock)) ? Number(book.stock) : undefined;
+  const resolvedAvailability = book.availability ?? (stock === 0 ? 'Out of Stock' : stock !== undefined && stock < 1 ? 'Out of Stock' : 'In Stock');
 
   return {
     _id,
@@ -110,7 +111,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     genre: book.genre || category,
     price: asNumber(book.price),
     image: String(book.image ?? book.coverImage ?? ''),
-    availability: book.availability ?? (stock === 0 ? 'Out of Stock' : stock && stock < 1 ? 'Out of Stock' : 'In Stock'),
+    availability: resolvedAvailability,
     isFeatured: book.isFeatured ?? featuredMetadata?.featured,
     featuredOrder: book.featuredOrder ?? featuredMetadata?.order,
     rating: book.rating ?? book.averageRating,
@@ -172,18 +173,21 @@ export const normalizeOrderItems = (
   const orderItems = value.map((item: any) => {
     if (!item || typeof item !== 'object') throw new Error('Order item is invalid');
     const bookId = idOf(item.bookId ?? item.productId ?? item.id);
-    if (!bookId) throw new Error('Order item book identifier is required');
+    if (!bookId) throw new Error('Book is missing from the order');
     if (seenBookIds.has(bookId)) throw new Error('Order items contain duplicate books');
     seenBookIds.add(bookId);
 
     const catalogBook = catalog.get(bookId);
-    if (!catalogBook || catalogBook.availability === 'Out of Stock' || (catalogBook.stock !== undefined && catalogBook.stock < 1)) {
-      throw new Error('One or more books are unavailable');
-    }
+    if (!catalogBook) throw new Error('Book is unavailable');
 
     const rawQuantity = item.quantity;
     const quantity = typeof rawQuantity === 'number' ? rawQuantity : Number(rawQuantity);
     if (!Number.isInteger(quantity) || quantity < 1) throw new Error('Order item quantity must be a positive integer');
+
+    const stock = Number.isFinite(Number(catalogBook.stock)) ? Number(catalogBook.stock) : undefined;
+    if (catalogBook.availability === 'Out of Stock' || (stock !== undefined && stock <= 0) || (stock !== undefined && quantity > stock)) {
+      throw new Error('Requested quantity is unavailable');
+    }
     if (!Number.isFinite(catalogBook.price) || catalogBook.price <= 0) throw new Error('Book price is invalid');
 
     return {

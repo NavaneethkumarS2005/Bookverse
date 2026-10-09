@@ -24,6 +24,7 @@ export interface IOrder extends Document {
     paymentId: string;
     paymentMethod: string;
     status: string;
+    stockConsumed: boolean;
     shippingAddress?: IShippingDetails;
     shippingDetails?: IShippingDetails;
     createdAt: Date;
@@ -48,6 +49,7 @@ const orderSchema: Schema = new Schema({
     paymentId: { type: String, required: true, unique: true, index: true },
     paymentMethod: { type: String, default: 'Razorpay' },
     status: { type: String, default: 'Paid' },
+    stockConsumed: { type: Boolean, default: false, index: true },
     shippingAddress: {
         address: { type: String },
         city: { type: String },

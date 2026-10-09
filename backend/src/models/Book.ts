@@ -15,6 +15,7 @@ export interface IBook extends Document {
   reviews?: number;
   buyLink?: string;
   availability?: string;
+  stock?: number;
   publisher?: string;
   featuredMetadata?: {
     featured?: boolean;
@@ -72,6 +73,12 @@ const bookSchema = new Schema<IBook>(
       type: Number,
       required: [true, 'Price is required'],
       min: 0,
+    },
+    stock: {
+      type: Number,
+      default: 25,
+      min: 0,
+      index: true,
     },
     genre: {
       type: String,
