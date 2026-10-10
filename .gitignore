@@ -34,3 +34,14 @@ server/.env.*
 # OS
 .DS_Store
 Thumbs.db
+
+# Deploy artifacts
+*.zip
+backend_deploy.zip
+frontend_deploy.zip
+
+# Temp / debug junk
+backend/uploads/
+backend/temp_books_response.json
+backend/backend-build-output.txt
+legacy_backup/
