@@ -91,7 +91,8 @@ const Cart: React.FC = () => {
                     orderItems: cart.map(item => ({
                         bookId: item.bookId,
                         quantity: item.quantity
-                    }))
+                    })),
+                    shippingAddress: shippingDetails
                 })
             });
 
@@ -117,15 +118,14 @@ const Cart: React.FC = () => {
         }
     };
 
-    useEffect(() => {
-        if (isPaymentOpen && paymentMethod === 'stripe' && !clientSecret) {
-            fetchPaymentIntent();
-        }
-    }, [isPaymentOpen, paymentMethod]);
-
     const handleProceedToPayment = () => {
+        if (!shippingDetails.address.trim() || !shippingDetails.phone.trim()) {
+            setCheckoutMessage({ type: 'error', text: 'Please enter your complete shipping address and phone number.' });
+            return;
+        }
+
         if (paymentMethod === 'stripe') {
-            // Logic handled by CheckoutForm inside Elements
+            fetchPaymentIntent();
         } else if (paymentMethod === 'phonepe') {
             handlePhonePe();
         } else {
@@ -421,8 +421,7 @@ const Cart: React.FC = () => {
                                             <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mb-3"></div>
                                             Loading Secure Payment...
                                         </div>
-                                    ) : (
-                                        clientSecret && (
+                                    ) : clientSecret ? (
                                             <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'night', labels: 'floating' } }}>
                                                 <CheckoutForm
                                                     clientSecret={clientSecret}
@@ -433,7 +432,27 @@ const Cart: React.FC = () => {
                                                     onCancel={() => setClientSecret('')}
                                                 />
                                             </Elements>
-                                        )
+                                    ) : (
+                                        <div>
+                                            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+                                                Enter your delivery details before continuing to secure card payment.
+                                            </p>
+                                            <div className="space-y-4 mb-6">
+                                                <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                <div className="grid grid-cols-2 gap-4">
+                                                    <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                    <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                </div>
+                                                <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            </div>
+                                            <button
+                                                type="button"
+                                                className="w-full py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20"
+                                                onClick={handleProceedToPayment}
+                                            >
+                                                Continue to Secure Card Payment
+                                            </button>
+                                        </div>
                                     )}
                                 </div>
                             )}

@@ -24,6 +24,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
 
     const [message, setMessage] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(false);
+    const [paymentSucceededButUnfinalized, setPaymentSucceededButUnfinalized] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -69,10 +70,12 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
                 if (data.success) {
                     onSuccess(paymentIntent.id);
                 } else {
-                    setMessage("Payment succeeded but order save failed: " + data.message);
+                    setPaymentSucceededButUnfinalized(true);
+                    setMessage("Payment succeeded, but order finalization is pending. Do not submit payment again; contact support with your payment confirmation.");
                 }
             } catch (err: any) {
-                setMessage("Error saving order: " + err.message);
+                setPaymentSucceededButUnfinalized(true);
+                setMessage("Payment succeeded, but order finalization is pending. Do not submit payment again; contact support with your payment confirmation.");
             }
             setIsLoading(false);
         } else {
@@ -102,11 +105,11 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
                     Cancel
                 </button>
                 <button
-                    disabled={isLoading || !stripe || !elements}
+                    disabled={isLoading || paymentSucceededButUnfinalized || !stripe || !elements}
                     id="submit"
                     className="flex-[2] py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
                 >
-                    {isLoading ? "Processing..." : "Pay Now"}
+                    {isLoading ? "Processing..." : paymentSucceededButUnfinalized ? "Payment Received — Do Not Retry" : "Pay Now"}
                 </button>
             </div>
         </form>

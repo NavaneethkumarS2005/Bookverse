@@ -6,15 +6,15 @@ export const generateEmbedding = async (text: string): Promise<number[]> => {
             return new Array(768).fill(0);
         }
 
-        // Debug: print key prefix to verify correct key is loaded
-        console.log(`Using key starting with: ${apiKey.substring(0, 8)}...`);
-
         // text-embedding-004 is on the v1beta endpoint
         const response = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${apiKey}`,
+            'https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent',
             {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: {
+                    'Content-Type': 'application/json',
+                    'x-goog-api-key': apiKey
+                },
                 body: JSON.stringify({
                     model: 'models/text-embedding-004',
                     content: { parts: [{ text }] }

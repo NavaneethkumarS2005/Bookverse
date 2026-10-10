@@ -36,6 +36,7 @@ import { enrichBookCovers } from './utils/enrichBookCovers.js';
 import { requestId } from './middleware/requestId.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { validateEnvironment } from './config/env.js';
+import { requireDatabase } from './middleware/databaseReady.js';
 
 dotenv.config();
 validateEnvironment();
@@ -120,6 +121,10 @@ export const createApp = (): express.Express => {
 
     app.use('/api/ai', aiLimiter);
     app.use('/api/auth', authLimiter);
+
+    // Do not allow routes backed by Mongoose to buffer and later time out while
+    // MongoDB is disconnected. /health remains available to report readiness.
+    app.use(/^\/api\/(?:auth|books|orders|payment|contact|reviews|upload|phonepe|cart|wishlist|admin|ai|discovery|recommendations|industry-guide|authors|publishers|upcoming-books|book-fairs)(?:\/|$)/, requireDatabase);
 
     app.use('/api/auth', authRoutes);
     app.use('/api/books', bookRoutes);

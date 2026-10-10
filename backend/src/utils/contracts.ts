@@ -1,4 +1,5 @@
 import mongoose from 'mongoose';
+import { CatalogFulfillment, resolveCatalogFulfillment } from './catalogFulfillment';
 
 export interface CatalogBookSummary {
   _id: string;
@@ -19,6 +20,7 @@ export interface CatalogBookSummary {
   publisher?: string;
   description?: string;
   stock?: number;
+  fulfillment?: CatalogFulfillment;
 }
 
 export interface CartItemContract {
@@ -100,6 +102,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     : undefined;
   const category = book.category || book.genre || (Array.isArray(book.genres) ? book.genres[0] : undefined);
   const stock = Number.isFinite(Number(book.stock)) ? Number(book.stock) : undefined;
+  const fulfillment = resolveCatalogFulfillment(book);
   const resolvedAvailability = book.availability ?? (stock === 0 ? 'Out of Stock' : stock !== undefined && stock < 1 ? 'Out of Stock' : 'In Stock');
 
   return {
@@ -121,6 +124,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     publisher: typeof book.publisher === 'string' ? book.publisher : undefined,
     description: book.description ? String(book.description) : undefined,
     stock,
+    fulfillment,
   };
 };
 
@@ -141,17 +145,17 @@ export const normalizeCartItem = (value: unknown): CartItemContract => {
   };
 };
 
-const normalizeShippingAddress = (value: unknown): ShippingAddressContract => {
+export const normalizeShippingAddress = (value: unknown): ShippingAddressContract => {
   if (!value || typeof value !== 'object') {
     throw new Error('Shipping address is required');
   }
 
   const address = value as Record<string, any>;
   return {
-    address: String(address.address ?? address.street ?? ''),
-    city: String(address.city ?? ''),
-    zip: String(address.zip ?? address.zipCode ?? ''),
-    phone: String(address.phone ?? address.mobileNumber ?? ''),
+    address: String(address.address ?? address.street ?? '').trim(),
+    city: String(address.city ?? '').trim(),
+    zip: String(address.zip ?? address.zipCode ?? '').trim(),
+    phone: String(address.phone ?? address.mobileNumber ?? '').trim(),
   };
 };
 
@@ -179,13 +183,22 @@ export const normalizeOrderItems = (
 
     const catalogBook = catalog.get(bookId);
     if (!catalogBook) throw new Error('Book is unavailable');
+    if (catalogBook.fulfillment === 'external') {
+      throw new Error('External-only books cannot be purchased through BookVerse');
+    }
+    if (catalogBook.fulfillment !== 'internal') {
+      throw new Error('Book checkout eligibility is not configured');
+    }
 
     const rawQuantity = item.quantity;
     const quantity = typeof rawQuantity === 'number' ? rawQuantity : Number(rawQuantity);
     if (!Number.isInteger(quantity) || quantity < 1) throw new Error('Order item quantity must be a positive integer');
 
-    const stock = Number.isFinite(Number(catalogBook.stock)) ? Number(catalogBook.stock) : undefined;
-    if (catalogBook.availability === 'Out of Stock' || (stock !== undefined && stock <= 0) || (stock !== undefined && quantity > stock)) {
+    const stock = Number(catalogBook.stock);
+    // A sale cannot be safely authorized for legacy records that have no
+    // tracked quantity. The inventory decrement uses the same stock predicate,
+    // so reject these before a payment intent can be confirmed.
+    if (!Number.isInteger(stock) || catalogBook.availability === 'Out of Stock' || stock <= 0 || quantity > stock) {
       throw new Error('Requested quantity is unavailable');
     }
     if (!Number.isFinite(catalogBook.price) || catalogBook.price <= 0) throw new Error('Book price is invalid');

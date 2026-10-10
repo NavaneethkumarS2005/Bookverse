@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec \"npm run build && node dist/server.js\"",
     "build": "tsc",
-    "test": "npm run build && node --test test/phase1.test.cjs"
+    "test": "npm run build && node --test test/phase1.test.cjs test/phase2.test.cjs test/phase5.test.cjs"
   },
   "dependencies": {
     "@google/genai": "^2.16.0",

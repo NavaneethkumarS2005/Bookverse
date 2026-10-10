@@ -2,6 +2,9 @@ import express, { Request, Response } from 'express';
 import dotenv from 'dotenv';
 import cloudinary from 'cloudinary';
 import Book from '../models/Book';
+import { auth } from '../middleware/auth';
+import { admin } from '../middleware/admin';
+import { AuthRequest } from '../types';
 // @ts-ignore
 import upload from '../middleware/upload';
 import { generateBookCoverSvg } from '../utils/coverArt';
@@ -39,6 +42,18 @@ const normalizeCoverUrl = (value?: string, title?: string, author?: string, cate
     }
 
     return trimmed;
+};
+
+const validateCoverMutation = (bookId?: string) => {
+    if (!bookId) {
+        return null;
+    }
+
+    if (typeof bookId !== 'string' || !/^[0-9a-fA-F]{24}$/.test(bookId.trim())) {
+        throw new Error('Invalid book id');
+    }
+
+    return bookId.trim();
 };
 
 const uploadToCloudinary = async (file: Express.Multer.File) => {
@@ -83,10 +98,10 @@ const fetchBookCoverFromISBN = async (isbn: string): Promise<string | null> => {
     }
 };
 
-router.post('/', upload.fields([
+router.post('/', auth, upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'images', maxCount: 5 }
-]), async (req: Request, res: Response) => {
+]), async (req: AuthRequest, res: Response) => {
     try {
         const files: Express.Multer.File[] = [];
 
@@ -123,12 +138,17 @@ router.post('/', upload.fields([
     }
 });
 
-router.post('/isbn-cover', async (req: Request, res: Response) => {
+router.post('/isbn-cover', auth, async (req: AuthRequest, res: Response) => {
     try {
-        const { isbn, bookId } = req.body as { isbn?: string; bookId?: string };
+        const isbn = typeof req.body?.isbn === 'string' ? req.body.isbn.trim() : '';
+        const bookId = validateCoverMutation(req.body?.bookId as string | undefined);
 
         if (!isbn) {
             return res.status(400).json({ message: 'ISBN is required' });
+        }
+
+        if (!/^(?:97[89])?\d{9}[\dXx]$/.test(isbn.replace(/\s+/g, ''))) {
+            return res.status(400).json({ message: 'Invalid ISBN format' });
         }
 
         const cover = await fetchBookCoverFromISBN(isbn);
@@ -137,6 +157,11 @@ router.post('/isbn-cover', async (req: Request, res: Response) => {
         }
 
         if (bookId) {
+            const user = req.user;
+            if (!user || user.role !== 'admin') {
+                return res.status(403).json({ message: 'Admin access required to update catalog cover images' });
+            }
+
             await Book.findByIdAndUpdate(bookId, {
                 image: cover,
                 coverImage: cover,
@@ -147,9 +172,9 @@ router.post('/isbn-cover', async (req: Request, res: Response) => {
         }
 
         return res.json({ imageUrl: cover, source: 'isbn-fetch' });
-    } catch (error) {
+    } catch (error: any) {
         console.error('Auto cover fetch failed:', error);
-        return res.status(500).json({ message: 'Error fetching cover from ISBN' });
+        return res.status(500).json({ message: error.message || 'Error fetching cover from ISBN' });
     }
 });
 

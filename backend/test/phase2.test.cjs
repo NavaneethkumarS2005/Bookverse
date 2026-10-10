@@ -77,7 +77,7 @@ test('normalizeOrderInput accepts legacy checkout fields and validates quantitie
     shippingDetails: { address: '1 Main', city: 'Bengaluru', zip: '560001', phone: '9000000000' },
     paymentMethod: 'COD',
   }, [
-    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'The Book', price: 299 },
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'The Book', price: 299, stock: 5 },
   ]);
 
   assert.equal(order.orderItems[0].bookId, '64f5d8a9b5e6d9a0f2c3d4e5');
@@ -92,15 +92,15 @@ test('normalizeOrderItems rejects unavailable books and duplicate items atomical
     { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
     { bookId: '64f5d8a9b5e6d9a0f2c3d4e6', quantity: 1 },
   ], [
-    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Available', price: 299, availability: 'In Stock' },
-    { _id: '64f5d8a9b5e6d9a0f2c3d4e6', title: 'Unavailable', price: 199, availability: 'Out of Stock' },
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Available', price: 299, availability: 'In Stock', stock: 5 },
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e6', title: 'Unavailable', price: 199, availability: 'Out of Stock', stock: 0 },
   ]), /unavailable/i);
 
   assert.throws(() => normalizeOrderItems([
     { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
     { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
   ], [
-    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Available', price: 299, availability: 'In Stock' },
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Available', price: 299, availability: 'In Stock', stock: 5 },
   ]), /duplicate/i);
 });
 
@@ -108,11 +108,19 @@ test('normalizeOrderItems returns a server-calculated total without trusting cli
   const order = normalizeOrderItems([
     { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 2, price: 1, totalPrice: 1 },
   ], [
-    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'The Book', price: 299, availability: 'In Stock' },
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'The Book', price: 299, availability: 'In Stock', stock: 5 },
   ]);
 
   assert.equal(order.totalPrice, 598);
   assert.equal(order.orderItems[0].price, 299);
+});
+
+test('normalizeOrderItems rejects books without tracked stock before payment', () => {
+  assert.throws(() => normalizeOrderItems([
+    { bookId: '64f5d8a9b5e6d9a0f2c3d4e5', quantity: 1 },
+  ], [
+    { _id: '64f5d8a9b5e6d9a0f2c3d4e5', title: 'Legacy Book', price: 299, availability: 'In Stock' },
+  ]), /unavailable/i);
 });
 
 test('serializeOrder returns canonical order fields and preserves legacy payment details', () => {

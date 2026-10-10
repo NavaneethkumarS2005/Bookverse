@@ -1,4 +1,4 @@
-import mongoose from 'mongoose';
+import mongoose, { ClientSession } from 'mongoose';
 import Book from '../models/Book';
 
 const bookLookupQuery = (bookId: string) => {
@@ -104,33 +104,56 @@ export const validateOrderStock = (orderItems: any[], catalogBooks: any[]) => {
   return normalized;
 };
 
-export const decrementOrderStock = async (orderItems: any[]) => {
+export const decrementOrderStock = async (orderItems: any[], session?: ClientSession) => {
   const changes = stockChangeForOrder(orderItems);
+  const entries = Object.entries(changes);
 
-  for (const [bookId, quantity] of Object.entries(changes)) {
-    const query = bookLookupQuery(bookId);
-    const result = await Book.updateOne(
-      {
-        ...query,
-        stock: { $gte: quantity },
-      },
-      [
+  const applyDecrement = async (txSession?: ClientSession) => {
+    for (const [bookId, quantity] of entries) {
+      const query = bookLookupQuery(bookId);
+      const book = await Book.findOne(
+        { ...query, stock: { $gte: quantity } },
+        null,
+        { session: txSession }
+      );
+
+      if (!book) {
+        throw new Error('Inventory changed. Please review your cart.');
+      }
+
+      const nextStock = Math.max((Number(book.stock) ?? 0) - quantity, 0);
+      const updated = await Book.findOneAndUpdate(
+        { ...query, stock: { $gte: quantity } },
         {
           $set: {
-            stock: {
-              $max: [{ $subtract: ['$stock', quantity] }, 0],
-            },
-            availability: {
-              $cond: [{ $lte: [{ $subtract: ['$stock', quantity] }, 0] }, 'Out of Stock', 'In Stock'],
-            },
+            stock: nextStock,
+            availability: nextStock > 0 ? 'In Stock' : 'Out of Stock',
           },
         },
-      ],
-      { runValidators: true }
-    );
+        {
+          session: txSession,
+          new: true,
+          runValidators: true,
+        }
+      );
 
-    if (result.modifiedCount !== 1) {
-      throw new Error('Inventory changed. Please review your cart.');
+      if (!updated) {
+        throw new Error('Inventory changed. Please review your cart.');
+      }
     }
+  };
+
+  if (session) {
+    await applyDecrement(session);
+    return;
+  }
+
+  const txSession = await mongoose.startSession();
+  try {
+    await txSession.withTransaction(async () => {
+      await applyDecrement(txSession);
+    });
+  } finally {
+    await txSession.endSession();
   }
 };

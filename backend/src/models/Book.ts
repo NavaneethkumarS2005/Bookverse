@@ -14,6 +14,7 @@ export interface IBook extends Document {
   rating?: number;
   reviews?: number;
   buyLink?: string;
+  fulfillment?: 'internal' | 'external';
   availability?: string;
   stock?: number;
   publisher?: string;
@@ -110,6 +111,11 @@ const bookSchema = new Schema<IBook>(
     },
     buyLink: {
       type: String,
+    },
+    fulfillment: {
+      type: String,
+      enum: ['internal', 'external'],
+      index: true,
     },
     availability: {
       type: String,

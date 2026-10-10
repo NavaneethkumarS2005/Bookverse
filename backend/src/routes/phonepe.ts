@@ -1,12 +1,13 @@
 import express, { Request, Response } from 'express';
 import axios from 'axios';
 import crypto from 'crypto';
+import mongoose from 'mongoose';
 // @ts-ignore
 import { auth } from '../middleware/auth';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
 import Book from '../models/Book';
-import { normalizeOrderItems } from '../utils/contracts';
+import { normalizeOrderInput } from '../utils/contracts';
 import { decrementOrderStock } from '../utils/inventory';
 
 const router = express.Router();
@@ -74,26 +75,74 @@ const paymentResultUrl = (clientBaseUrl: string, code: string | undefined, merch
     return `${clientBaseUrl}/?payment=pending&txnId=${encodeURIComponent(merchantTransactionId)}`;
 };
 
-const finalizePhonePeOrder = async (merchantTransactionId: string, providerResponse: any) => {
-    if (providerResponse.code !== 'PAYMENT_SUCCESS') return false;
-    const order = await Order.findOne({ paymentId: merchantTransactionId });
-    if (!order || order.status === 'Paid') return false;
+const extractPhonePeTransactionId = (providerResponse: any): string | null => {
+    const candidates = [
+        providerResponse?.merchantTransactionId,
+        providerResponse?.transactionId,
+        providerResponse?.txnId,
+        providerResponse?.data?.merchantTransactionId,
+        providerResponse?.data?.transactionId,
+        providerResponse?.data?.txnId,
+    ];
 
-    const providerAmount = Number(providerResponse.amount ?? providerResponse.data?.amount);
-    const expectedAmount = Math.round(order.totalPrice * 100);
-    if (!Number.isFinite(providerAmount) || providerAmount !== expectedAmount) return false;
-
-    if (order.stockConsumed) {
-        order.status = 'Paid';
-        await order.save();
-        return true;
+    for (const candidate of candidates) {
+        if (typeof candidate === 'string' && candidate.trim()) {
+            return candidate.trim();
+        }
     }
 
-    await decrementOrderStock(order.orderItems);
-    order.status = 'Paid';
-    order.stockConsumed = true;
-    await order.save();
-    return true;
+    return null;
+};
+
+const finalizePhonePeOrder = async (merchantTransactionId: string, providerResponse: any) => {
+    const providerCode = providerResponse?.code ?? providerResponse?.data?.code;
+    if (providerCode !== 'PAYMENT_SUCCESS') return false;
+
+    const providerTransactionId = extractPhonePeTransactionId(providerResponse);
+    if (!providerTransactionId || providerTransactionId !== merchantTransactionId) return false;
+
+    const session = await mongoose.startSession();
+    let finalized = false;
+
+    try {
+        await session.withTransaction(async () => {
+            finalized = false;
+            const order = await Order.findOne({ paymentId: merchantTransactionId }).session(session);
+            if (!order) return;
+
+            const providerAmount = Number(providerResponse.amount ?? providerResponse.data?.amount);
+            const expectedAmount = Math.round(order.totalPrice * 100);
+            if (!Number.isFinite(providerAmount) || providerAmount !== expectedAmount) return;
+
+            if (order.status === 'Paid' || order.stockConsumed) {
+                finalized = order.status === 'Paid' && order.stockConsumed;
+                return;
+            }
+
+            if (!order.stockConsumed) {
+                await decrementOrderStock(order.orderItems, session);
+            }
+
+            const updatedOrder = await Order.findOneAndUpdate(
+                { _id: order._id, status: { $ne: 'Paid' }, stockConsumed: { $ne: true } },
+                { $set: { status: 'Paid', stockConsumed: true } },
+                { session, new: true }
+            );
+
+            if (!updatedOrder) {
+                throw new Error('PhonePe order was concurrently finalized');
+            }
+
+            finalized = true;
+        });
+    } catch (error) {
+        console.error('PhonePe finalization failed:', error);
+        finalized = false;
+    } finally {
+        await session.endSession();
+    }
+
+    return finalized;
 };
 
 const verifyAndRedirect = async (merchantTransactionId: string, clientBaseUrl: string, res: Response) => {
@@ -113,8 +162,11 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
             if (typeof id === 'number') return Book.findOne({ id: id });
             return null;
         }));
-        const { orderItems: normalizedItems, totalPrice } = normalizeOrderItems(orderItems, catalogBooks);
-        const shippingAddress = req.body.shippingAddress ?? req.body.shippingDetails;
+        const normalizedOrder = normalizeOrderInput({
+            orderItems,
+            shippingAddress: req.body.shippingAddress ?? req.body.shippingDetails,
+            paymentMethod: 'PhonePe'
+        }, catalogBooks);
         const backendBaseUrl = getBackendBaseUrl(req as Request);
         const userId = req.user.id;
         const merchantTransactionId = `MT${crypto.randomUUID().replace(/-/g, '')}`;
@@ -122,12 +174,12 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         // Create a Pending Order with server-authoritative catalog values.
         const newOrder = new Order({
             user: userId,
-            orderItems: normalizedItems,
-            totalPrice,
+            orderItems: normalizedOrder.orderItems,
+            totalPrice: normalizedOrder.totalPrice,
             paymentId: merchantTransactionId,
             paymentMethod: 'PhonePe',
             status: 'Pending',
-            shippingAddress
+            shippingAddress: normalizedOrder.shippingAddress
         });
 
         await newOrder.save();
@@ -136,12 +188,12 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
             merchantId: MERCHANT_ID,
             merchantTransactionId: merchantTransactionId,
             merchantUserId: userId,
-            amount: Math.round(totalPrice * 100), // Convert to Paise
+            amount: Math.round(normalizedOrder.totalPrice * 100), // Convert to Paise
             // Include the merchantTransactionId in redirect and callback so QR/code flows carry the txn id
             redirectUrl: `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`,
             redirectMode: "POST",
             callbackUrl: `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`,
-            mobileNumber: shippingAddress?.phone || "9999999999",
+            mobileNumber: normalizedOrder.shippingAddress.phone,
             paymentInstrument: {
                 type: "PAY_PAGE"
             }
@@ -235,27 +287,49 @@ router.get('/status/:txnId', async (req: Request, res: Response) => {
             : req.params.txnId;
         const response = { data: await getPhonePeStatus(merchantTransactionId) };
 
-        if (response.data.code === 'PAYMENT_SUCCESS') {
-            await Order.findOneAndUpdate(
-                { paymentId: merchantTransactionId },
-                { status: 'Paid' }
-            );
-            res.json({ success: true, message: 'Payment Successful', data: response.data });
-        } else {
-            const failed = ['PAYMENT_ERROR', 'PAYMENT_DECLINED', 'PAYMENT_CANCELLED'].includes(response.data.code);
-            if (failed) {
-                await Order.findOneAndUpdate(
-                    { paymentId: merchantTransactionId },
-                    { status: 'Failed' }
-                );
+        const order = await Order.findOne({ paymentId: merchantTransactionId });
+        if (!order) {
+            return res.status(404).json({ success: false, message: 'Order not found', data: response.data });
+        }
+
+        const success = response.data.code === 'PAYMENT_SUCCESS';
+        if (success) {
+            const finalized = await finalizePhonePeOrder(merchantTransactionId, response.data);
+            const currentOrder = await Order.findById(order._id);
+            if (!currentOrder) {
+                return res.status(404).json({ success: false, message: 'Order not found', data: response.data });
             }
-            res.json({
-                success: false,
-                pending: !failed,
-                message: failed ? 'Payment failed' : 'Payment is being confirmed',
-                data: response.data
+
+            return res.json({
+                success: finalized,
+                message: finalized ? 'Payment Successful' : 'Payment verification failed',
+                data: response.data,
+                orderId: currentOrder._id.toString(),
+                status: currentOrder.status,
             });
         }
+
+        const failed = ['PAYMENT_ERROR', 'PAYMENT_DECLINED', 'PAYMENT_CANCELLED'].includes(response.data.code);
+        let currentOrder: typeof order | null = order;
+        if (failed) {
+            currentOrder = await Order.findOneAndUpdate(
+                { _id: order._id, status: { $ne: 'Paid' } },
+                { $set: { status: 'Failed' } },
+                { new: true }
+            ) ?? await Order.findById(order._id);
+
+            if (!currentOrder) {
+                return res.status(404).json({ success: false, message: 'Order not found', data: response.data });
+            }
+        }
+        return res.json({
+            success: false,
+            pending: !failed,
+            message: failed ? 'Payment failed' : 'Payment is being confirmed',
+            data: response.data,
+            orderId: currentOrder._id.toString(),
+            status: currentOrder.status,
+        });
 
     } catch (error: any) {
         console.error("PhonePe Status Error:", error.message);

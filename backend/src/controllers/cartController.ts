@@ -3,6 +3,7 @@ import User from '../models/User';
 import Book from '../models/Book';
 import { AuthRequest } from '../types';
 import { normalizeCartItem } from '../utils/contracts';
+import { isCheckoutEligibleBook } from '../utils/catalogFulfillment';
 
 // Get Cart
 export const getCart = async (req: AuthRequest, res: Response) => {
@@ -57,6 +58,9 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
         if (!book) {
             return res.status(404).json({ message: 'Book not found' });
+        }
+        if (!isCheckoutEligibleBook(book)) {
+            return res.status(400).json({ message: 'This book is available through an external seller and cannot be added to the BookVerse checkout cart.' });
         }
 
         // Use the MongoDB _id for consistency in the cart array
