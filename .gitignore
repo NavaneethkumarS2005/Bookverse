@@ -26,6 +26,11 @@ yarn-error.log*
 *.swp
 *.swo
 
+server/node_modules/
+server/.env
+server/.env.*
+!server/.env.example
+
 # OS
 .DS_Store
 Thumbs.db
