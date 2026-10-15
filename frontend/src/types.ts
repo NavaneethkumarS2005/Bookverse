@@ -103,6 +103,8 @@ export interface IProduct {
     genre?: string;
     /** External link to buy the book (e.g. Amazon/Flipkart) */
     buyLink?: string;
+    /** Whether BookVerse fulfills this title or it is an external-only listing. */
+    fulfillment?: 'internal' | 'external';
     /** Number of items available in stock. */
     stock: number;
     /** Average rating of the book (0-5). */

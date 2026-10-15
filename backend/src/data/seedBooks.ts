@@ -1,4 +1,6 @@
-export const seedBooks = [
+import { EXTERNAL_ONLY_SEED_IDS, INTERNAL_DEMO_SEED_IDS } from '../utils/catalogFulfillment';
+
+const rawSeedBooks = [
     // --- INTERNAL INVENTORY (Add to Cart) ---
     {
         id: 1,
@@ -553,3 +555,12 @@ export const seedBooks = [
         buyLink: "https://www.amazon.in/Cracking-Coding-Interview-Programming-Questions/dp/0984782850"
     }
 ];
+
+export const seedBooks = rawSeedBooks.map((book) => ({
+    ...book,
+    fulfillment: INTERNAL_DEMO_SEED_IDS.has(book.id)
+        ? 'internal' as const
+        : EXTERNAL_ONLY_SEED_IDS.has(book.id)
+            ? 'external' as const
+            : undefined,
+}));

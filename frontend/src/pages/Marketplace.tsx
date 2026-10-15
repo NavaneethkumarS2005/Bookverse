@@ -70,10 +70,7 @@ const Marketplace: React.FC = () => {
     ];
     const currentSortLabel = sortOptions.find(opt => opt.value === sortOption)?.label || 'Newest Arrivals';
 
-    const isExternalPlatformBook = (book: Book) => {
-        const link = (book.buyLink || '').toLowerCase();
-        return Boolean(link && /(amazon|flipkart|snapdeal|ebay|shopify|myntra|bookshop|online)/.test(link));
-    };
+    const isExternalPlatformBook = (book: Book) => book.fulfillment === 'external';
 
     const websiteBooks = books.filter((book) => !isExternalPlatformBook(book));
     const platformBooks = books.filter((book) => isExternalPlatformBook(book));

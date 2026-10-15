@@ -242,7 +242,7 @@ const BookDetails: React.FC = () => {
 
                         {/* ACTIONS */}
                         <div className="flex flex-col sm:flex-row gap-4 mt-auto mb-12">
-                            {book.buyLink ? (
+                            {book.buyLink && (
                                 <button
                                     onClick={() => window.open(book.buyLink, '_blank')}
                                     className="flex-1 px-8 py-4 rounded-xl font-bold text-white text-lg transition-all transform active:scale-95 flex items-center justify-center gap-3 shadow-lg shadow-orange-500/25 bg-gradient-to-r from-orange-500 to-amber-500 hover:shadow-xl hover:-translate-y-1 cursor-pointer z-10"
@@ -253,7 +253,8 @@ const BookDetails: React.FC = () => {
                                                 'External Store'
                                     }
                                 </button>
-                            ) : (
+                            )}
+                            {book.fulfillment !== 'external' && (
                                 <button
                                     onClick={handleAddToCart}
                                     disabled={addingToCart}
