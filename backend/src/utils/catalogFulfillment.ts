@@ -25,3 +25,16 @@ export const resolveCatalogFulfillment = (book: unknown): CatalogFulfillment | u
 };
 
 export const isCheckoutEligibleBook = (book: unknown): boolean => resolveCatalogFulfillment(book) === 'internal';
+
+export type DemoInventoryMaintenanceAction = 'update-missing-stock' | 'skip-valid-stock' | 'skip-invalid-stock' | 'skip-external' | 'skip-unclassified';
+
+export const getDemoInventoryMaintenanceAction = (book: unknown): DemoInventoryMaintenanceAction => {
+  const fulfillment = resolveCatalogFulfillment(book);
+  if (fulfillment === 'external') return 'skip-external';
+  if (fulfillment !== 'internal') return 'skip-unclassified';
+
+  const stock = book && typeof book === 'object' ? (book as Record<string, unknown>).stock : undefined;
+  if (stock === undefined) return 'update-missing-stock';
+  if (Number.isInteger(stock) && Number(stock) >= 0) return 'skip-valid-stock';
+  return 'skip-invalid-stock';
+};

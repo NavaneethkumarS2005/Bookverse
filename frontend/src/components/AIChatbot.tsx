@@ -213,7 +213,7 @@ const AIChatbot: React.FC = () => {
                                             </div>
                                             <div className="flex gap-2 border-t border-slate-200 dark:border-slate-700 p-2">
                                                 <button onClick={() => { navigate(target); setIsOpen(false); }} className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white">View</button>
-                                                {result.type === 'book' && <button onClick={() => addToCart(item).catch(() => setBotStatus('Could not add to cart'))} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Add to cart</button>}
+                                                {result.type === 'book' && item.fulfillment !== 'external' && <button onClick={() => addToCart(item).catch(() => setBotStatus('Could not add to cart'))} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Add to cart</button>}
                                                 {result.type === 'upcoming_book' && <button onClick={() => navigate('/upcoming-books')} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Pre-order</button>}
                                             </div>
                                         </div>;
