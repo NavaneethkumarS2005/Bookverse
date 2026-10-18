@@ -57,6 +57,9 @@ const UpcomingBooks: React.FC = () => {
         return filtered.slice(0, page * ITEMS_PER_PAGE);
     }, [books, searchTerm, page]);
 
+    const genreCount = useMemo(() => new Set(books.flatMap(book => book.genres || [])).size, [books]);
+    const preorderCount = useMemo(() => books.filter(book => book.isPreorderAvailable).length, [books]);
+
     const usedImageUrls = new Set<string>();
     const uniqueBookImage = (book: IUpcomingBook): string | undefined => {
         const candidate = book.coverImage?.url?.trim();
@@ -83,15 +86,15 @@ const UpcomingBooks: React.FC = () => {
                             <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-300">Coming soon</p>
                             <h1 className="mb-3 text-4xl font-black tracking-tight text-white md:text-5xl">Up next on the reading radar.</h1>
                             <p className="max-w-xl text-base text-slate-300 md:text-lg">
-                                Keep an eye on the most anticipated releases, their authors, and the stories the community is already waiting for.
+                                Track upcoming titles, their authors, and release dates published in the BookVerse catalog.
                             </p>
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                             {[
-                                { label: 'Anticipated', value: `${books.length}+` },
-                                { label: 'Genres', value: '12' },
-                                { label: 'Pre-orders', value: 'Live' }
+                                { label: 'Titles', value: `${books.length}` },
+                                { label: 'Genres', value: `${genreCount}` },
+                                { label: 'Pre-orders', value: `${preorderCount}` }
                             ].map((stat) => (
                                 <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
                                     <div className="text-2xl font-black text-white">{stat.value}</div>
@@ -107,7 +110,7 @@ const UpcomingBooks: React.FC = () => {
                         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Releases</p>
                         <h2 className="font-outfit text-3xl font-bold text-slate-900 dark:text-white mb-2">Upcoming Books</h2>
                     </div>
-                    <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search title, author, genre..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
+                    <input aria-label="Search upcoming books" type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search title, author, genre..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
                 </div>
                 {loading && page === 1 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">

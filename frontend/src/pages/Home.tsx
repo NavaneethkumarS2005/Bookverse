@@ -17,6 +17,7 @@ const Home: React.FC = () => {
     const [recommendationLabel, setRecommendationLabel] = useState('Live picks for you');
     const [recommendationBasis, setRecommendationBasis] = useState<'general' | 'history'>('general');
     const [recommendationLoading, setRecommendationLoading] = useState(true);
+    const [recommendationError, setRecommendationError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [paymentComplete, setPaymentComplete] = useState(false);
@@ -52,8 +53,16 @@ const Home: React.FC = () => {
         void fetchBooks();
     }, []);
 
-    const fetchRecommendations = async (refresh = false) => {
+    const lastRecommendationSignatureRef = React.useRef<string>('');
+    const recommendationRequestRef = React.useRef(false);
+    const getBookIdentifier = (book: Book): string => String(book._id ?? book.id ?? book.title);
+
+    const fetchRecommendations = async (refresh = false, attempt = 0) => {
+        if (recommendationRequestRef.current) return;
+
+        recommendationRequestRef.current = true;
         setRecommendationLoading(true);
+
         try {
             const isAuthenticated = Boolean(localStorage.getItem('user'));
             const endpoint = isAuthenticated ? '/api/recommendations/personalized' : '/api/recommendations/general';
@@ -61,30 +70,42 @@ const Home: React.FC = () => {
             try {
                 response = await axios.get(`${API_URL}${endpoint}`, {
                     withCredentials: true,
-                    params: refresh ? { refresh: 'true' } : undefined
+                    params: refresh ? { refresh: 'true' } : undefined,
                 });
             } catch (personalizedError) {
                 if (!isAuthenticated) throw personalizedError;
-                response = await axios.get(`${API_URL}/api/recommendations/general`, { params: refresh ? { refresh: 'true' } : undefined });
+                response = await axios.get(`${API_URL}/api/recommendations/general`, {
+                    params: refresh ? { refresh: 'true' } : undefined,
+                });
             }
+
             const rawBooks = Array.isArray(response.data?.books) ? response.data.books : [];
             const seenIds = new Set<string>();
-            const normalizedBooks = rawBooks
-                .map((book: unknown, index: number) => normalizeBook(book, index))
-                .filter((book: Book) => {
-                    const id = String(book._id || book.id || book.title);
+            const normalizedBooks: Book[] = rawBooks
+                .map((book: unknown, index: number): Book => normalizeBook(book, index))
+                .filter((book: Book): boolean => {
+                    const id = getBookIdentifier(book);
                     if (seenIds.has(id)) return false;
                     seenIds.add(id);
                     return true;
                 })
                 .slice(0, 4);
+
+            const nextSignature = normalizedBooks.map((book: Book): string => getBookIdentifier(book)).join('|');
+            if (refresh && attempt < 2 && lastRecommendationSignatureRef.current && nextSignature === lastRecommendationSignatureRef.current && normalizedBooks.length > 1) {
+                return fetchRecommendations(true, attempt + 1);
+            }
+
             setRecommendations(normalizedBooks);
+            lastRecommendationSignatureRef.current = nextSignature;
             setRecommendationLabel(response.data?.label || 'Live picks for you');
             setRecommendationBasis(response.data?.basis === 'history' ? 'history' : 'general');
+            setRecommendationError(null);
         } catch (err) {
             console.error('Failed to load recommendations', err);
-            setRecommendations([]);
+            setRecommendationError('Recommendations are temporarily unavailable. The catalog or backend request is not responding right now.');
         } finally {
+            recommendationRequestRef.current = false;
             setRecommendationLoading(false);
         }
     };
@@ -256,6 +277,12 @@ const Home: React.FC = () => {
                     ) : (
                         <div className={`rounded-2xl border p-8 ${theme === 'dark' ? 'border-white/10 bg-white/5 text-slate-300' : 'border-indigo-100 bg-white/80 text-slate-600 shadow-sm'}`}>
                             Recommendations will appear when books are available in the catalog.
+                        </div>
+                    )}
+
+                    {recommendationError && (
+                        <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${theme === 'dark' ? 'border-amber-500/30 bg-amber-500/10 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
+                            {recommendationError}
                         </div>
                     )}
                 </div>

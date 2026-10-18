@@ -25,11 +25,11 @@ import DiscoveryDetails from './pages/DiscoveryDetails';
 import BoothDetails from './pages/BoothDetails';
 import Wishlist from './pages/Wishlist';
 import IndustryGuide from './pages/IndustryGuide';
+import BookstoreExplorer from './pages/BookstoreExplorer';
 
 import CartDrawer from './components/CartDrawer';
 import AIChatbot from './components/AIChatbot';
 import LiveSupport from './components/LiveSupport';
-import LiveRecommendationsSidebar from './components/LiveRecommendationsSidebar';
 
 function App() {
   return (
@@ -41,7 +41,6 @@ function App() {
               <CartDrawer />
               <AIChatbot />
               <LiveSupport />
-              <LiveRecommendationsSidebar />
               <Navbar />
               <div className="app-shell">
                 <Routes>
@@ -55,6 +54,7 @@ function App() {
                   <Route path="/publishers" element={<Publishers />} />
                   <Route path="/book-fairs" element={<BookFairs />} />
                   <Route path="/industry-guide" element={<IndustryGuide />} />
+                  <Route path="/bookstore-explorer" element={<BookstoreExplorer />} />
                   <Route path="/authors/:id" element={<DiscoveryDetails kind="authors" />} />
                   <Route path="/publishers/:id" element={<DiscoveryDetails kind="publishers" />} />
                   <Route path="/book-fairs/:id" element={<DiscoveryDetails kind="book-fairs" />} />

@@ -51,7 +51,7 @@ const BoothDetails: React.FC = () => {
 
     return (
         <div className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
-            <div className="max-w-6xl mx-auto px-5">
+            <div className="max-w-7xl mx-auto px-5">
                 <Link to="/book-fairs" className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">← Back to book fairs</Link>
                 {loading ? (
                     <div className="mt-6 space-y-6"><div className="h-56 rounded-3xl bg-slate-200 dark:bg-slate-800 animate-pulse" /><div className="h-40 rounded-3xl bg-slate-200 dark:bg-slate-800 animate-pulse" /></div>

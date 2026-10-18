@@ -5,15 +5,31 @@ import { AuthRequest } from '../types';
 
 const serialize = (books: any[]) => books.map(book => ({ ...(typeof book.toObject === 'function' ? book.toObject() : book), recommendationActions: ['view', 'add_to_cart', 'add_to_wishlist'] }));
 
+const getEligibleRecommendationFilter = () => ({
+    availability: { $ne: 'Out of Stock' },
+    stock: { $gt: 0 },
+    $or: [
+        { fulfillment: { $exists: false } },
+        { fulfillment: { $in: [null, 'internal'] } },
+    ],
+});
+
 export const getGeneralRecommendations = async (req: Request, res: Response) => {
     try {
-        const filter = { availability: { $ne: 'Out of Stock' } };
-        const refresh = req.query.refresh === 'true';
-        const books = refresh
-            ? await Book.aggregate([{ $match: filter }, { $sample: { size: 12 } }])
-            : await Book.find(filter).sort({ 'featuredMetadata.featured': -1, rating: -1, reviews: -1, createdAt: -1 }).limit(12);
-        res.json({ basis: 'general', label: refresh ? 'Fresh picks from BookVerse' : 'Popular picks for you', books: serialize(books) });
-    } catch (error: any) { res.status(500).json({ message: error.message }); }
+        const filter = getEligibleRecommendationFilter();
+        const books = await Book.aggregate([
+            { $match: filter },
+            { $sample: { size: 12 } },
+        ]);
+
+        res.json({
+            basis: 'general',
+            label: req.query.refresh === 'true' ? 'Fresh picks from BookVerse' : 'Popular picks for you',
+            books: serialize(books),
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 export const getPersonalizedRecommendations = async (req: AuthRequest, res: Response) => {
@@ -32,24 +48,30 @@ export const getPersonalizedRecommendations = async (req: AuthRequest, res: Resp
 
         const genres = [...new Set(history.map(book => book.genre).filter(Boolean))];
         const authors = [...new Set(history.map(book => book.author).filter(Boolean))];
-        // A valid purchase record alone is not sufficient for a truthful personal
-        // recommendation. Fall back if its referenced book data cannot be matched.
         if (!history.length || (!genres.length && !authors.length)) return getGeneralRecommendations(req, res);
+
         const excludedIds = history.map(book => book._id);
-        const refresh = req.query.refresh === 'true';
         const match = {
             _id: { $nin: excludedIds },
-            availability: { $ne: 'Out of Stock' },
-            $or: [{ genre: { $in: genres } }, { author: { $in: authors } }]
+            ...getEligibleRecommendationFilter(),
+            $or: [{ genre: { $in: genres } }, { author: { $in: authors } }],
         };
 
-        const books = refresh
-            ? await Book.aggregate([{ $match: match }, { $sample: { size: 12 } }])
-            : await Book.find(match).sort({ rating: -1, reviews: -1, createdAt: -1 }).limit(12);
+        const books = await Book.aggregate([
+            { $match: match },
+            { $sample: { size: 12 } },
+        ]);
 
         if (!books.length) return getGeneralRecommendations(req, res);
-        res.json({ basis: 'history', label: refresh ? 'More picks based on your reading' : 'Because you like…', books: serialize(books), signals: { genres, authors } });
-    } catch (error: any) { res.status(500).json({ message: error.message }); }
+        res.json({
+            basis: 'history',
+            label: req.query.refresh === 'true' ? 'More picks based on your reading' : 'Because you like…',
+            books: serialize(books),
+            signals: { genres, authors },
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
 };
 
 export const getBookRecommendations = async (req: Request, res: Response) => {
@@ -60,4 +82,46 @@ export const getBookRecommendations = async (req: Request, res: Response) => {
             .sort({ rating: -1, reviews: -1 }).limit(8);
         res.json({ basis: 'similar_book', label: `Because you like ${source.title}`, sourceBook: source._id, books: serialize(books) });
     } catch (error: any) { res.status(500).json({ message: error.message }); }
+};
+
+export const getSimilarBooks = async (req: Request, res: Response) => {
+    try {
+        const { bookId } = req.params;
+        req.params.id = bookId;
+        return getBookRecommendations(req, res);
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getTrendingRecommendations = async (req: Request, res: Response) => {
+    try {
+        const books = await Book.find(getEligibleRecommendationFilter())
+            .sort({ rating: -1, reviews: -1, totalCopiesSold: -1 })
+            .limit(12);
+
+        res.json({
+            basis: 'trending',
+            label: 'Trending now',
+            books: serialize(books),
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
+};
+
+export const getNewReleases = async (req: Request, res: Response) => {
+    try {
+        const books = await Book.find(getEligibleRecommendationFilter())
+            .sort({ createdAt: -1, id: -1 })
+            .limit(12);
+
+        res.json({
+            basis: 'new_releases',
+            label: 'New releases',
+            books: serialize(books),
+        });
+    } catch (error: any) {
+        res.status(500).json({ message: error.message });
+    }
 };
