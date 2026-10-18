@@ -52,6 +52,8 @@ const Authors: React.FC = () => {
         return ['All', ...Array.from(unique).sort()];
     }, [authors]);
 
+    const languageCount = useMemo(() => new Set(authors.flatMap(author => author.language || [])).size, [authors]);
+
     const visibleAuthors = useMemo(() => {
         const term = searchTerm.trim().toLowerCase();
         let filtered = authors.filter(author => {
@@ -88,18 +90,18 @@ const Authors: React.FC = () => {
 
                     <div className="relative z-10 grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
                         <div>
-                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-300">Auteurs & voices</p>
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-300">Authors & voices</p>
                             <h1 className="mb-3 text-4xl font-black tracking-tight text-white md:text-5xl">Meet the minds behind the stories.</h1>
                             <p className="max-w-xl text-base text-slate-300 md:text-lg">
-                                Discover prominent voices, their writing worlds, and the genres they shape with warmth, depth, and originality.
+                                Explore author profiles, genres, and published works in the BookVerse catalog.
                             </p>
                         </div>
 
                         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                             {[
-                                { label: 'Featured', value: `${authors.length}+` },
+                                { label: 'Authors', value: `${authors.length}` },
                                 { label: 'Genres', value: `${genres.length - 1}` },
-                                { label: 'Impact', value: 'High' }
+                                { label: 'Languages', value: `${languageCount}` }
                             ].map((stat) => (
                                 <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
                                     <div className="text-2xl font-black text-white">{stat.value}</div>
@@ -115,7 +117,7 @@ const Authors: React.FC = () => {
                         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Writers</p>
                         <h2 className="font-outfit text-3xl font-bold text-slate-900 dark:text-white mb-2">Authors</h2>
                     </div>
-                    <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search authors..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
+                    <input aria-label="Search authors" type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search authors..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
                 </div>
 
                 {genres.length > 1 && (

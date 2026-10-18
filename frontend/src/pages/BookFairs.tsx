@@ -83,9 +83,9 @@ const BookFairs: React.FC = () => {
 
                         <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
                             {[
-                                { label: 'Events', value: `${fairs.length}+` },
-                                { label: 'Cities', value: 'Global' },
-                                { label: 'Format', value: 'Hybrid' }
+                                { label: 'Events', value: `${fairs.length}` },
+                                { label: 'Upcoming', value: `${fairs.filter(fair => fair.status === 'UPCOMING').length}` },
+                                { label: 'Virtual', value: `${fairs.filter(fair => fair.isVirtual).length}` }
                             ].map((stat) => (
                                 <div key={stat.label} className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
                                     <div className="text-2xl font-black text-white">{stat.value}</div>
@@ -101,7 +101,7 @@ const BookFairs: React.FC = () => {
                         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Events</p>
                         <h2 className="font-outfit text-3xl font-bold text-slate-900 dark:text-white mb-2">Book Fairs</h2>
                     </div>
-                    <input type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search fairs or cities..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
+                    <input aria-label="Search book fairs or cities" type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search fairs or cities..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
                 </div>
                 <div className="flex flex-wrap gap-2 mb-10">{STATUS_FILTERS.map(status => <button key={status} type="button" onClick={() => setStatusFilter(status)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${statusFilter === status ? 'bg-indigo-500 border-indigo-500 text-white shadow-md' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700'}`}>{status === 'All' ? 'All' : status.charAt(0) + status.slice(1).toLowerCase()}</button>)}</div>
                 {loading ? (

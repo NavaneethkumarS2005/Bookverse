@@ -1,10 +1,17 @@
 import express, { Request, Response } from 'express';
 import Book from '../models/Book.js';
-import { getPersonalizedRecommendations, getSimilarBooks, getTrendingRecommendations, getNewReleases } from './recommendationController.js';
+import {
+    getGeneralRecommendations,
+    getPersonalizedRecommendations,
+    getSimilarBooks,
+    getTrendingRecommendations,
+    getNewReleases,
+} from '../controllers/recommendationController.js';
 import { auth } from '../middleware/auth.js';
 
 const router = express.Router();
 
+router.get('/general', getGeneralRecommendations);
 router.get('/personalized', auth, getPersonalizedRecommendations);
 router.get('/similar/:bookId', getSimilarBooks);
 router.get('/trending', getTrendingRecommendations);

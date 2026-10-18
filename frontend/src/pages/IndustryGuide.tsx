@@ -18,13 +18,13 @@ const IndustryGuide: React.FC = () => {
   useEffect(() => { void load(); }, []);
   const Card = ({ title, children }: { title: string; children: React.ReactNode }) => <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900"><h2 className="mb-5 font-outfit text-2xl font-bold text-slate-900 dark:text-white">{title}</h2>{children}</section>;
 
-  return <main className="min-h-screen bg-slate-50 pb-16 pt-10 dark:bg-slate-950">
+  return <main className="min-h-screen bg-slate-50 pb-12 pt-24 dark:bg-slate-950">
     <div className="mx-auto max-w-7xl px-5">
-      <section className="overflow-hidden rounded-[2rem] bg-slate-950 px-6 py-12 text-white shadow-2xl sm:px-10">
-        <p className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300"><FiShield /> Verified catalog intelligence</p>
+      <section className="overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 px-6 py-10 text-white shadow-2xl sm:px-10">
+        <p className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.2em] text-indigo-300"><FiShield /> BookVerse catalog guide</p>
         <h1 className="max-w-3xl font-outfit text-4xl font-bold leading-tight sm:text-5xl">Publishing intelligence for readers, collectors and curious minds.</h1>
         <p className="mt-5 max-w-2xl text-lg leading-relaxed text-slate-300">Explore upcoming releases, emerging authors, publishers and book fairs through one research-ready view.</p>
-        <form onSubmit={load} className="mt-8 flex max-w-2xl gap-3"><input value={focus} onChange={event => setFocus(event.target.value)} placeholder="Try “Tamil fiction”, “fantasy”, or “Chennai”" className="min-w-0 flex-1 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-400 focus:border-indigo-300" /><button className="rounded-xl bg-indigo-500 px-5 py-3 font-semibold transition hover:bg-indigo-400">Research</button></form>
+        <form onSubmit={load} className="mt-8 flex max-w-2xl gap-3"><input aria-label="Focus the industry guide search" value={focus} onChange={event => setFocus(event.target.value)} placeholder="Try “Tamil fiction”, “fantasy”, or “Chennai”" className="min-w-0 flex-1 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-400 focus:border-indigo-300" /><button type="submit" className="rounded-xl bg-indigo-500 px-5 py-3 font-semibold transition hover:bg-indigo-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white">Search guide</button></form>
       </section>
       {loading ? <div className="py-16 text-center text-slate-500"><FiRefreshCw className="mx-auto mb-3 animate-spin text-2xl" />Preparing guide…</div> : error ? <div className="mt-8 rounded-2xl bg-red-50 p-5 text-red-700 dark:bg-red-950/30 dark:text-red-300">{error}</div> : data && <>
         <p className="my-6 rounded-2xl border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-200">{data.verification.notice}</p>

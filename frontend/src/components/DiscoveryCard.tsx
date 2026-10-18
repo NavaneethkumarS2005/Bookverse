@@ -74,7 +74,7 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
       style={{ perspective: 1000 }}
       onMouseEnter={() => setIsFlipped(true)}
       onMouseLeave={() => setIsFlipped(false)}
-      onTouchStart={() => setIsFlipped(!isFlipped)}
+      onTouchStart={() => setIsFlipped(current => !current)}
     >
       <motion.div
         className="relative h-full w-full shadow-sm transition-shadow hover:shadow-xl rounded-[1.8rem]"
@@ -86,7 +86,8 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
         {/* Front Face */}
         <Link 
           to={to} 
-          className="absolute inset-0 block overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+          aria-label={`View details for ${title}`}
+          className="absolute inset-0 block overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 dark:border-slate-800 dark:bg-slate-900"
           style={{ backfaceVisibility: 'hidden' }}
         >
       <div className={`relative aspect-[4/3] overflow-hidden bg-gradient-to-br ${accentPalette[0]}`}>
@@ -106,10 +107,10 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
         )}
       </div>
 
-      <div className="space-y-4 p-6">
+      <div className="flex min-h-[216px] flex-col space-y-4 p-6">
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <h3 className="truncate text-xl font-bold text-slate-900 dark:text-white">{title}</h3>
+            <h3 className="line-clamp-2 min-h-[3.5rem] text-xl font-bold leading-7 text-slate-900 dark:text-white">{title}</h3>
             <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{subtitle}</p>
           </div>
           {label && (
@@ -121,7 +122,7 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
 
         <p className="line-clamp-3 text-sm leading-6 text-slate-600 dark:text-slate-300">{description || subtitle}</p>
 
-        <div className="flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
+        <div className="mt-auto flex items-center justify-between border-t border-slate-200 pt-4 dark:border-slate-800">
           <span className="text-sm font-semibold text-slate-500 dark:text-slate-400">View details</span>
           <span className={`inline-flex items-center gap-1 text-sm font-bold ${accentPalette[2]} transition-transform group-hover:translate-x-1`}>
             Explore →
@@ -143,13 +144,13 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
             
             <div className="flex-1 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
               <p className="text-sm leading-relaxed text-slate-600 dark:text-slate-300">
-                {description || "Discover more about this fascinating selection. Uncover hidden details, immerse yourself in the world created by the author, and explore what makes this truly special."}
+                {description || subtitle}
               </p>
             </div>
 
             <Link 
               to={to} 
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95"
+              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:scale-95"
             >
               Explore Now <span>→</span>
             </Link>
