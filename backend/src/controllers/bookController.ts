@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Book, { IBook } from '../models/Book';
 import User from '../models/User';
 import { normalizeBook } from '../utils/contracts';
+import { publicBookFilter } from '../utils/catalogVisibility';
 
 import { seedBooks } from '../data/seedBooks';
 
@@ -119,12 +120,13 @@ export const getBooks = async (req: Request, res: Response) => {
         else if (sort === 'newest') sortOption.id = -1; // Assuming higher ID = newer, or use createdAt if available
         else sortOption.id = -1; // Default
 
-        const books = await Book.find(query)
+        const visibleQuery = await publicBookFilter(query);
+        const books = await Book.find(visibleQuery)
             .sort(sortOption)
             .skip(skip)
             .limit(limitNum);
 
-        const total = await Book.countDocuments(query);
+        const total = await Book.countDocuments(visibleQuery);
 
         res.json({
             books: books.map(book => normalizeBook(book)),
@@ -175,13 +177,14 @@ export const getBookById = async (req: Request, res: Response) => {
         let book;
 
         // 1. If it's a valid MongoDB ObjectId, try findById first
+        const visibleQuery = await publicBookFilter({});
         if (typeof id === 'string' && id.match(/^[0-9a-fA-F]{24}$/)) {
-            book = await Book.findById(id);
+            book = await Book.findOne({ $and: [{ _id: id }, visibleQuery] });
         }
 
         // 2. If not found (or not an ObjectId), try legacy numeric ID
         if (!book && !isNaN(Number(id))) {
-            book = await Book.findOne({ id: id });
+            book = await Book.findOne({ $and: [{ id: id }, visibleQuery] });
         }
 
         if (!book) return res.status(404).json({ message: 'Book not found' });

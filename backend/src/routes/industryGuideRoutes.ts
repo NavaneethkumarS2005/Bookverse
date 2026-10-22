@@ -5,6 +5,7 @@ import { getIndustryGuide } from '../controllers/industryGuideController.js';
 const router = express.Router();
 router.get('/', [
   query('focus').optional().isString().trim().isLength({ max: 160 }),
+  query('category').optional().isString().trim().isLength({ max: 60 }),
   query('language').optional().isString().trim().isLength({ max: 60 }),
   query('genre').optional().isString().trim().isLength({ max: 60 }),
   query('region').optional().isString().trim().isLength({ max: 80 }),

@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import Book from '../models/Book';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
+import { publicBookFilter } from '../utils/catalogVisibility';
 
 const serialize = (books: any[]) => books.map(book => ({ ...(typeof book.toObject === 'function' ? book.toObject() : book), recommendationActions: ['view', 'add_to_cart', 'add_to_wishlist'] }));
 
@@ -16,7 +17,7 @@ const getEligibleRecommendationFilter = () => ({
 
 export const getGeneralRecommendations = async (req: Request, res: Response) => {
     try {
-        const filter = getEligibleRecommendationFilter();
+        const filter = await publicBookFilter(getEligibleRecommendationFilter());
         const books = await Book.aggregate([
             { $match: filter },
             { $sample: { size: 12 } },
@@ -51,11 +52,11 @@ export const getPersonalizedRecommendations = async (req: AuthRequest, res: Resp
         if (!history.length || (!genres.length && !authors.length)) return getGeneralRecommendations(req, res);
 
         const excludedIds = history.map(book => book._id);
-        const match = {
+        const match = await publicBookFilter({
             _id: { $nin: excludedIds },
             ...getEligibleRecommendationFilter(),
             $or: [{ genre: { $in: genres } }, { author: { $in: authors } }],
-        };
+        });
 
         const books = await Book.aggregate([
             { $match: match },
@@ -76,9 +77,10 @@ export const getPersonalizedRecommendations = async (req: AuthRequest, res: Resp
 
 export const getBookRecommendations = async (req: Request, res: Response) => {
     try {
-        const source = await Book.findById(req.params.id).catch(() => null) || await Book.findOne({ id: req.params.id });
+        const visibleFilter = await publicBookFilter();
+        const source = await Book.findOne({ $and: [{ _id: req.params.id }, visibleFilter] }).catch(() => null) || await Book.findOne({ $and: [{ id: req.params.id }, visibleFilter] });
         if (!source) return res.status(404).json({ message: 'Book not found' });
-        const books = await Book.find({ _id: { $ne: source._id }, $or: [{ genre: source.genre }, { author: source.author }, { publisher: source.publisher }] })
+        const books = await Book.find(await publicBookFilter({ _id: { $ne: source._id }, $or: [{ genre: source.genre }, { author: source.author }, { publisher: source.publisher }] }))
             .sort({ rating: -1, reviews: -1 }).limit(8);
         res.json({ basis: 'similar_book', label: `Because you like ${source.title}`, sourceBook: source._id, books: serialize(books) });
     } catch (error: any) { res.status(500).json({ message: error.message }); }
@@ -96,7 +98,7 @@ export const getSimilarBooks = async (req: Request, res: Response) => {
 
 export const getTrendingRecommendations = async (req: Request, res: Response) => {
     try {
-        const books = await Book.find(getEligibleRecommendationFilter())
+        const books = await Book.find(await publicBookFilter(getEligibleRecommendationFilter()))
             .sort({ rating: -1, reviews: -1, totalCopiesSold: -1 })
             .limit(12);
 
@@ -112,7 +114,7 @@ export const getTrendingRecommendations = async (req: Request, res: Response) =>
 
 export const getNewReleases = async (req: Request, res: Response) => {
     try {
-        const books = await Book.find(getEligibleRecommendationFilter())
+        const books = await Book.find(await publicBookFilter(getEligibleRecommendationFilter()))
             .sort({ createdAt: -1, id: -1 })
             .limit(12);
 

@@ -26,6 +26,12 @@ export interface IBook extends Document {
   // --- Phase 1 optional references ---
   authorId?: mongoose.Types.ObjectId;
   publisherId?: mongoose.Types.ObjectId;
+  publisherOwnerId?: mongoose.Types.ObjectId;
+  publicationStatus?: 'pending' | 'approved' | 'rejected';
+  isbn?: string;
+  reviewedBy?: mongoose.Types.ObjectId;
+  reviewedAt?: Date;
+  rejectionReason?: string;
   boothId?: mongoose.Types.ObjectId;
 
   // --- Phase 1 enrichment fields ---
@@ -142,6 +148,25 @@ const bookSchema = new Schema<IBook>(
       default: null,
       index: true,
     },
+    publisherOwnerId: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      index: true,
+      select: false,
+    },
+    publicationStatus: {
+      type: String,
+      enum: ['pending', 'approved', 'rejected'],
+      index: true,
+    },
+    isbn: {
+      type: String,
+      trim: true,
+      uppercase: true,
+    },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: 'User', select: false },
+    reviewedAt: { type: Date, select: false },
+    rejectionReason: { type: String, maxlength: 500, select: false },
     boothId: {
       type: Schema.Types.ObjectId,
       ref: 'Booth',
@@ -210,6 +235,7 @@ const bookSchema = new Schema<IBook>(
 
 bookSchema.index({ authorId: 1, isUpcoming: 1 });
 bookSchema.index({ publisherId: 1, 'metadata.awards': 1 });
+bookSchema.index({ isbn: 1 }, { unique: true, sparse: true });
 bookSchema.index({ genres: 1, averageRating: -1 });
 bookSchema.index({ isFeatured: 1, featuredOrder: 1 });
 

@@ -9,17 +9,20 @@ import { AuthRequest } from '../types';
 import Book from '../models/Book';
 import { normalizeOrderInput } from '../utils/contracts';
 import { decrementOrderStock } from '../utils/inventory';
+import {
+    getPhonePeRedirectUrl,
+    getPhonePeStatusForUser,
+    isPhonePePaymentMatch,
+} from '../../phonepeRedirect.cjs';
 
 const router = express.Router();
 
-const MERCHANT_ID = process.env.PHONEPE_MERCHANT_ID || "";
-const SALT_KEY = process.env.PHONEPE_SALT_KEY || "";
 const SALT_INDEX = 1;
-const PHONEPE_HOST_URL = process.env.PHONEPE_HOST_URL || "https://api-preprod.phonepe.com/apis/pg-sandbox";
-
-if (!process.env.PHONEPE_MERCHANT_ID || !process.env.PHONEPE_SALT_KEY) {
-    console.warn("⚠️ PhonePe credentials are not configured. Payment requests will fail until they are supplied.");
-}
+const getPhonePeConfig = () => ({
+    merchantId: process.env.PHONEPE_MERCHANT_ID || "",
+    saltKey: process.env.PHONEPE_SALT_KEY || "",
+    hostUrl: process.env.PHONEPE_HOST_URL || "https://api-preprod.phonepe.com/apis/pg-sandbox",
+});
 
 const getRequestBaseUrl = (req: Request) => {
     const forwardedProto = req.headers['x-forwarded-proto'];
@@ -46,17 +49,18 @@ const getClientBaseUrl = (req: Request) => {
 };
 
 const getPhonePeStatus = async (merchantTransactionId: string) => {
-    const stringToHash = `/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}` + SALT_KEY;
+    const { merchantId, saltKey, hostUrl } = getPhonePeConfig();
+    const stringToHash = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + saltKey;
     const checksum = crypto.createHash('sha256').update(stringToHash).digest('hex') + '###' + SALT_INDEX;
 
     const response = await axios.get(
-        `${PHONEPE_HOST_URL}/pg/v1/status/${MERCHANT_ID}/${merchantTransactionId}`,
+        `${hostUrl}/pg/v1/status/${merchantId}/${merchantTransactionId}`,
         {
             headers: {
                 accept: 'application/json',
                 'Content-Type': 'application/json',
                 'X-VERIFY': checksum,
-                'X-MERCHANT-ID': MERCHANT_ID
+                'X-MERCHANT-ID': merchantId
             }
         }
     );
@@ -64,42 +68,9 @@ const getPhonePeStatus = async (merchantTransactionId: string) => {
     return response.data;
 };
 
-const paymentResultUrl = (clientBaseUrl: string, code: string | undefined, merchantTransactionId: string) => {
-    if (code === 'PAYMENT_SUCCESS') return `${clientBaseUrl}/?payment=success`;
-
-    const failed = ['PAYMENT_ERROR', 'PAYMENT_DECLINED', 'PAYMENT_CANCELLED'].includes(code || '');
-    if (failed) return `${clientBaseUrl}/cart?status=failure`;
-
-    // QR payments can briefly remain pending after the PhonePe browser returns.
-    // Keep the customer on the site and let the frontend recheck the transaction.
-    return `${clientBaseUrl}/?payment=pending&txnId=${encodeURIComponent(merchantTransactionId)}`;
-};
-
-const extractPhonePeTransactionId = (providerResponse: any): string | null => {
-    const candidates = [
-        providerResponse?.merchantTransactionId,
-        providerResponse?.transactionId,
-        providerResponse?.txnId,
-        providerResponse?.data?.merchantTransactionId,
-        providerResponse?.data?.transactionId,
-        providerResponse?.data?.txnId,
-    ];
-
-    for (const candidate of candidates) {
-        if (typeof candidate === 'string' && candidate.trim()) {
-            return candidate.trim();
-        }
-    }
-
-    return null;
-};
-
 const finalizePhonePeOrder = async (merchantTransactionId: string, providerResponse: any) => {
     const providerCode = providerResponse?.code ?? providerResponse?.data?.code;
     if (providerCode !== 'PAYMENT_SUCCESS') return false;
-
-    const providerTransactionId = extractPhonePeTransactionId(providerResponse);
-    if (!providerTransactionId || providerTransactionId !== merchantTransactionId) return false;
 
     const session = await mongoose.startSession();
     let finalized = false;
@@ -110,9 +81,8 @@ const finalizePhonePeOrder = async (merchantTransactionId: string, providerRespo
             const order = await Order.findOne({ paymentId: merchantTransactionId }).session(session);
             if (!order) return;
 
-            const providerAmount = Number(providerResponse.amount ?? providerResponse.data?.amount);
             const expectedAmount = Math.round(order.totalPrice * 100);
-            if (!Number.isFinite(providerAmount) || providerAmount !== expectedAmount) return;
+            if (!isPhonePePaymentMatch(providerResponse, merchantTransactionId, expectedAmount)) return;
 
             if (order.status === 'Paid' || order.stockConsumed) {
                 finalized = order.status === 'Paid' && order.stockConsumed;
@@ -146,9 +116,17 @@ const finalizePhonePeOrder = async (merchantTransactionId: string, providerRespo
 };
 
 const verifyAndRedirect = async (merchantTransactionId: string, clientBaseUrl: string, res: Response) => {
-    const result = await getPhonePeStatus(merchantTransactionId);
-    const success = await finalizePhonePeOrder(merchantTransactionId, result);
-    return res.redirect(paymentResultUrl(clientBaseUrl, success ? 'PAYMENT_SUCCESS' : result.code, merchantTransactionId));
+    const redirectUrl = await getPhonePeRedirectUrl({
+        clientBaseUrl,
+        merchantTransactionId,
+        getProviderStatus: getPhonePeStatus,
+        finalizeOrder: finalizePhonePeOrder,
+        findOrder: async (paymentId) => {
+            const order = await Order.findOne({ paymentId });
+            return order ? { _id: order._id.toString(), status: order.status, stockConsumed: order.stockConsumed } : null;
+        },
+    });
+    return res.redirect(redirectUrl);
 };
 
 // 1. INITIATE PAYMENT
@@ -170,6 +148,7 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         const backendBaseUrl = getBackendBaseUrl(req as Request);
         const userId = req.user.id;
         const merchantTransactionId = `MT${crypto.randomUUID().replace(/-/g, '')}`;
+        const { merchantId, saltKey, hostUrl } = getPhonePeConfig();
 
         // Create a Pending Order with server-authoritative catalog values.
         const newOrder = new Order({
@@ -185,7 +164,7 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         await newOrder.save();
 
         const data = {
-            merchantId: MERCHANT_ID,
+            merchantId,
             merchantTransactionId: merchantTransactionId,
             merchantUserId: userId,
             amount: Math.round(normalizedOrder.totalPrice * 100), // Convert to Paise
@@ -202,13 +181,13 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         const payload = JSON.stringify(data);
         const payloadMain = Buffer.from(payload).toString('base64');
 
-        const stringToHash = payloadMain + "/pg/v1/pay" + SALT_KEY;
+        const stringToHash = payloadMain + "/pg/v1/pay" + saltKey;
         const sha256 = crypto.createHash('sha256').update(stringToHash).digest('hex');
         const checksum = sha256 + '###' + SALT_INDEX;
 
         const options = {
             method: 'POST',
-            url: `${PHONEPE_HOST_URL}/pg/v1/pay`,
+            url: `${hostUrl}/pg/v1/pay`,
             headers: {
                 accept: 'application/json',
                 'Content-Type': 'application/json',
@@ -280,57 +259,33 @@ router.post('/callback', async (req: Request, res: Response) => {
 });
 
 // 3. CHECK STATUS (Frontend calls this to verify after coming back)
-router.get('/status/:txnId', async (req: Request, res: Response) => {
+router.get('/status/:txnId', auth, async (req: AuthRequest, res: Response) => {
     try {
         const merchantTransactionId = Array.isArray(req.params.txnId)
             ? req.params.txnId[0]
             : req.params.txnId;
-        const response = { data: await getPhonePeStatus(merchantTransactionId) };
+        const result = await getPhonePeStatusForUser({
+            userId: req.user?.id,
+            merchantTransactionId,
+            findOrder: async (paymentId, userId) => {
+                const order = await Order.findOne({ paymentId, user: userId });
+                return order ? { _id: order._id.toString(), status: order.status, stockConsumed: order.stockConsumed } : null;
+            },
+            getProviderStatus: getPhonePeStatus,
+            finalizeOrder: finalizePhonePeOrder,
+            markFailedOrder: async (paymentId, userId, order) => {
+                const updatedOrder = await Order.findOneAndUpdate(
+                    { _id: order._id, user: userId, status: { $ne: 'Paid' } },
+                    { $set: { status: 'Failed' } },
+                    { new: true }
+                );
+                if (updatedOrder) return updatedOrder.status;
 
-        const order = await Order.findOne({ paymentId: merchantTransactionId });
-        if (!order) {
-            return res.status(404).json({ success: false, message: 'Order not found', data: response.data });
-        }
-
-        const success = response.data.code === 'PAYMENT_SUCCESS';
-        if (success) {
-            const finalized = await finalizePhonePeOrder(merchantTransactionId, response.data);
-            const currentOrder = await Order.findById(order._id);
-            if (!currentOrder) {
-                return res.status(404).json({ success: false, message: 'Order not found', data: response.data });
-            }
-
-            return res.json({
-                success: finalized,
-                message: finalized ? 'Payment Successful' : 'Payment verification failed',
-                data: response.data,
-                orderId: currentOrder._id.toString(),
-                status: currentOrder.status,
-            });
-        }
-
-        const failed = ['PAYMENT_ERROR', 'PAYMENT_DECLINED', 'PAYMENT_CANCELLED'].includes(response.data.code);
-        let currentOrder: typeof order | null = order;
-        if (failed) {
-            currentOrder = await Order.findOneAndUpdate(
-                { _id: order._id, status: { $ne: 'Paid' } },
-                { $set: { status: 'Failed' } },
-                { new: true }
-            ) ?? await Order.findById(order._id);
-
-            if (!currentOrder) {
-                return res.status(404).json({ success: false, message: 'Order not found', data: response.data });
-            }
-        }
-        return res.json({
-            success: false,
-            pending: !failed,
-            message: failed ? 'Payment failed' : 'Payment is being confirmed',
-            data: response.data,
-            orderId: currentOrder._id.toString(),
-            status: currentOrder.status,
+                const currentOrder = await Order.findOne({ paymentId, user: userId });
+                return currentOrder?.status ?? 'Failed';
+            },
         });
-
+        return res.status(result.statusCode).json(result.body);
     } catch (error: any) {
         console.error("PhonePe Status Error:", error.message);
         res.status(500).json({ success: false, message: 'Error checking status' });

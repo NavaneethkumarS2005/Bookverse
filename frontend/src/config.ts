@@ -4,7 +4,7 @@
 const DEV_API_URLS = ['http://localhost:5000', 'http://localhost:5001', 'http://localhost:5002', 'http://localhost:5003', 'http://localhost:5004'];
 const DEV_API_URL = DEV_API_URLS[0];
 const API_URL: string = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? DEV_API_URL : '');
-const GEOAPIFY_API_KEY: string = import.meta.env.VITE_GEOAPIFY_API_KEY || '';
+const GEOAPIFY_API_KEY: string = import.meta.env.VITE_GEOAPIFY_API_KEY || '653a68529cc64f2da559cfdd7d9cbd72';
 const configuredAreaRequestBudget = Number(import.meta.env.VITE_GEOAPIFY_MAX_AREA_REQUESTS);
 const GEOAPIFY_MAX_AREA_REQUESTS = Number.isInteger(configuredAreaRequestBudget) && configuredAreaRequestBudget > 0
     ? Math.min(configuredAreaRequestBudget, 32)

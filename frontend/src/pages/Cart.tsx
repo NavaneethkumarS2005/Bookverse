@@ -47,10 +47,10 @@ const Cart: React.FC = () => {
         const status = query.get('status');
         if (status === 'failure') {
             setCheckoutMessage({ type: 'error', text: 'Payment failed. Please try again.' });
-        } else if (status === 'success') {
-            setCheckoutMessage({ type: 'success', text: 'Payment successful! Your order is placed.' });
-            setPersistedMessage({ type: 'success', text: 'Payment successful! Your order is placed.' });
-            clearCart();
+        } else if (status === 'error') {
+            setCheckoutMessage({ type: 'error', text: 'Payment status could not be verified. Your cart has not been cleared.' });
+        } else if (status === 'pending') {
+            setCheckoutMessage({ type: 'info', text: 'Payment is still being confirmed. Your cart has not been cleared.' });
         }
     }, [location, clearCart]);
 
@@ -120,9 +120,12 @@ const Cart: React.FC = () => {
 
     const handleProceedToPayment = () => {
         if (!shippingDetails.address.trim() || !shippingDetails.phone.trim()) {
+            console.warn('[Checkout] Validation failed: missing shipping address or phone', shippingDetails);
             setCheckoutMessage({ type: 'error', text: 'Please enter your complete shipping address and phone number.' });
             return;
         }
+
+        console.debug('[Checkout] Proceeding with payment method:', paymentMethod);
 
         if (paymentMethod === 'stripe') {
             fetchPaymentIntent();
@@ -206,6 +209,8 @@ const Cart: React.FC = () => {
 
         try {
             setProcessing(true);
+            setCheckoutMessage(null);
+            console.debug('[PhonePe] Initiating payment request for', cart.length, 'item(s)');
 
             const res = await fetch(`${API_URL}/api/phonepe/pay`, {
                 method: 'POST',
@@ -220,16 +225,31 @@ const Cart: React.FC = () => {
                 })
             });
 
+            if (!res.ok) {
+                if (res.status === 401) {
+                    const msg = { type: 'error' as CheckoutMessageType, text: 'Session expired. Please log in again.' };
+                    setCheckoutMessage(msg);
+                    setPersistedMessage(msg);
+                    setIsPaymentOpen(false);
+                    setTimeout(() => {
+                        navigate('/login');
+                    }, 800);
+                    return;
+                }
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.message || `PhonePe payment initiation failed with status ${res.status}`);
+            }
+
             const data = await res.json();
-            if (data.success) {
+            if (data.success && data.url) {
                 setCheckoutMessage({ type: 'info', text: 'Redirecting to PhonePe payment page...' });
                 window.location.href = data.url; // Redirect to PhonePe
             } else {
-                setCheckoutMessage({ type: 'error', text: 'PhonePe error: ' + data.message });
+                setCheckoutMessage({ type: 'error', text: 'PhonePe error: ' + (data.message || 'Unable to initiate payment.') });
                 setProcessing(false);
             }
         } catch (error: any) {
-            console.error("Payment Error:", error);
+            console.error("PhonePe Payment Error:", error);
             setCheckoutMessage({ type: 'error', text: 'Payment initiation failed: ' + error.message });
             setProcessing(false);
         }

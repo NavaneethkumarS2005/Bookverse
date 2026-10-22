@@ -4,6 +4,24 @@ import Book from '../models/Book';
 import { AuthRequest } from '../types';
 import { normalizeCartItem } from '../utils/contracts';
 import { isCheckoutEligibleBook } from '../utils/catalogFulfillment';
+import { publicBookFilter } from '../utils/catalogVisibility';
+
+export const normalizeVisibleCartItems = async (items: any[]) => {
+    const populatedItems = items.filter((item: any) => item.bookId);
+    if (!populatedItems.length) return [];
+    const visibleBooks = await Book.find(await publicBookFilter({
+        _id: { $in: populatedItems.map((item: any) => item.bookId._id) },
+    })).select('_id').lean();
+    const visibleIds = new Set(visibleBooks.map((book: any) => String(book._id)));
+
+    return populatedItems
+        .filter((item: any) => visibleIds.has(String(item.bookId._id)))
+        .map((item: any) => normalizeCartItem({
+            bookId: item.bookId._id,
+            quantity: item.quantity,
+            book: item.bookId,
+        }));
+};
 
 // Get Cart
 export const getCart = async (req: AuthRequest, res: Response) => {
@@ -13,13 +31,7 @@ export const getCart = async (req: AuthRequest, res: Response) => {
 
         // Normalize the database-backed cart at the API boundary so the
         // frontend receives one stable shape regardless of legacy book fields.
-        const cartItems = user.cart
-            .filter((item: any) => item.bookId)
-            .map((item: any) => normalizeCartItem({
-                bookId: item.bookId._id,
-                quantity: item.quantity,
-                book: item.bookId,
-            }));
+        const cartItems = await normalizeVisibleCartItems(user.cart);
 
         res.json(cartItems);
     } catch (err: any) {
@@ -45,14 +57,14 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
         // Is it a valid ObjectId?
         if (/^[0-9a-fA-F]{24}$/.test(normalizedBookId)) {
-            book = await Book.findById(normalizedBookId);
+            book = await Book.findOne({ $and: [{ _id: normalizedBookId }, await publicBookFilter()] });
         }
 
         // If not found or not ObjectId, try numeric custom ID
         if (!book) {
             const numericId = Number(normalizedBookId);
             if (!Number.isNaN(numericId)) {
-                book = await Book.findOne({ id: numericId });
+                book = await Book.findOne({ $and: [{ id: numericId }, await publicBookFilter()] });
             }
         }
 
@@ -82,13 +94,7 @@ export const addToCart = async (req: AuthRequest, res: Response) => {
 
         // Return updated cart (populate for immediate UI update)
         const populatedUser = await user.populate('cart.bookId');
-        const updatedCart = populatedUser.cart
-            .filter((item: any) => item.bookId)
-            .map((item: any) => normalizeCartItem({
-                bookId: item.bookId._id,
-                quantity: item.quantity,
-                book: item.bookId,
-            }));
+        const updatedCart = await normalizeVisibleCartItems(populatedUser.cart);
 
         res.status(200).json({ message: 'Added to cart', cart: updatedCart });
     } catch (err: any) {

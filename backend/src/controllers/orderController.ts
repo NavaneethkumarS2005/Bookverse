@@ -7,6 +7,7 @@ import Order from '../models/Order';
 import { AuthRequest } from '../types';
 import { normalizeOrderInput, serializeOrder } from '../utils/contracts';
 import { decrementOrderStock } from '../utils/inventory';
+import { publicBookFilter } from '../utils/catalogVisibility';
 // @ts-ignore
 import sendEmail from '../utils/emailService';
 // @ts-ignore
@@ -21,13 +22,16 @@ const getStripe = () => {
     } as any);
 };
 
-const getCatalogBooks = async (orderItems: any[]) => Promise.all(orderItems.map(async (item: any) => {
-    const id = item.bookId ?? item.id;
-    if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findById(id);
-    if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ id: Number(id) });
-    if (typeof id === 'number') return Book.findOne({ id: id });
-    return null;
-}));
+const getCatalogBooks = async (orderItems: any[]) => {
+    const visibleFilter = await publicBookFilter();
+    return Promise.all(orderItems.map(async (item: any) => {
+        const id = item.bookId ?? item.id;
+        if (typeof id === 'string' && /^[0-9a-fA-F]{24}$/.test(id)) return Book.findOne({ $and: [{ _id: id }, visibleFilter] });
+        if (typeof id === 'string' && !Number.isNaN(Number(id))) return Book.findOne({ $and: [{ id: Number(id) }, visibleFilter] });
+        if (typeof id === 'number') return Book.findOne({ $and: [{ id }, visibleFilter] });
+        return null;
+    }));
+};
 
 const loadNormalizedOrder = async (req: AuthRequest, orderItems: any[]) => {
     const catalogBooks = await getCatalogBooks(orderItems);

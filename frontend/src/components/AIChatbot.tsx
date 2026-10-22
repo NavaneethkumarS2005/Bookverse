@@ -41,14 +41,27 @@ const AIChatbot: React.FC = () => {
     const [botStatus, setBotStatus] = useState<string>('Ready to help you discover your next favorite read');
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
+    const messagesContainerRef = useRef<HTMLDivElement>(null);
     const recognitionRef = useRef<any>(null);
 
     const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        container.scrollTo({
+            top: container.scrollHeight,
+            behavior: 'smooth'
+        });
     };
 
     useEffect(() => {
-        scrollToBottom();
+        const container = messagesContainerRef.current;
+        if (!container) return;
+
+        const shouldAutoScroll = container.scrollHeight - (container.scrollTop + container.clientHeight) <= 80;
+        if (shouldAutoScroll) {
+            scrollToBottom();
+        }
     }, [messages, isTyping]);
 
     // Initialize Speech Recognition
@@ -165,9 +178,9 @@ const AIChatbot: React.FC = () => {
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
-                <div className="bg-white dark:bg-slate-900 w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 mb-4 overflow-hidden flex flex-col transition-all duration-300">
+                <div className="bg-white dark:bg-slate-900 w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 mb-4 overflow-hidden flex flex-col transition-all duration-300 min-h-0 max-h-[70vh] h-[min(70vh,32rem)]">
                     {/* Header */}
-                    <div className="bg-gradient-to-r from-indigo-600 to-pink-500 p-4 text-white flex justify-between items-center">
+                    <div className="shrink-0 bg-gradient-to-r from-indigo-600 to-pink-500 p-4 text-white flex justify-between items-center">
                         <div className="flex items-center gap-2">
                             <span className="text-2xl">🤖</span>
                             <div>
@@ -183,7 +196,7 @@ const AIChatbot: React.FC = () => {
                     </div>
 
                     {/* Messages Area */}
-                    <div className="flex-1 h-80 overflow-y-auto p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
+                    <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.isBot
@@ -234,7 +247,7 @@ const AIChatbot: React.FC = () => {
                     </div>
 
                     {/* Input Area */}
-                    <div className="p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
+                    <div className="shrink-0 p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
                         <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2">
                             {recognitionRef.current && (
                                 <button

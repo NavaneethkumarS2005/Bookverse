@@ -9,10 +9,14 @@ import {
     getBookFairById,
     getBooths,
     getBoothById,
-    searchDiscovery
+    searchDiscovery,
+    getDiscoveryOverview
 } from '../controllers/discoveryController.js';
 
 const router = express.Router();
+
+// Overview aggregator for Discover landing page
+router.get('/overview', getDiscoveryOverview);
 
 // Authors
 router.get('/authors', getAuthors);

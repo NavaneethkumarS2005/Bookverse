@@ -18,6 +18,7 @@ export interface CatalogBookSummary {
   authorId?: string;
   publisherId?: string;
   publisher?: string;
+  isbn?: string;
   description?: string;
   stock?: number;
   fulfillment?: CatalogFulfillment;
@@ -122,6 +123,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     authorId: idOf(book.authorId),
     publisherId: idOf(book.publisherId),
     publisher: typeof book.publisher === 'string' ? book.publisher : undefined,
+    ...(typeof book.isbn === 'string' && book.isbn ? { isbn: book.isbn } : {}),
     description: book.description ? String(book.description) : undefined,
     stock,
     fulfillment,

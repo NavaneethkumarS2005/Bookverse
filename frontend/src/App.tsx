@@ -26,6 +26,8 @@ import BoothDetails from './pages/BoothDetails';
 import Wishlist from './pages/Wishlist';
 import IndustryGuide from './pages/IndustryGuide';
 import BookstoreExplorer from './pages/BookstoreExplorer';
+import Discover from './pages/Discover';
+import PublisherWorkspace from './pages/PublisherWorkspace';
 
 import CartDrawer from './components/CartDrawer';
 import AIChatbot from './components/AIChatbot';
@@ -49,9 +51,11 @@ function App() {
                   <Route path="/contact" element={<Contact />} />
                   <Route path="/marketplace" element={<Marketplace />} />
                   <Route path="/categories" element={<Categories />} />
+                  <Route path="/discover" element={<Discover />} />
                   <Route path="/upcoming-books" element={<UpcomingBooks />} />
                   <Route path="/authors" element={<Authors />} />
                   <Route path="/publishers" element={<Publishers />} />
+                  <Route path="/publisher" element={<PublisherWorkspace />} />
                   <Route path="/book-fairs" element={<BookFairs />} />
                   <Route path="/industry-guide" element={<IndustryGuide />} />
                   <Route path="/bookstore-explorer" element={<BookstoreExplorer />} />
