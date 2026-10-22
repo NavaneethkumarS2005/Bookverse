@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec \"npm run build && node dist/server.js\"",
     "build": "tsc",
-    "test": "npm run build && node --test test/phase1.test.cjs test/phase2.test.cjs test/phase5.test.cjs",
+    "test": "npm run build && node --test test/phase1.test.cjs test/phase2.test.cjs test/phase5.test.cjs test/publisher.test.cjs test/boothBooking.test.cjs test/phonepeRedirect.test.cjs",
     "inventory:maintain": "tsx src/scripts/maintainDemoInventory.ts"
   },
   "dependencies": {

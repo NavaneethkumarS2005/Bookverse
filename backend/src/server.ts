@@ -29,6 +29,9 @@ import adminRoutes from './routes/admin.js';
 import aiRoutes from './routes/ai.js';
 import discoveryRoutes from './routes/discoveryRoutes.js';
 import adminDiscoveryRoutes from './routes/adminDiscovery.js';
+import adminPublisherRoutes from './routes/adminPublisherRoutes.js';
+import boothBookingRoutes from './routes/boothBookingRoutes.js';
+import adminBoothBookingRoutes from './routes/adminBoothBookingRoutes.js';
 import wishlistRoutes from './routes/wishlist.js';
 import industryGuideRoutes from './routes/industryGuideRoutes.js';
 import { seedDiscovery } from './data/seedDiscovery.js';
@@ -124,7 +127,7 @@ export const createApp = (): express.Express => {
 
     // Do not allow routes backed by Mongoose to buffer and later time out while
     // MongoDB is disconnected. /health remains available to report readiness.
-    app.use(/^\/api\/(?:auth|books|orders|payment|contact|reviews|upload|phonepe|cart|wishlist|admin|ai|discovery|recommendations|industry-guide|authors|publishers|upcoming-books|book-fairs)(?:\/|$)/, requireDatabase);
+    app.use(/^\/api\/(?:auth|books|orders|payment|contact|reviews|upload|phonepe|cart|wishlist|admin|ai|discovery|recommendations|industry-guide|authors|publishers|upcoming-books|book-fairs|booth-bookings)(?:\/|$)/, requireDatabase);
 
     app.use('/api/auth', authRoutes);
     app.use('/api/books', bookRoutes);
@@ -142,6 +145,9 @@ export const createApp = (): express.Express => {
     app.use('/api/recommendations', recommendationRoutes);
     app.use('/api/industry-guide', industryGuideRoutes);
     app.use('/api/admin/discovery', adminDiscoveryRoutes);
+    app.use('/api/admin/publishers', adminPublisherRoutes);
+    app.use('/api/booth-bookings', boothBookingRoutes);
+    app.use('/api/admin/booth-bookings', adminBoothBookingRoutes);
 
     app.use('/api/authors', authorRoutes);
     app.use('/api/publishers', publisherRoutes);

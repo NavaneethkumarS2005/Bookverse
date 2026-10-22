@@ -5,6 +5,8 @@ import { API_URL } from '../config';
 import { useNavigate } from 'react-router-dom';
 import { Book } from '../types';
 import InlineAlert from '../components/InlineAlert';
+import AdminPublisherManagement from '../components/AdminPublisherManagement';
+import AdminBoothBookingManagement from '../components/AdminBoothBookingManagement';
 
 interface Stats {
     revenue: number;
@@ -166,6 +168,24 @@ const AdminDashboard: React.FC = () => {
                         >
                             📚 Manage Books
                         </button>
+                        <button
+                            onClick={() => setActiveTab('publishers')}
+                            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'publishers'
+                                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                        >
+                            Publishers
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('expo-bookings')}
+                            className={`px-6 py-2 rounded-lg text-sm font-semibold transition-all ${activeTab === 'expo-bookings'
+                                ? 'bg-slate-900 dark:bg-white text-white dark:text-slate-900 shadow-md'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+                                }`}
+                        >
+                            Expo stalls
+                        </button>
                     </div>
                 </div>
 
@@ -318,6 +338,9 @@ const AdminDashboard: React.FC = () => {
                         </div>
                     </div>
                 )}
+
+                {activeTab === 'publishers' && <AdminPublisherManagement />}
+                {activeTab === 'expo-bookings' && <AdminBoothBookingManagement />}
 
                 {/* ADD BOOK MODAL */}
                 {showBookModal && (

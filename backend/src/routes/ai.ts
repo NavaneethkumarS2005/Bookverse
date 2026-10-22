@@ -7,8 +7,11 @@ import BookFair from '../models/BookFair.js';
 import Booth from '../models/Booth.js';
 import { body, validationResult } from 'express-validator';
 import { generateEmbedding } from '../utils/embeddings.js';
+import { publicBookFilter, publicBoothFilter, publicPublisherFilter } from '../utils/catalogVisibility.js';
 
 const router = express.Router();
+
+const bookCatalogPlaceholder = 'The catalog is currently unavailable in this fallback context.';
 
 // ─── MODEL PROVIDER SETUP ─────────────────────────────────────────────────────
 const getOpenRouterApiKey = () => process.env.OPENROUTER_API_KEY?.trim() || process.env.OPENROUTER_KEY?.trim();
@@ -17,6 +20,55 @@ const getGeminiApiKey = () => process.env.GEMINI_API_KEY?.trim() || process.env.
 const getGeminiModel = () => process.env.GEMINI_MODEL?.trim() || 'gemini-2.0-flash';
 
 type DiscoveryIntent = 'books' | 'upcoming_books' | 'authors' | 'publishers' | 'fairs' | 'booths';
+type ChatIntent = DiscoveryIntent | 'website' | 'general';
+
+const WEBSITE_KNOWLEDGE = `
+BookVerse website knowledge (verified from the current app):
+- Home page: landing page with discovery, mood-based reading suggestions, and promotional shelf.
+- Marketplace: browser-friendly catalog page for books and discovery.
+- Categories page: product and genre browsing.
+- Bookstore Explorer page: map-based book discovery experience with geographic and place-based searching for bookstore locations.
+- Upcoming Books page: upcoming releases and preorder information.
+- Authors, Publishers, Book Fairs, and Booth pages: discovery and detail pages for catalog entities.
+- Publisher workspace: authenticated users can apply at /publisher, check their application status, and, after approval, submit and manage publisher books. Admin approval is required before publisher books appear in the public catalog; stock is assigned by an admin.
+- Publisher application and book submission records are private to their owner and admins. The assistant cannot inspect private account status or claim that an application or book was approved; direct users to sign in and check /publisher.
+- Admins review publisher applications and book submissions in the existing Admin Dashboard under Publishers.
+- Sell Book page: user flow for listing books to sell.
+- Wishlist, Cart, Orders, Profile, Login, Contact: authenticated or public user flows.
+- Checkout and payment: current supported flows include PhonePe, Stripe card checkout, and Cash on Delivery as described in the app's store policy.
+- Authentication: JWT-based session auth with cookie-based login flow.
+- Admin dashboard: admin functionality exists for store administration.
+- Current limitations: there is no verified live-weather integration, no external web search integration in this codebase, and the assistant should only describe features implemented in the app.
+`;
+
+export const classifyChatIntent = (message: string): ChatIntent => {
+    const text = message.toLowerCase();
+
+    const websiteSignals = [
+        /this website|website|app|site|page|feature|navigation|add to cart|wishlist|orders?|checkout|login|signup|register|profile|sell|bookstore explorer|mapping|map|explorer|near me|location|where is|publisher workspace|publisher registration|publisher application|apply as publisher|submit (a )?book/i,
+        /how do i|where can i|can i|does this website|is there.*map|does this app/i,
+        /what pages?|what features?|show me the|how to use/i
+    ];
+    const generalSignals = [
+        /what is|explain|tell me about|difference between|how does|why does|how do i prepare|can you explain|summarize|in simple words|translate|tamil|tamizh|javascript|java|python|ai|frontend|backend|interview/i,
+        /weather|stock market|politics|history|science|math|biology|chemistry/i
+    ];
+
+    if (websiteSignals.some((pattern) => pattern.test(text))) return 'website';
+    if (generalSignals.some((pattern) => pattern.test(text))) return 'general';
+    if (/upcoming|pre[ -]?order|releas(e|ing|es)/.test(text)) return 'upcoming_books';
+    if (/author|writer|novelist/.test(text)) return 'authors';
+    if (/publisher|publishing house|imprint/.test(text)) return 'publishers';
+    if (/fair|festival|expo|exhibition/.test(text)) return 'fairs';
+    if (/booth|stall|where.*available|availability at/.test(text)) return 'booths';
+    return 'books';
+};
+
+export const buildWebsiteKnowledgeContext = (customerName = 'Guest') => `
+You are assisting ${customerName} on the BookVerse website.
+${WEBSITE_KNOWLEDGE}
+Answer only using the verified BookVerse app features and clearly state when a feature is unavailable or unverified.
+`;
 
 const detectIntent = (message: string): DiscoveryIntent => {
     const text = message.toLowerCase();
@@ -135,7 +187,7 @@ const scoreBookForQuery = (book: any, message: string, queryTerms: string[] = []
 };
 
 const rankBooksForMessage = async (message: string, budget: number | null) => {
-    const allBooks = await Book.find()
+    const allBooks = await Book.find(await publicBookFilter())
         .select('title author genre genres price description rating metadata')
         .lean();
 
@@ -174,7 +226,7 @@ const buildRecommendationReply = (books: any[], message: string, budget: number 
     return `I’d go with ${top}. They match the ${mood} vibe you’re looking for${budgetText}, and I can narrow it even more if you want something darker, lighter, or more emotional.`;
 };
 
-const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
+export const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
     const regex = toSafeSearchRegex(message);
     
     if (intent === 'upcoming_books') {
@@ -209,14 +261,15 @@ const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
     if (intent === 'publishers') {
         return {
             type: 'publisher',
-            items: await Publisher.find({
-                $or: [
+            items: await Publisher.find({ $and: [
+                { $or: [
                     { name: regex },
                     { genres: regex },
                     { description: regex },
                     { country: regex }
-                ]
-            }).limit(6),
+                ] },
+                publicPublisherFilter(),
+            ] }).select('_id name publisherSlug description logoUrl logo establishedYear headquarters country website isVerified isFeatured genres stats createdAt').limit(6),
             actions: ['view_publisher']
         };
     }
@@ -239,14 +292,14 @@ const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
     if (intent === 'booths') {
         return {
             type: 'booth',
-            items: await Booth.find({
+            items: await Booth.find({ $and: [{
                 $or: [
                     { boothNumber: regex },
                     { section: regex },
                     { floor: regex },
                     { specialNotes: regex }
                 ]
-            }).populate('fairId').populate('publisherId').limit(6),
+            }, await publicBoothFilter()] }).populate('fairId').populate({ path: 'publisherId', match: publicPublisherFilter(), select: '_id name publisherSlug logoUrl logo website isVerified' }).limit(6),
             actions: ['view_booth']
         };
     }
@@ -254,14 +307,14 @@ const queryDiscovery = async (intent: DiscoveryIntent, message: string) => {
     // Default: books
     return {
         type: 'book',
-        items: await Book.find({
+        items: await Book.find(await publicBookFilter({
             $or: [
                 { title: regex },
                 { author: regex },
                 { genres: regex },
                 { 'metadata.publisherSummary': regex }
             ]
-        }).limit(6),
+        })).select('-publisherOwnerId -reviewedBy -rejectionReason').limit(6),
         actions: ['view', 'add_to_cart', 'wishlist']
     };
 };
@@ -279,10 +332,14 @@ KNOWLEDGE BASE & LIVE INVENTORY:
 Here is the real-time catalog fetched directly from our store's database:
 {BOOK_CATALOG}
 
+WEBSITE KNOWLEDGE CONTEXT:
+{WEBSITE_CONTEXT}
+
 OPERATIONAL CAPABILITIES:
 1. EXPLAIN & ANSWER: If a user asks about literary themes, genres, writing styles, or cultural ideas, provide deep, insightful, and easy-to-read explanations.
 2. RECOMMENDATION ENGINE: Actively analyze the user's preferences. Cross-reference their taste with the provided inventory list's descriptions, genres, ratings, and price points to find the best matches.
 3. INVENTORY AWARENESS: Recommend only books that exist in the live inventory above. Never invent books, pricing, stock, or facts. If a title is low in stock, subtlely mention it without making up numbers.
+4. WEBSITE-LEVEL ASSISTANCE: Answer site navigation, feature, cart, wishlist, checkout, profile, and order questions using the verified BookVerse app knowledge above.
 
 RESPONSE GUIDELINES:
 - Maintain a warm, intellectual, and helpful tone.
@@ -290,8 +347,9 @@ RESPONSE GUIDELINES:
 - Use clean Markdown formatting for titles and lists so it renders perfectly on the screen.
 - Keep replies concise but rich, usually 2-6 sentences or a short bullet list.
 - Use a personal, human touch: "I’d recommend...", "This one fits your vibe...", "If you like..."
-- Use ₹ currency formatting.
-- If the user asks a non-book question, gently redirect back to books, reading experience, or store policies.
+- Use ₹ currency formatting when discussing prices.
+- If the user asks a non-book or website question, answer it directly using the website knowledge or general knowledge without forcing a book recommendation.
+- If a feature is not implemented or cannot be verified, say so clearly.
 
 STORE POLICIES:
 - Shipping: Free on all orders, 3-5 business days
@@ -323,8 +381,118 @@ router.post('/chat', [
             return res.status(400).json({ success: false, message: 'Message is required' });
         }
 
+        const chatIntent = classifyChatIntent(message);
         const intent = detectIntent(message);
-        
+
+        if (chatIntent === 'website' || chatIntent === 'general') {
+            const websiteContext = buildWebsiteKnowledgeContext(customerName);
+            const systemPromptWithCatalog = SYSTEM_PROMPT
+                .replace('{USER_NAME}', customerName || 'Guest')
+                .replace('{BOOK_CATALOG}', bookCatalogPlaceholder)
+                .replace('{WEBSITE_CONTEXT}', websiteContext);
+
+            const providerHistory = Array.isArray(history)
+                ? history.filter((h: any) => typeof h?.text === 'string' && h.text.length <= 500).map((h: any) => ({
+                    role: h.isBot ? 'assistant' : 'user',
+                    content: h.text
+                }))
+                : [];
+
+            let providerReply: string | null = null;
+            let providerSource = 'fallback';
+
+            try {
+                if (getOpenRouterApiKey()) {
+                    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${getOpenRouterApiKey()}`,
+                            'Content-Type': 'application/json',
+                            'HTTP-Referer': process.env.CLIENT_URL || 'http://localhost:5173',
+                            'X-Title': 'LuminaBook AI'
+                        },
+                        body: JSON.stringify({
+                            model: getOpenRouterModel(),
+                            messages: [
+                                { role: 'system', content: systemPromptWithCatalog },
+                                ...providerHistory,
+                                { role: 'user', content: message }
+                            ],
+                            temperature: 0.7,
+                            max_tokens: 700
+                        })
+                    });
+                    const payload = await response.json();
+                    if (!response.ok) throw new Error(payload?.error?.message || 'OpenRouter request failed');
+                    const reply = payload?.choices?.[0]?.message?.content;
+                    if (typeof reply === 'string' && reply.trim()) {
+                        providerReply = reply.trim();
+                        providerSource = 'openrouter';
+                    }
+                }
+            } catch (error: any) {
+                console.warn('OpenRouter general website request failed, trying other provider path.', error.message);
+            }
+
+            if (!providerReply && getGeminiApiKey() && getGeminiApiKey() !== 'your_gemini_api_key_here') {
+                try {
+                    const { GoogleGenAI } = await import('@google/genai');
+                    const ai = new GoogleGenAI({ apiKey: getGeminiApiKey() });
+                    const response = await ai.models.generateContent({
+                        model: getGeminiModel(),
+                        contents: [
+                            ...(Array.isArray(history) ? history.filter((h: any) => typeof h?.text === 'string' && h.text.length <= 500).map((h: any) => ({ role: h.isBot ? 'model' : 'user', parts: [{ text: h.text }] })) : []),
+                            { role: 'user', parts: [{ text: message }] }
+                        ],
+                        config: {
+                            systemInstruction: systemPromptWithCatalog,
+                            maxOutputTokens: 2048,
+                        }
+                    });
+                    const extractText = (payload: any): string => {
+                        if (!payload) return '';
+                        if (typeof payload.text === 'string' && payload.text.trim()) return payload.text.trim();
+                        if (typeof payload.outputText === 'string' && payload.outputText.trim()) return payload.outputText.trim();
+                        if (Array.isArray(payload.output)) {
+                            for (const item of payload.output) {
+                                if (item?.content && Array.isArray(item.content)) {
+                                    for (const part of item.content) {
+                                        if (typeof part?.text === 'string' && part.text.trim()) return part.text.trim();
+                                    }
+                                }
+                            }
+                        }
+                        return '';
+                    };
+                    const reply = extractText(response);
+                    if (reply.trim()) {
+                        providerReply = reply.trim();
+                        providerSource = 'gemini';
+                    }
+                } catch (error: any) {
+                    console.warn('Gemini general website request failed.', error.message);
+                }
+            }
+
+            if (providerReply) {
+                return res.json({
+                    success: true,
+                    reply: providerReply,
+                    intent: chatIntent,
+                    results: [],
+                    powered_by: providerSource
+                });
+            }
+
+            if (chatIntent === 'website') {
+                const fallbackReply = `This BookVerse app currently includes a Home page, Marketplace, Categories, Bookstore Explorer with map-based discovery, Wishlist, Cart, Orders, Profile, Sell Book, and admin flows. If you want the exact page or feature, I can point you to the right area in the app.`;
+                return res.json({ success: true, reply: fallbackReply, intent: 'website', results: [], powered_by: 'fallback', fallback_reason: 'local_knowledge' });
+            }
+
+            const fallbackReply = `I couldn’t reach the AI service right now, but I can still help with BookVerse basics: home, marketplace, categories, cart, wishlist, orders, checkout, profile, author and publisher discovery, and the bookstore explorer. If you tell me the exact feature or concept, I can narrow it down.`;
+            return res.json({ success: true, reply: fallbackReply, intent: 'general', results: [], powered_by: 'fallback', fallback_reason: 'general_fallback' });
+        }
+
         if (intent !== 'books') {
             const result = await queryDiscovery(intent, message);
             const items = result.items.map((item: any) => item.toObject ? item.toObject() : item);
@@ -346,7 +514,7 @@ router.post('/chat', [
             
             // Perform vector search
             if (queryVector && queryVector.length > 0 && queryVector.some(v => v !== 0)) {
-                booksFound = await Book.aggregate<any>([
+                const vectorBooks = await Book.aggregate<any>([
                     {
                         $vectorSearch: {
                             index: 'vector_index',
@@ -357,6 +525,13 @@ router.post('/chat', [
                         }
                     }
                 ] as any);
+                if (vectorBooks.length) {
+                    const visibleBooks = await Book.find(await publicBookFilter({
+                        _id: { $in: vectorBooks.map((book: any) => book._id) },
+                    })).select('_id').lean();
+                    const visibleIds = new Set(visibleBooks.map((book: any) => String(book._id)));
+                    booksFound = vectorBooks.filter((book: any) => visibleIds.has(String(book._id)));
+                }
             }
         } catch (err) {
             console.warn('Vector search failed in AI chat (missing index?), falling back to classic search.', err);
@@ -365,7 +540,7 @@ router.post('/chat', [
         if (booksFound.length === 0) {
             booksFound = await rankBooksForMessage(message, extractBudget(message));
             if (booksFound.length === 0) {
-                booksFound = await Book.find().limit(10);
+                booksFound = await Book.find(await publicBookFilter()).limit(10);
             }
         }
 
@@ -375,7 +550,8 @@ router.post('/chat', [
 
         const systemPromptWithCatalog = SYSTEM_PROMPT
             .replace('{USER_NAME}', customerName || 'Guest')
-            .replace('{BOOK_CATALOG}', bookCatalog);
+            .replace('{BOOK_CATALOG}', bookCatalog)
+            .replace('{WEBSITE_CONTEXT}', buildWebsiteKnowledgeContext(customerName));
 
         // FAQ responses
         const faqResponses: { [key: string]: string } = {

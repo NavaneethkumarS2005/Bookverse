@@ -21,13 +21,53 @@ const Home: React.FC = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [paymentComplete, setPaymentComplete] = useState(false);
+    const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
     useEffect(() => {
         const query = new URLSearchParams(window.location.search);
-        if (query.get('payment') !== 'success') return;
-        setPaymentComplete(true);
-        void clearCart();
-        window.history.replaceState({}, '', window.location.pathname);
+        const payment = query.get('payment');
+        if (payment !== 'success' && payment !== 'pending') return;
+
+        const merchantTransactionId = query.get('txnId');
+        if (!merchantTransactionId) {
+            setPaymentMessage('Payment status could not be verified. Your cart has not been cleared.');
+            return;
+        }
+
+        let active = true;
+        let clearResultUrl = false;
+        const verifyPayment = async () => {
+            try {
+                const response = await fetch(`${API_URL}/api/phonepe/status/${encodeURIComponent(merchantTransactionId)}`, {
+                    credentials: 'include',
+                });
+                const result = await response.json();
+                if (!active) return;
+
+                if (response.ok && result.success === true && result.status === 'Paid') {
+                    setPaymentComplete(true);
+                    setPaymentMessage(null);
+                    void clearCart();
+                    clearResultUrl = true;
+                } else if (result.status === 'Failed') {
+                    setPaymentMessage('PhonePe payment was not completed. Your cart has not been cleared.');
+                    clearResultUrl = true;
+                } else {
+                    setPaymentMessage('PhonePe payment is still being confirmed. Your cart has not been cleared.');
+                }
+            } catch {
+                if (active) {
+                    setPaymentMessage('PhonePe payment status is unavailable. Your cart has not been cleared.');
+                }
+            } finally {
+                if (active && clearResultUrl) window.history.replaceState({}, '', window.location.pathname);
+            }
+        };
+
+        void verifyPayment();
+        return () => {
+            active = false;
+        };
     }, [clearCart]);
 
     useEffect(() => {
@@ -128,6 +168,7 @@ const Home: React.FC = () => {
     return (
         <>
             {paymentComplete && <div className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-xl">Payment successful! Your order has been placed.</div>}
+            {paymentMessage && <div role="status" className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-amber-100 px-5 py-3 text-sm font-semibold text-amber-900 shadow-xl">{paymentMessage}</div>}
 
             <header className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-white py-20 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950">
                 <div className="pointer-events-none absolute inset-0 overflow-hidden">

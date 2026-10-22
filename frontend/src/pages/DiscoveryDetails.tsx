@@ -23,7 +23,7 @@ const DiscoveryDetails: React.FC<{ kind: DetailKind }> = ({ kind }) => {
       {(item.city || item.venue || item.publisherId?.name || item.fairId?.name) && <p className="mt-4 text-sm text-indigo-600">{[item.city, item.venue, item.publisherId?.name, item.fairId?.name].filter(Boolean).join(' · ')}</p>}
     </section>
     {related.length > 0 && <section className="mt-10"><h2 className="mb-5 text-2xl font-bold text-slate-900 dark:text-white">{kind === 'book-fairs' ? 'Booths' : 'Books'}</h2>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{related.map((entry: any) => entry.title ? <ProductCard key={entry._id || entry.id} book={entry} /> : <Link key={entry._id} to={`/booths/${entry._id}`} className="rounded-2xl border border-slate-200 bg-white p-5 font-semibold text-slate-900 shadow-sm transition hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900 dark:text-white">Booth {entry.boothNumber || 'details'} →</Link>)}</div>
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">{related.map((entry: any) => entry.title ? <ProductCard key={entry._id || entry.id} book={entry} /> : <Link key={entry._id} to={`/booths/${entry._id}`} className="rounded-2xl border border-slate-200 bg-white p-5 font-semibold text-slate-900 shadow-sm transition hover:border-indigo-300 dark:border-slate-800 dark:bg-slate-900 dark:text-white"><span className="block">Stall {entry.boothNumber || 'details'}</span><span className="mt-2 block text-sm font-normal text-slate-500">{entry.status || 'Availability not listed'}{typeof entry.price === 'number' ? ` · ₹${entry.price.toLocaleString('en-IN')}` : ' · Price not configured'}</span></Link>)}</div>
     </section>}
   </div></main>;
 };

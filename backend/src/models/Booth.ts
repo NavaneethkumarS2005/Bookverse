@@ -3,7 +3,8 @@ import mongoose, { Schema, Document, Model } from 'mongoose';
 export interface IBooth extends Document {
   boothNumber: string;
   fairId: mongoose.Types.ObjectId;
-  publisherId: mongoose.Types.ObjectId;
+  publisherId?: mongoose.Types.ObjectId;
+  price?: number;
   /** Optional booth-specific image; existing records can omit it. */
   image?: { url: string; publicId: string };
   section?: string;
@@ -23,7 +24,8 @@ const boothSchema = new Schema<IBooth>(
   {
     boothNumber: { type: String, required: true, unique: true, index: true },
     fairId: { type: Schema.Types.ObjectId, ref: 'BookFair', required: true, index: true },
-    publisherId: { type: Schema.Types.ObjectId, ref: 'Publisher', required: true },
+    publisherId: { type: Schema.Types.ObjectId, ref: 'Publisher', default: null },
+    price: { type: Number, min: 0 },
     image: { url: String, publicId: String },
     section: String,
     floor: String,

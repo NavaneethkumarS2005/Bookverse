@@ -1,6 +1,8 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
 
 export interface IPublisher extends Document {
+  ownerId?: mongoose.Types.ObjectId;
+  normalizedName?: string;
   name: string;
   publisherSlug?: string;
   description?: string;
@@ -11,6 +13,12 @@ export interface IPublisher extends Document {
   country?: string;
   website?: string;
   contactEmail?: string;
+  contactPhone?: string;
+  applicationStatus?: 'pending' | 'approved' | 'rejected';
+  isActive?: boolean;
+  reviewedBy?: mongoose.Types.ObjectId;
+  reviewedAt?: Date;
+  rejectionReason?: string;
   isVerified?: boolean;
   isFeatured?: boolean;
   boothNumber?: string;
@@ -21,6 +29,8 @@ export interface IPublisher extends Document {
 
 const publisherSchema = new Schema<IPublisher>(
   {
+    ownerId: { type: Schema.Types.ObjectId, ref: 'User', unique: true, sparse: true, index: true, select: false },
+    normalizedName: { type: String, unique: true, sparse: true, index: true },
     name: { type: String, required: [true, 'Publisher name is required'], trim: true, unique: true, index: true },
     publisherSlug: { type: String, unique: true, sparse: true },
     description: String,
@@ -31,6 +41,12 @@ const publisherSchema = new Schema<IPublisher>(
     country: String,
     website: String,
     contactEmail: String,
+    contactPhone: { type: String, trim: true, maxlength: 30 },
+    applicationStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved', index: true },
+    isActive: { type: Boolean, default: true, index: true },
+    reviewedBy: { type: Schema.Types.ObjectId, ref: 'User' },
+    reviewedAt: Date,
+    rejectionReason: { type: String, maxlength: 500 },
     isVerified: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
     boothNumber: { type: String, ref: 'Booth' },

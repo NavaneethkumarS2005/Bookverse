@@ -85,6 +85,7 @@ export interface IProduct {
     id?: number | string;
     /** Title of the book. */
     title: string;
+    isbn?: string;
     /** Author of the book. */
     author: string;
     /** Description or summary of the book. */
@@ -390,7 +391,8 @@ export interface IBooth {
     _id: string;
     boothNumber: string;
     fairId: string | IBookFair;
-    publisherId: string | IPublisher;
+    publisherId?: string | IPublisher;
+    price?: number;
     section?: string;
     floor?: string;
     size?: {
