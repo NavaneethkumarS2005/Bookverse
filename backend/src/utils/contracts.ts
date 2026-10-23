@@ -22,6 +22,7 @@ export interface CatalogBookSummary {
   description?: string;
   stock?: number;
   fulfillment?: CatalogFulfillment;
+  buyLink?: string;
 }
 
 export interface CartItemContract {
@@ -127,6 +128,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     description: book.description ? String(book.description) : undefined,
     stock,
     fulfillment,
+    ...(typeof book.buyLink === 'string' && book.buyLink.trim() ? { buyLink: book.buyLink.trim() } : {}),
   };
 };
 

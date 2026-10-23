@@ -146,6 +146,7 @@ export const normalizeBook = (value: unknown, index = 0): Book => {
         reviews,
         seller: raw.seller ?? '',
         fulfillment: raw.fulfillment === 'internal' || raw.fulfillment === 'external' ? raw.fulfillment : undefined,
+        buyLink: typeof raw.buyLink === 'string' && raw.buyLink.trim() ? raw.buyLink.trim() : undefined,
         stock: asNumber(raw.stock ?? raw.quantity, 0),
         createdAt: firstNonEmptyString(raw.createdAt, raw.publishedAt) || '',
         updatedAt: firstNonEmptyString(raw.updatedAt, raw.createdAt) || '',

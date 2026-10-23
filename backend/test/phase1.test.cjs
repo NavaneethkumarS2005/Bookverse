@@ -182,3 +182,17 @@ test('environment validation accepts complete production configuration', () => {
 
     assert.equal(valid, undefined);
 });
+
+test('normalizeBook preserves valid buyLink in catalog contracts', () => {
+    const { normalizeBook } = require('../dist/utils/contracts.js');
+    const input = {
+        _id: '507f1f77bcf86cd799439011',
+        title: 'Atomic Habits',
+        author: 'James Clear',
+        price: 540,
+        buyLink: 'https://www.flipkart.com/atomic-habits/p/123'
+    };
+
+    const output = normalizeBook(input);
+    assert.equal(output.buyLink, 'https://www.flipkart.com/atomic-habits/p/123');
+});
