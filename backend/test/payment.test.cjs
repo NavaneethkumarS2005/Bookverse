@@ -206,8 +206,12 @@ test('PhonePe /pay returns 503 gateway unavailable when merchant credentials are
   const token = createAuthToken();
   const prevMerchant = process.env.PHONEPE_MERCHANT_ID;
   const prevSalt = process.env.PHONEPE_SALT_KEY;
+  const prevClientId = process.env.PHONEPE_CLIENT_ID;
+  const prevClientSecret = process.env.PHONEPE_CLIENT_SECRET;
   delete process.env.PHONEPE_MERCHANT_ID;
   delete process.env.PHONEPE_SALT_KEY;
+  delete process.env.PHONEPE_CLIENT_ID;
+  delete process.env.PHONEPE_CLIENT_SECRET;
 
   try {
     await withServer(app, async baseUrl => {
@@ -230,5 +234,65 @@ test('PhonePe /pay returns 503 gateway unavailable when merchant credentials are
   } finally {
     if (prevMerchant) process.env.PHONEPE_MERCHANT_ID = prevMerchant;
     if (prevSalt) process.env.PHONEPE_SALT_KEY = prevSalt;
+    if (prevClientId) process.env.PHONEPE_CLIENT_ID = prevClientId;
+    if (prevClientSecret) process.env.PHONEPE_CLIENT_SECRET = prevClientSecret;
   }
+});
+
+test('PhonePe v2 getPhonePeOAuthToken requests token and caches it securely', async () => {
+  const { getPhonePeOAuthToken, clearPhonePeTokenCache } = require('../dist/routes/phonepe.js');
+  clearPhonePeTokenCache();
+
+  let requestCount = 0;
+  const mockServer = express();
+  mockServer.use(express.urlencoded({ extended: true }));
+  mockServer.post('/v1/oauth/token', (req, res) => {
+    requestCount++;
+    assert.equal(req.body.client_id, 'test_cid');
+    assert.equal(req.body.client_secret, 'test_sec');
+    assert.equal(req.body.client_version, '1');
+    assert.equal(req.body.grant_type, 'client_credentials');
+    res.json({
+      access_token: 'mock_access_token_xyz',
+      expires_at: Math.floor(Date.now() / 1000) + 3600,
+      token_type: 'O-Bearer'
+    });
+  });
+
+  await withServer(mockServer, async mockBaseUrl => {
+    const config = {
+      clientId: 'test_cid',
+      clientSecret: 'test_sec',
+      clientVersion: '1',
+      hostUrl: mockBaseUrl,
+      mode: 'v2',
+      isConfigured: true
+    };
+
+    const token1 = await getPhonePeOAuthToken(config);
+    assert.equal(token1, 'mock_access_token_xyz');
+    assert.equal(requestCount, 1);
+
+    // Call again immediately: must return cached token without duplicate HTTP call
+    const token2 = await getPhonePeOAuthToken(config);
+    assert.equal(token2, 'mock_access_token_xyz');
+    assert.equal(requestCount, 1);
+  });
+
+  clearPhonePeTokenCache();
+});
+
+test('PhonePe v2 order status verification accepts COMPLETED state and matches merchantOrderId', () => {
+  const { isPhonePePaymentMatch } = require('../phonepeRedirect.cjs');
+
+  const v2Response = {
+    orderId: 'OMO2403282020198641071317',
+    merchantOrderId: 'MT1234567890',
+    state: 'COMPLETED',
+    amount: 50000
+  };
+
+  assert.equal(isPhonePePaymentMatch(v2Response, 'MT1234567890', 50000), true);
+  assert.equal(isPhonePePaymentMatch(v2Response, 'MTdifferent', 50000), false);
+  assert.equal(isPhonePePaymentMatch(v2Response, 'MT1234567890', 49999), false);
 });

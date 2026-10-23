@@ -121,11 +121,13 @@ test('environment validation rejects missing critical production variables', () 
         STRIPE_SECRET_KEY: '',
         STRIPE_WEBHOOK_SECRET: '',
         PHONEPE_MERCHANT_ID: '',
-        PHONEPE_SALT_KEY: ''
+        PHONEPE_SALT_KEY: '',
+        PHONEPE_CLIENT_ID: '',
+        PHONEPE_CLIENT_SECRET: ''
     }, () => {
         assert.throws(
             validateEnvironment,
-            /Missing or invalid production environment variables: MONGO_URI, JWT_SECRET, CLIENT_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PHONEPE_MERCHANT_ID, PHONEPE_SALT_KEY/
+            /Missing or invalid production environment variables: MONGO_URI, JWT_SECRET, CLIENT_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PHONEPE_CLIENT_ID & PHONEPE_CLIENT_SECRET/
         );
     });
 
@@ -176,6 +178,23 @@ test('environment validation accepts complete production configuration', () => {
         STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret',
         PHONEPE_MERCHANT_ID: 'merchant-id',
         PHONEPE_SALT_KEY: 'phonepe-salt-key'
+    }, () => {
+        assert.doesNotThrow(validateEnvironment);
+    });
+
+    assert.equal(valid, undefined);
+});
+
+test('environment validation accepts complete production configuration with v2 credentials', () => {
+    const valid = withEnv({
+        NODE_ENV: 'production',
+        MONGO_URI: 'mongodb://localhost:27017/bookverse',
+        JWT_SECRET: 'a'.repeat(32),
+        CLIENT_URL: 'https://bookverse.example.com',
+        STRIPE_SECRET_KEY: 'stripe-test-key',
+        STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret',
+        PHONEPE_CLIENT_ID: 'client-id-test',
+        PHONEPE_CLIENT_SECRET: 'client-secret-test'
     }, () => {
         assert.doesNotThrow(validateEnvironment);
     });
