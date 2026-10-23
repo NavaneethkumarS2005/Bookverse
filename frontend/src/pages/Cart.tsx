@@ -252,6 +252,8 @@ const Cart: React.FC = () => {
             console.error("PhonePe Payment Error:", error);
             setCheckoutMessage({ type: 'error', text: 'Payment initiation failed: ' + error.message });
             setProcessing(false);
+        } finally {
+            setProcessing(false);
         }
     };
 
@@ -478,11 +480,21 @@ const Cart: React.FC = () => {
                             )}
 
                             {paymentMethod === 'phonepe' && (
-                                <div className="text-center">
-                                    <div className="mb-8 p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700">
+                                <div>
+                                    <div className="mb-6 p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center">
                                         <p className="text-slate-900 dark:text-white font-medium mb-2">Secure payment via PhonePe</p>
                                         <p className="text-sm text-slate-500">Supports UPI, Credit/Debit Cards, Wallet, NetBanking</p>
                                     </div>
+
+                                    <div className="space-y-4 mb-6">
+                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        </div>
+                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                    </div>
+
                                     <button
                                         className="w-full py-3 rounded-xl font-bold text-white bg-[#6739b7] hover:bg-[#5a32a3] transition-colors shadow-lg shadow-purple-500/20"
                                         onClick={handleProceedToPayment}

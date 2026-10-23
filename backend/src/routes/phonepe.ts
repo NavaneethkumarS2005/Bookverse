@@ -132,6 +132,14 @@ const verifyAndRedirect = async (merchantTransactionId: string, clientBaseUrl: s
 // 1. INITIATE PAYMENT
 router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
     try {
+        const { merchantId, saltKey, hostUrl } = getPhonePeConfig();
+        if (!merchantId || !saltKey) {
+            return res.status(503).json({
+                success: false,
+                message: 'PhonePe payment gateway is currently not configured on this server.'
+            });
+        }
+
         const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
         const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
             const id = item.bookId ?? item.id;
@@ -148,7 +156,6 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         const backendBaseUrl = getBackendBaseUrl(req as Request);
         const userId = req.user.id;
         const merchantTransactionId = `MT${crypto.randomUUID().replace(/-/g, '')}`;
-        const { merchantId, saltKey, hostUrl } = getPhonePeConfig();
 
         // Create a Pending Order with server-authoritative catalog values.
         const newOrder = new Order({
