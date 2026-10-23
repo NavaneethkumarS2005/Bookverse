@@ -41,6 +41,21 @@ const buildFallbackCoverSvg = (title: string, author = '', category = '') => {
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;
 };
 
+export const isValidExternalUrl = (url: unknown): string | undefined => {
+    if (typeof url !== 'string') return undefined;
+    const trimmed = url.trim();
+    if (!trimmed) return undefined;
+    try {
+        const parsed = new URL(trimmed);
+        if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+            return trimmed;
+        }
+    } catch {
+        return undefined;
+    }
+    return undefined;
+};
+
 export const resolveBookImage = (value?: string, title?: string, author?: string, category?: string): string => {
     if (!value || !value.trim()) return buildFallbackCoverSvg(title || 'Untitled', author, category);
 
@@ -146,7 +161,7 @@ export const normalizeBook = (value: unknown, index = 0): Book => {
         reviews,
         seller: raw.seller ?? '',
         fulfillment: raw.fulfillment === 'internal' || raw.fulfillment === 'external' ? raw.fulfillment : undefined,
-        buyLink: typeof raw.buyLink === 'string' && raw.buyLink.trim() ? raw.buyLink.trim() : undefined,
+        buyLink: isValidExternalUrl(raw.buyLink),
         stock: asNumber(raw.stock ?? raw.quantity, 0),
         createdAt: firstNonEmptyString(raw.createdAt, raw.publishedAt) || '',
         updatedAt: firstNonEmptyString(raw.updatedAt, raw.createdAt) || '',

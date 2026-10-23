@@ -196,3 +196,51 @@ test('normalizeBook preserves valid buyLink in catalog contracts', () => {
     const output = normalizeBook(input);
     assert.equal(output.buyLink, 'https://www.flipkart.com/atomic-habits/p/123');
 });
+
+test('normalizeBook keeps book valid when buyLink is absent or empty', () => {
+    const { normalizeBook } = require('../dist/utils/contracts.js');
+    const inputWithout = {
+        _id: '507f1f77bcf86cd799439012',
+        title: 'The Great Gatsby',
+        author: 'F. Scott Fitzgerald',
+        price: 999
+    };
+    const inputEmpty = {
+        _id: '507f1f77bcf86cd799439013',
+        title: '1984',
+        author: 'George Orwell',
+        price: 850,
+        buyLink: '   '
+    };
+
+    const outputWithout = normalizeBook(inputWithout);
+    assert.equal(outputWithout.buyLink, undefined);
+    assert.equal(outputWithout.title, 'The Great Gatsby');
+
+    const outputEmpty = normalizeBook(inputEmpty);
+    assert.equal(outputEmpty.buyLink, undefined);
+    assert.equal(outputEmpty.title, '1984');
+});
+
+test('normalizeBook discards invalid or malformed external URLs', () => {
+    const { normalizeBook } = require('../dist/utils/contracts.js');
+    const malformedCases = [
+        'not-a-valid-url',
+        'javascript:alert(1)',
+        'ftp://invalid-protocol.com/book',
+        'data:text/html,malicious',
+        null,
+        12345
+    ];
+
+    for (const badLink of malformedCases) {
+        const output = normalizeBook({
+            _id: '507f1f77bcf86cd799439014',
+            title: 'Test Title',
+            author: 'Test Author',
+            price: 100,
+            buyLink: badLink
+        });
+        assert.equal(output.buyLink, undefined, `Expected buyLink to be undefined for ${badLink}`);
+    }
+});

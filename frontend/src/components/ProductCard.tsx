@@ -73,6 +73,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
         y.set(0);
     };
 
+    const getRetailerInfo = (url?: string) => {
+        if (!url) return null;
+        try {
+            const parsed = new URL(url);
+            const host = parsed.hostname.toLowerCase();
+            if (host.includes('amazon')) {
+                return { label: 'Buy from Amazon', shortLabel: 'Amazon', title: 'Buy on Amazon' };
+            }
+            if (host.includes('flipkart')) {
+                return { label: 'Buy from Flipkart', shortLabel: 'Flipkart', title: 'Buy on Flipkart' };
+            }
+            if (host.includes('google')) {
+                return { label: 'Google Books', shortLabel: 'Google Books', title: 'View on Google Books' };
+            }
+            return { label: 'Visit Store', shortLabel: 'Store', title: 'Visit External Retailer Store' };
+        } catch {
+            return null;
+        }
+    };
+
+    const retailer = getRetailerInfo(book.buyLink);
+
     return (
         <motion.div 
             ref={ref}
@@ -136,26 +158,17 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        {book.buyLink && (
+                        {retailer && book.buyLink && (
                             <a
                                 href={book.buyLink}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                title={`Buy on ${
-                                    book.buyLink.includes('amazon') ? 'Amazon' :
-                                    book.buyLink.includes('flipkart') ? 'Flipkart' :
-                                    book.buyLink.includes('google') ? 'Google Books' :
-                                    'External Store'
-                                }`}
-                                className="inline-flex items-center gap-1 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:from-amber-600 hover:to-orange-600"
+                                onClick={(e) => e.stopPropagation()}
+                                title={retailer.title}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:from-amber-600 hover:to-orange-600"
                             >
                                 <span>🔗</span>
-                                <span>{
-                                    book.buyLink.includes('amazon') ? 'Amazon' :
-                                    book.buyLink.includes('flipkart') ? 'Flipkart' :
-                                    book.buyLink.includes('google') ? 'Google Books' :
-                                    'External'
-                                }</span>
+                                <span>{retailer.shortLabel}</span>
                             </a>
                         )}
 
