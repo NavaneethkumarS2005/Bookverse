@@ -23,7 +23,8 @@ type CheckoutMessageType = 'success' | 'error' | 'info';
 const Cart: React.FC = () => {
     const { cart, removeFromCart, getCartTotal, clearCart, updateQuantity } = useCart();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('phonepe'); // 'stripe', 'phonepe', 'cod'
+    const [paymentMethod, setPaymentMethod] = useState('demo'); // 'stripe', 'phonepe', 'cod', 'demo'
+    const [demoRequestId, setDemoRequestId] = useState(() => crypto.randomUUID());
     const [processing, setProcessing] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
     const [orderId, setOrderId] = useState('');
@@ -131,6 +132,8 @@ const Cart: React.FC = () => {
             fetchPaymentIntent();
         } else if (paymentMethod === 'phonepe') {
             handlePhonePe();
+        } else if (paymentMethod === 'demo') {
+            handleDemoPayment();
         } else {
             handleCOD();
         }
@@ -190,6 +193,64 @@ const Cart: React.FC = () => {
         } catch (error) {
             console.error("COD Error:", error);
             setCheckoutMessage({ type: 'error', text: 'Order processing failed. Please try again.' });
+        } finally {
+            setProcessing(false);
+        }
+    };
+
+    const handleDemoPayment = async () => {
+        if (!localStorage.getItem('user')) {
+            setCheckoutMessage({ type: 'error', text: 'Your session has expired. Please log in again to place a demo order.' });
+            navigate('/login');
+            return;
+        }
+
+        if (!shippingDetails.address.trim() || !shippingDetails.phone.trim()) {
+            setCheckoutMessage({ type: 'error', text: 'Please enter your complete shipping address and phone number.' });
+            return;
+        }
+
+        if (processing || cart.length === 0) return;
+        setProcessing(true);
+        setCheckoutMessage(null);
+
+        try {
+            const res = await fetch(`${API_URL}/api/payment/demo-order`, {
+                method: 'POST',
+                credentials: 'include',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    requestId: demoRequestId,
+                    orderItems: cart.map(item => ({
+                        bookId: item.bookId,
+                        quantity: item.quantity
+                    })),
+                    shippingAddress: shippingDetails
+                })
+            });
+
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok || !data.success || !data.orderId || data.demo !== true || data.realPayment !== false) {
+                if (res.status === 401) {
+                    setCheckoutMessage({ type: 'error', text: 'Session expired. Please log in again.' });
+                    navigate('/login');
+                    return;
+                }
+                throw new Error(data.message || 'Unable to complete the demo order.');
+            }
+
+            const successMsg = {
+                type: 'success' as CheckoutMessageType,
+                text: `Demo order ${data.orderId} created. No real payment was made.`
+            };
+            setCheckoutMessage(successMsg);
+            setPersistedMessage(successMsg);
+            clearCart();
+            setIsPaymentOpen(false);
+            setDemoRequestId(crypto.randomUUID());
+        } catch (error: any) {
+            console.error('Demo payment simulation error:', error);
+            setCheckoutMessage({ type: 'error', text: error?.message || 'Demo order failed. Your cart has not been cleared.' });
         } finally {
             setProcessing(false);
         }
@@ -403,7 +464,7 @@ const Cart: React.FC = () => {
                             <h2 className="font-outfit font-bold text-2xl text-center text-slate-900 dark:text-white mb-8">Checkout</h2>
 
                             {/* Select Method */}
-                            <div className="grid grid-cols-3 gap-3 mb-8">
+                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                                 <button
                                     onClick={() => setPaymentMethod('stripe')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'stripe'
@@ -423,6 +484,16 @@ const Cart: React.FC = () => {
                                 >
                                     <span className="text-2xl">🟣</span>
                                     <span className="text-xs font-semibold">PhonePe</span>
+                                </button>
+                                <button
+                                    onClick={() => setPaymentMethod('demo')}
+                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'demo'
+                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
+                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        }`}
+                                >
+                                    <span className="text-2xl">▦</span>
+                                    <span className="text-xs font-semibold">UPI QR (Demo)</span>
                                 </button>
                                 <button
                                     onClick={() => setPaymentMethod('cod')}
@@ -501,6 +572,40 @@ const Cart: React.FC = () => {
                                         disabled={processing}
                                     >
                                         {processing ? 'Processing...' : 'Pay with PhonePe'}
+                                    </button>
+                                </div>
+                            )}
+
+                            {paymentMethod === 'demo' && (
+                                <div>
+                                    <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center dark:border-amber-800 dark:bg-amber-950/30">
+                                        <p className="mb-2 font-bold text-amber-900 dark:text-amber-200">DEMO PAYMENT — NO REAL MONEY TRANSFER</p>
+                                        <p className="mb-4 text-sm text-amber-800 dark:text-amber-300">
+                                            This decorative QR-style graphic is not scannable and does not initiate a UPI payment.
+                                        </p>
+                                        <div role="img" aria-label="Decorative demo QR-style graphic, not scannable" className="mx-auto grid h-36 w-36 grid-cols-6 grid-rows-6 gap-1 rounded-lg border-4 border-white bg-white p-2 shadow-sm">
+                                            {[1,1,1,0,1,1, 1,0,1,1,0,1, 1,1,1,0,1,0, 0,1,0,1,1,1, 1,0,1,0,0,1, 1,1,0,1,1,1].map((filled, index) => (
+                                                <span key={index} className={filled ? 'rounded-sm bg-slate-900' : 'rounded-sm bg-white'} />
+                                            ))}
+                                        </div>
+                                        <p className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">Demo total: ₹{getCartTotal()}</p>
+                                    </div>
+
+                                    <div className="space-y-4 mb-6">
+                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        </div>
+                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                    </div>
+                                    <button
+                                        type="button"
+                                        className="w-full py-3 rounded-xl font-bold text-white bg-indigo-600 hover:bg-indigo-700 transition-colors shadow-lg shadow-indigo-500/20 disabled:cursor-not-allowed disabled:opacity-60"
+                                        onClick={handleDemoPayment}
+                                        disabled={processing}
+                                    >
+                                        {processing ? 'Processing demo order...' : 'Simulate Successful Payment'}
                                     </button>
                                 </div>
                             )}
