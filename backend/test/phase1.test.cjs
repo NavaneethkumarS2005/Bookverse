@@ -39,6 +39,17 @@ test('request ID middleware generates and returns a request ID header', async ()
     assert.match(requestIdValue, /^[a-zA-Z0-9_-]{1,128}$/);
 });
 
+test('Render proxy trust is configured before rate-limited API requests', async () => {
+    const app = createApp();
+    assert.equal(app.get('trust proxy'), 1);
+
+    const { response } = await request('/api/does-not-exist', {
+        headers: { 'X-Forwarded-For': '198.51.100.10' }
+    });
+
+    assert.equal(response.status, 404);
+});
+
 test('request ID middleware accepts a safe caller-supplied ID', async () => {
     const { response } = await request('/health', {
         headers: { 'X-Request-Id': 'phase-1-test-id' }
