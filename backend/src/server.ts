@@ -47,6 +47,11 @@ validateEnvironment();
 export const createApp = (): express.Express => {
     const app = express();
 
+    // Render terminates requests at its load balancer before forwarding them to
+    // this service. Trust that single proxy hop so rate limiting can use the
+    // client address supplied by Render, without trusting arbitrary chains.
+    app.set('trust proxy', 1);
+
     const allowedOrigins = [
         'http://localhost:5173',
         'http://localhost:5174',
