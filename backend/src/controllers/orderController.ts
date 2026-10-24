@@ -190,6 +190,18 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
         requestedItems.push({ bookId, quantity });
     }
 
+    let canonicalCatalogBooks: any[];
+    try {
+        canonicalCatalogBooks = await getCatalogBooks(rawItems);
+    } catch (err) {
+        console.error('Demo order catalog lookup failed:', err);
+        return res.status(500).json({ success: false, message: 'Unable to validate the demo order. Please try again.' });
+    }
+    const canonicalRequestedItems = requestedItems.map((item, index) => ({
+        bookId: String(canonicalCatalogBooks[index]?._id ?? canonicalCatalogBooks[index]?.id ?? item.bookId),
+        quantity: item.quantity,
+    }));
+
     const shippingAddress = normalizeShippingAddress(req.body?.shippingAddress ?? req.body?.shippingDetails);
     if (!shippingAddress.address || !shippingAddress.phone) {
         return res.status(400).json({ success: false, message: 'Shipping address and phone are required.' });
@@ -206,7 +218,7 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
             bookId: String(item.bookId), quantity: Number(item.quantity),
         }));
         const existingAddress = order.shippingAddress || {};
-        return JSON.stringify(existingItems) === JSON.stringify(requestedItems) &&
+        return JSON.stringify(existingItems) === JSON.stringify(canonicalRequestedItems) &&
             String(existingAddress.address || '') === shippingAddress.address &&
             String(existingAddress.city || '') === shippingAddress.city &&
             String(existingAddress.zip || '') === shippingAddress.zip &&
