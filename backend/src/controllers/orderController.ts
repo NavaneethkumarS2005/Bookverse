@@ -5,7 +5,7 @@ import Stripe from 'stripe';
 import Book from '../models/Book';
 import Order from '../models/Order';
 import { AuthRequest } from '../types';
-import { normalizeOrderInput, serializeOrder } from '../utils/contracts';
+import { normalizeOrderInput, normalizeShippingAddress, serializeOrder } from '../utils/contracts';
 import { decrementOrderStock } from '../utils/inventory';
 import { publicBookFilter } from '../utils/catalogVisibility';
 // @ts-ignore
@@ -173,37 +173,74 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
         return res.status(400).json({ success: false, message: 'A valid demo request ID is required.' });
     }
 
-    const paymentId = `DEMO_${requestId.toLowerCase()}`;
-    let normalized: Awaited<ReturnType<typeof loadNormalizedOrder>>;
-
-    try {
-        const orderItems = Array.isArray(req.body?.orderItems) ? req.body.orderItems : [];
-        normalized = await loadNormalizedOrder(req, orderItems);
-    } catch (err: any) {
-        return res.status(400).json({ success: false, message: err?.message || 'Invalid demo order.' });
+    const rawItems = req.body?.orderItems;
+    if (!Array.isArray(rawItems) || rawItems.length === 0) {
+        return res.status(400).json({ success: false, message: 'At least one order item is required.' });
     }
 
+    const requestedItems: Array<{ bookId: string; quantity: number }> = [];
+    const seenIds = new Set<string>();
+    for (const item of rawItems) {
+        const bookId = String(item?.bookId ?? item?.productId ?? item?.id ?? '').trim();
+        const quantity = Number(item?.quantity);
+        if (!bookId || !Number.isInteger(quantity) || quantity < 1 || seenIds.has(bookId)) {
+            return res.status(400).json({ success: false, message: 'Order items contain an invalid or duplicate book/quantity.' });
+        }
+        seenIds.add(bookId);
+        requestedItems.push({ bookId, quantity });
+    }
+
+    const shippingAddress = normalizeShippingAddress(req.body?.shippingAddress ?? req.body?.shippingDetails);
+    if (!shippingAddress.address || !shippingAddress.phone) {
+        return res.status(400).json({ success: false, message: 'Shipping address and phone are required.' });
+    }
+
+    const paymentId = `DEMO_${requestId.toLowerCase()}`;
     const matchesExistingDemoOrder = (order: any) => {
         if (!order || String(order.user) !== req.user.id ||
             order.paymentMethod !== 'UPI_QR_DEMO' ||
             order.status !== 'Demo Completed' ||
-            order.stockConsumed !== true ||
-            Number(order.totalPrice) !== normalized.totalPrice) return false;
+            order.stockConsumed !== true) return false;
 
         const existingItems = (order.orderItems || []).map((item: any) => ({
-            bookId: String(item.bookId), quantity: Number(item.quantity), title: String(item.title), price: Number(item.price),
-        }));
-        const requestedItems = normalized.orderItems.map((item: any) => ({
-            bookId: String(item.bookId), quantity: Number(item.quantity), title: String(item.title), price: Number(item.price),
+            bookId: String(item.bookId), quantity: Number(item.quantity),
         }));
         const existingAddress = order.shippingAddress || {};
-        const requestedAddress = normalized.shippingAddress;
         return JSON.stringify(existingItems) === JSON.stringify(requestedItems) &&
-            String(existingAddress.address || '') === requestedAddress.address &&
-            String(existingAddress.city || '') === requestedAddress.city &&
-            String(existingAddress.zip || '') === requestedAddress.zip &&
-            String(existingAddress.phone || '') === requestedAddress.phone;
+            String(existingAddress.address || '') === shippingAddress.address &&
+            String(existingAddress.city || '') === shippingAddress.city &&
+            String(existingAddress.zip || '') === shippingAddress.zip &&
+            String(existingAddress.phone || '') === shippingAddress.phone;
     };
+
+    // Check idempotency before revalidating stock/prices: a retry after a
+    // committed order must return that order even though its stock was consumed.
+    try {
+        const existing = await Order.findOne({ paymentId });
+        if (existing) {
+            if (!matchesExistingDemoOrder(existing)) {
+                return res.status(409).json({ success: false, message: 'This demo request ID has already been used for a different order.' });
+            }
+            return res.json({
+                success: true,
+                demo: true,
+                realPayment: false,
+                message: 'Demo order already created. No money was transferred.',
+                orderId: existing._id.toString(),
+                order: serializeOrder(existing),
+            });
+        }
+    } catch (err) {
+        console.error('Demo idempotency lookup failed:', err);
+        return res.status(500).json({ success: false, message: 'Unable to verify the demo order. Please try again.' });
+    }
+
+    let normalized: Awaited<ReturnType<typeof loadNormalizedOrder>>;
+    try {
+        normalized = await loadNormalizedOrder(req, rawItems);
+    } catch (err: any) {
+        return res.status(400).json({ success: false, message: err?.message || 'Invalid demo order.' });
+    }
 
     let createdOrder: any;
     let createdNewOrder = false;
@@ -257,7 +294,7 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
         }
 
         const statusCode = err?.statusCode || (
-            /required|invalid|unavailable|quantity|price|book|address|order item/i.test(String(err?.message))
+            /required|invalid|unavailable|quantity|price|book|address|order item|inventory changed/i.test(String(err?.message))
                 ? 400
                 : 500
         );
