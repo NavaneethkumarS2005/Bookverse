@@ -25,27 +25,5 @@ export default defineConfig({
     build: {
         sourcemap: false, // Disable sourcemaps in production for security/size
         chunkSizeWarningLimit: 1000, // Increase warning limit (1MB)
-        rollupOptions: {
-            output: {
-                manualChunks: function (id) {
-                    // 1. Vendor Chunking (React Core)
-                    if (id.includes('node_modules')) {
-                        if (id.includes('react') || id.includes('react-dom') || id.includes('react-router-dom')) {
-                            return 'vendor-react';
-                        }
-                        // 2. Vendor Chunking (UI/Icons)
-                        if (id.includes('react-icons') || id.includes('lucide-react')) {
-                            return 'vendor-icons';
-                        }
-                        // 3. Vendor Chunking (Utilities)
-                        if (id.includes('axios') || id.includes('date-fns') || id.includes('lodash')) {
-                            return 'vendor-utils';
-                        }
-                        // 4. Everything else in node_modules
-                        return 'vendor-others';
-                    }
-                },
-            },
-        },
     },
 });

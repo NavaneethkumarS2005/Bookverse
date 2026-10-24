@@ -73,6 +73,28 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
         y.set(0);
     };
 
+    const getRetailerInfo = (url?: string) => {
+        if (!url) return null;
+        try {
+            const parsed = new URL(url);
+            const host = parsed.hostname.toLowerCase();
+            if (host.includes('amazon')) {
+                return { label: 'Buy from Amazon', shortLabel: 'Amazon', title: 'Buy on Amazon' };
+            }
+            if (host.includes('flipkart')) {
+                return { label: 'Buy from Flipkart', shortLabel: 'Flipkart', title: 'Buy on Flipkart' };
+            }
+            if (host.includes('google')) {
+                return { label: 'Google Books', shortLabel: 'Google Books', title: 'View on Google Books' };
+            }
+            return { label: 'Visit Store', shortLabel: 'Store', title: 'Visit External Retailer Store' };
+        } catch {
+            return null;
+        }
+    };
+
+    const retailer = getRetailerInfo(book.buyLink);
+
     return (
         <motion.div 
             ref={ref}
@@ -127,7 +149,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
                     <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{book.author}</p>
                 </div>
 
-                <div className="mt-4 flex items-end justify-between gap-3 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <div className="mt-4 flex items-end justify-between gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
                     <div>
                         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">Price</p>
                         <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
@@ -135,9 +157,25 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
                         </span>
                     </div>
 
-                    <Link to={`/book/${bookId}`} className="rounded-xl bg-gradient-to-r from-pink-500 to-indigo-600 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 transition-all hover:-translate-y-0.5 hover:shadow-xl">
-                        View
-                    </Link>
+                    <div className="flex items-center gap-2">
+                        {retailer && book.buyLink && (
+                            <a
+                                href={book.buyLink}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                onClick={(e) => e.stopPropagation()}
+                                title={retailer.title}
+                                className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-orange-500 px-3 py-2 text-xs font-bold text-white shadow-md shadow-orange-500/20 transition-all hover:-translate-y-0.5 hover:shadow-lg hover:from-amber-600 hover:to-orange-600"
+                            >
+                                <span>🔗</span>
+                                <span>{retailer.shortLabel}</span>
+                            </a>
+                        )}
+
+                        <Link to={`/book/${bookId}`} className="rounded-xl bg-gradient-to-r from-pink-500 to-indigo-600 px-3.5 py-2 text-xs font-bold text-white shadow-md shadow-indigo-500/20 transition-all hover:-translate-y-0.5 hover:shadow-lg">
+                            View
+                        </Link>
+                    </div>
                 </div>
             </div>
         </motion.div>

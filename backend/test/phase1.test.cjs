@@ -121,11 +121,13 @@ test('environment validation rejects missing critical production variables', () 
         STRIPE_SECRET_KEY: '',
         STRIPE_WEBHOOK_SECRET: '',
         PHONEPE_MERCHANT_ID: '',
-        PHONEPE_SALT_KEY: ''
+        PHONEPE_SALT_KEY: '',
+        PHONEPE_CLIENT_ID: '',
+        PHONEPE_CLIENT_SECRET: ''
     }, () => {
         assert.throws(
             validateEnvironment,
-            /Missing or invalid production environment variables: MONGO_URI, JWT_SECRET, CLIENT_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PHONEPE_MERCHANT_ID, PHONEPE_SALT_KEY/
+            /Missing or invalid production environment variables: MONGO_URI, JWT_SECRET, CLIENT_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PHONEPE_CLIENT_ID & PHONEPE_CLIENT_SECRET/
         );
     });
 
@@ -181,4 +183,83 @@ test('environment validation accepts complete production configuration', () => {
     });
 
     assert.equal(valid, undefined);
+});
+
+test('environment validation accepts complete production configuration with v2 credentials', () => {
+    const valid = withEnv({
+        NODE_ENV: 'production',
+        MONGO_URI: 'mongodb://localhost:27017/bookverse',
+        JWT_SECRET: 'a'.repeat(32),
+        CLIENT_URL: 'https://bookverse.example.com',
+        STRIPE_SECRET_KEY: 'stripe-test-key',
+        STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret',
+        PHONEPE_CLIENT_ID: 'client-id-test',
+        PHONEPE_CLIENT_SECRET: 'client-secret-test'
+    }, () => {
+        assert.doesNotThrow(validateEnvironment);
+    });
+
+    assert.equal(valid, undefined);
+});
+
+test('normalizeBook preserves valid buyLink in catalog contracts', () => {
+    const { normalizeBook } = require('../dist/utils/contracts.js');
+    const input = {
+        _id: '507f1f77bcf86cd799439011',
+        title: 'Atomic Habits',
+        author: 'James Clear',
+        price: 540,
+        buyLink: 'https://www.flipkart.com/atomic-habits/p/123'
+    };
+
+    const output = normalizeBook(input);
+    assert.equal(output.buyLink, 'https://www.flipkart.com/atomic-habits/p/123');
+});
+
+test('normalizeBook keeps book valid when buyLink is absent or empty', () => {
+    const { normalizeBook } = require('../dist/utils/contracts.js');
+    const inputWithout = {
+        _id: '507f1f77bcf86cd799439012',
+        title: 'The Great Gatsby',
+        author: 'F. Scott Fitzgerald',
+        price: 999
+    };
+    const inputEmpty = {
+        _id: '507f1f77bcf86cd799439013',
+        title: '1984',
+        author: 'George Orwell',
+        price: 850,
+        buyLink: '   '
+    };
+
+    const outputWithout = normalizeBook(inputWithout);
+    assert.equal(outputWithout.buyLink, undefined);
+    assert.equal(outputWithout.title, 'The Great Gatsby');
+
+    const outputEmpty = normalizeBook(inputEmpty);
+    assert.equal(outputEmpty.buyLink, undefined);
+    assert.equal(outputEmpty.title, '1984');
+});
+
+test('normalizeBook discards invalid or malformed external URLs', () => {
+    const { normalizeBook } = require('../dist/utils/contracts.js');
+    const malformedCases = [
+        'not-a-valid-url',
+        'javascript:alert(1)',
+        'ftp://invalid-protocol.com/book',
+        'data:text/html,malicious',
+        null,
+        12345
+    ];
+
+    for (const badLink of malformedCases) {
+        const output = normalizeBook({
+            _id: '507f1f77bcf86cd799439014',
+            title: 'Test Title',
+            author: 'Test Author',
+            price: 100,
+            buyLink: badLink
+        });
+        assert.equal(output.buyLink, undefined, `Expected buyLink to be undefined for ${badLink}`);
+    }
 });

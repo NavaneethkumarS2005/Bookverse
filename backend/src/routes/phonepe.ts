@@ -13,16 +13,91 @@ import {
     getPhonePeRedirectUrl,
     getPhonePeStatusForUser,
     isPhonePePaymentMatch,
+    PhonePeProviderResponse,
 } from '../../phonepeRedirect.cjs';
 
 const router = express.Router();
 
-const SALT_INDEX = 1;
-const getPhonePeConfig = () => ({
-    merchantId: process.env.PHONEPE_MERCHANT_ID || "",
-    saltKey: process.env.PHONEPE_SALT_KEY || "",
-    hostUrl: process.env.PHONEPE_HOST_URL || "https://api-preprod.phonepe.com/apis/pg-sandbox",
-});
+interface TokenCache {
+    accessToken: string;
+    expiresAtEpochMs: number;
+}
+
+let cachedToken: TokenCache | null = null;
+
+export const clearPhonePeTokenCache = () => {
+    cachedToken = null;
+};
+
+export const getPhonePeConfig = () => {
+    const clientId = process.env.PHONEPE_CLIENT_ID?.trim() || "";
+    const clientSecret = process.env.PHONEPE_CLIENT_SECRET?.trim() || "";
+    const clientVersion = process.env.PHONEPE_CLIENT_VERSION?.trim() || "1";
+    const merchantId = process.env.PHONEPE_MERCHANT_ID?.trim() || "";
+    const saltKey = process.env.PHONEPE_SALT_KEY?.trim() || "";
+    const hostUrl = process.env.PHONEPE_HOST_URL?.trim() || "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+    const isV2 = Boolean(clientId && clientSecret);
+    const isV1 = Boolean(merchantId && saltKey);
+
+    return {
+        clientId,
+        clientSecret,
+        clientVersion,
+        merchantId,
+        saltKey,
+        hostUrl,
+        isConfigured: isV2 || isV1,
+        mode: isV2 ? ('v2' as const) : isV1 ? ('v1' as const) : ('none' as const),
+    };
+};
+
+export const getPhonePeOAuthToken = async (config = getPhonePeConfig()): Promise<string> => {
+    if (!config.clientId || !config.clientSecret) {
+        throw new Error('PhonePe OAuth requires PHONEPE_CLIENT_ID and PHONEPE_CLIENT_SECRET');
+    }
+
+    const now = Date.now();
+    // Use cached token if valid for at least another 60 seconds
+    if (cachedToken && cachedToken.expiresAtEpochMs - now > 60000) {
+        return cachedToken.accessToken;
+    }
+
+    const oauthUrl = `${config.hostUrl.replace(/\/$/, '')}/v1/oauth/token`;
+    const params = new URLSearchParams({
+        client_id: config.clientId,
+        client_version: config.clientVersion,
+        client_secret: config.clientSecret,
+        grant_type: 'client_credentials'
+    });
+
+    const response = await axios.post(oauthUrl, params.toString(), {
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            Accept: 'application/json'
+        }
+    });
+
+    const data = response.data;
+    const token = data?.access_token;
+    if (!token || typeof token !== 'string') {
+        throw new Error('PhonePe OAuth response did not contain an access_token');
+    }
+
+    // expires_at can be in seconds or milliseconds
+    const rawExpires = Number(data?.expires_at);
+    let expiresAtEpochMs = now + 3600000;
+    if (Number.isFinite(rawExpires) && rawExpires > 0) {
+        expiresAtEpochMs = rawExpires < 10000000000 ? rawExpires * 1000 : rawExpires;
+    }
+
+    cachedToken = {
+        accessToken: token,
+        expiresAtEpochMs
+    };
+
+    return token;
+};
 
 const getRequestBaseUrl = (req: Request) => {
     const forwardedProto = req.headers['x-forwarded-proto'];
@@ -42,14 +117,29 @@ const getBackendBaseUrl = (req: Request) => {
 const getClientBaseUrl = (req: Request) => {
     const configured = process.env.CLIENT_URL?.trim();
     if (configured) return configured.replace(/\/$/, '');
-
-    // The callback originates from PhonePe's servers, so checking req.headers.origin
-    // or referer will return PhonePe URLs. We should rely on the configured CLIENT_URL.
     return 'http://localhost:5173';
 };
 
-const getPhonePeStatus = async (merchantTransactionId: string) => {
-    const { merchantId, saltKey, hostUrl } = getPhonePeConfig();
+const SALT_INDEX = 1;
+
+export const getPhonePeStatus = async (merchantTransactionId: string): Promise<PhonePeProviderResponse> => {
+    const config = getPhonePeConfig();
+
+    if (config.mode === 'v2') {
+        const token = await getPhonePeOAuthToken(config);
+        const statusUrl = `${config.hostUrl.replace(/\/$/, '')}/checkout/v2/order/${encodeURIComponent(merchantTransactionId)}/status`;
+        const response = await axios.get(statusUrl, {
+            headers: {
+                Accept: 'application/json',
+                'Content-Type': 'application/json',
+                Authorization: `O-Bearer ${token}`
+            }
+        });
+        return response.data;
+    }
+
+    // Legacy v1 flow
+    const { merchantId, saltKey, hostUrl } = config;
     const stringToHash = `/pg/v1/status/${merchantId}/${merchantTransactionId}` + saltKey;
     const checksum = crypto.createHash('sha256').update(stringToHash).digest('hex') + '###' + SALT_INDEX;
 
@@ -69,8 +159,9 @@ const getPhonePeStatus = async (merchantTransactionId: string) => {
 };
 
 const finalizePhonePeOrder = async (merchantTransactionId: string, providerResponse: any) => {
-    const providerCode = providerResponse?.code ?? providerResponse?.data?.code;
-    if (providerCode !== 'PAYMENT_SUCCESS') return false;
+    const providerCode = providerResponse?.state ?? providerResponse?.code ?? providerResponse?.data?.code;
+    const isSuccess = providerCode === 'PAYMENT_SUCCESS' || providerCode === 'COMPLETED';
+    if (!isSuccess) return false;
 
     const session = await mongoose.startSession();
     let finalized = false;
@@ -132,6 +223,14 @@ const verifyAndRedirect = async (merchantTransactionId: string, clientBaseUrl: s
 // 1. INITIATE PAYMENT
 router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
     try {
+        const config = getPhonePeConfig();
+        if (!config.isConfigured) {
+            return res.status(503).json({
+                success: false,
+                message: 'PhonePe payment gateway is currently not configured on this server.'
+            });
+        }
+
         const orderItems = Array.isArray(req.body.orderItems ?? req.body.items) ? req.body.orderItems ?? req.body.items : [];
         const catalogBooks = await Promise.all(orderItems.map(async (item: any) => {
             const id = item.bookId ?? item.id;
@@ -148,7 +247,6 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
         const backendBaseUrl = getBackendBaseUrl(req as Request);
         const userId = req.user.id;
         const merchantTransactionId = `MT${crypto.randomUUID().replace(/-/g, '')}`;
-        const { merchantId, saltKey, hostUrl } = getPhonePeConfig();
 
         // Create a Pending Order with server-authoritative catalog values.
         const newOrder = new Order({
@@ -163,15 +261,59 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
 
         await newOrder.save();
 
+        const amountPaise = Math.round(normalizedOrder.totalPrice * 100);
+        const callbackUrl = `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`;
+
+        if (config.mode === 'v2') {
+            const token = await getPhonePeOAuthToken(config);
+            const payUrl = `${config.hostUrl.replace(/\/$/, '')}/checkout/v2/pay`;
+            const payloadV2 = {
+                merchantOrderId: merchantTransactionId,
+                amount: amountPaise,
+                paymentFlow: {
+                    type: "PG_CHECKOUT",
+                    merchantUrls: {
+                        redirectUrl: callbackUrl
+                    }
+                },
+                metaInfo: {
+                    userId,
+                    orderId: newOrder._id.toString(),
+                    phone: normalizedOrder.shippingAddress.phone || ''
+                }
+            };
+
+            const response = await axios.post(payUrl, payloadV2, {
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                    Authorization: `O-Bearer ${token}`
+                }
+            });
+
+            const redirectUrl = response.data?.redirectUrl || response.data?.data?.redirectUrl;
+            if (!redirectUrl) {
+                throw new Error('PhonePe v2 response did not contain a redirectUrl');
+            }
+
+            return res.json({
+                success: true,
+                url: redirectUrl,
+                merchantTransactionId,
+                orderId: newOrder._id.toString()
+            });
+        }
+
+        // Fallback: Legacy v1 initiate flow
+        const { merchantId, saltKey, hostUrl } = config;
         const data = {
             merchantId,
             merchantTransactionId: merchantTransactionId,
             merchantUserId: userId,
-            amount: Math.round(normalizedOrder.totalPrice * 100), // Convert to Paise
-            // Include the merchantTransactionId in redirect and callback so QR/code flows carry the txn id
-            redirectUrl: `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`,
+            amount: amountPaise,
+            redirectUrl: callbackUrl,
             redirectMode: "POST",
-            callbackUrl: `${backendBaseUrl}/api/phonepe/callback?merchantTransactionId=${merchantTransactionId}`,
+            callbackUrl: callbackUrl,
             mobileNumber: normalizedOrder.shippingAddress.phone,
             paymentInstrument: {
                 type: "PAY_PAGE"
@@ -217,7 +359,6 @@ router.post('/pay', auth, async (req: AuthRequest, res: Response) => {
 });
 
 // 2. CALLBACK / REDIRECT HANDLER
-// PhonePe test/QR flows can return with a GET and only the transaction id in the query.
 router.get('/callback', async (req: Request, res: Response) => {
     const clientBaseUrl = getClientBaseUrl(req);
     const merchantTransactionId = req.query.merchantTransactionId as string
@@ -243,6 +384,7 @@ router.post('/callback', async (req: Request, res: Response) => {
         const merchantTransactionId = req.query.merchantTransactionId as string
             || req.query.transactionId as string
             || req.query.txnId as string
+            || (req.body as any)?.merchantOrderId
             || (req.body as any)?.merchantTransactionId
             || (req.body as any)?.transactionId;
 

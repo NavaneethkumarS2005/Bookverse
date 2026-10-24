@@ -1,13 +1,18 @@
-const failedCodes = new Set(['PAYMENT_ERROR', 'PAYMENT_DECLINED', 'PAYMENT_CANCELLED']);
+const failedCodes = new Set(['PAYMENT_ERROR', 'PAYMENT_DECLINED', 'PAYMENT_CANCELLED', 'FAILED']);
+const successCodes = new Set(['PAYMENT_SUCCESS', 'COMPLETED']);
 
 const isPhonePePaymentMatch = (providerResponse, merchantTransactionId, expectedAmount) => {
     const candidates = [
         providerResponse?.merchantTransactionId,
+        providerResponse?.merchantOrderId,
         providerResponse?.transactionId,
         providerResponse?.txnId,
+        providerResponse?.orderId,
         providerResponse?.data?.merchantTransactionId,
+        providerResponse?.data?.merchantOrderId,
         providerResponse?.data?.transactionId,
         providerResponse?.data?.txnId,
+        providerResponse?.data?.orderId,
     ];
     const providerTransactionId = candidates.find(candidate => typeof candidate === 'string' && candidate.trim())?.trim();
     const providerAmount = Number(providerResponse?.amount ?? providerResponse?.data?.amount);
@@ -27,9 +32,9 @@ const getPhonePeRedirectUrl = async ({
     findOrder,
 }) => {
     const providerResponse = await getProviderStatus(merchantTransactionId);
-    const code = providerResponse?.code ?? providerResponse?.data?.code;
+    const code = providerResponse?.state ?? providerResponse?.code ?? providerResponse?.data?.code;
 
-    if (code === 'PAYMENT_SUCCESS') {
+    if (successCodes.has(code)) {
         const finalized = await finalizeOrder(merchantTransactionId, providerResponse);
         if (finalized) {
             return `${clientBaseUrl}/?payment=success&txnId=${encodeURIComponent(merchantTransactionId)}`;
@@ -67,9 +72,9 @@ const getPhonePeStatusForUser = async ({
     }
 
     const providerResponse = await getProviderStatus(merchantTransactionId);
-    const code = providerResponse?.code ?? providerResponse?.data?.code;
+    const code = providerResponse?.state ?? providerResponse?.code ?? providerResponse?.data?.code;
 
-    if (code === 'PAYMENT_SUCCESS') {
+    if (successCodes.has(code)) {
         const finalized = await finalizeOrder(merchantTransactionId, providerResponse);
         if (finalized) {
             return {

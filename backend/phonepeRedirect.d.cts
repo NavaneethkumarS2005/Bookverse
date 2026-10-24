@@ -1,15 +1,22 @@
 export interface PhonePeProviderResponse {
     merchantTransactionId?: string;
+    merchantOrderId?: string;
+    orderId?: string;
     transactionId?: string;
     txnId?: string;
     amount?: number | string;
     code?: string;
+    state?: string;
+    redirectUrl?: string;
     data?: {
         merchantTransactionId?: string;
+        merchantOrderId?: string;
+        orderId?: string;
         transactionId?: string;
         txnId?: string;
         amount?: number | string;
         code?: string;
+        state?: string;
     };
 }
 

@@ -1,5 +1,12 @@
 import { EXTERNAL_ONLY_SEED_IDS, INTERNAL_DEMO_SEED_IDS } from '../utils/catalogFulfillment';
 
+/**
+ * Open Library Covers API base URL — returns real book cover images by ISBN.
+ * Format: https://covers.openlibrary.org/b/isbn/<ISBN>-M.jpg
+ * Size options: S (small), M (medium), L (large)
+ */
+const OL = (isbn: string) => `https://covers.openlibrary.org/b/isbn/${isbn}-M.jpg`;
+
 const rawSeedBooks = [
     // --- INTERNAL INVENTORY (Add to Cart) ---
     {
@@ -9,7 +16,7 @@ const rawSeedBooks = [
         price: 999,
         genre: "Fiction",
         description: "A classic novel set in the Jazz Age that explores themes of decadence, idealism, resistance to change, social upheaval, and excess. The story primarily concerns the young and mysterious millionaire Jay Gatsby and his quixotic passion and obsession with the beautiful former debutante Daisy Buchanan.",
-        image: "https://placehold.co/400x600/F87171/white?text=Great+Gatsby",
+        image: OL("9780743273565"),
         rating: 4.5,
         reviews: 120
     },
@@ -20,7 +27,7 @@ const rawSeedBooks = [
         price: 850,
         genre: "Sci-Fi",
         description: "A dystopian social science fiction novel and cautionary tale about the dangers of totalitarianism, mass surveillance, and repressive regimentation of persons and behaviours within society. The story takes place in an imagined future, the year 1984, when much of the world has fallen victim to perpetual war.",
-        image: "https://placehold.co/400x600/60A5FA/white?text=1984",
+        image: OL("9780451524935"),
         rating: 4.8,
         reviews: 350
     },
@@ -31,7 +38,7 @@ const rawSeedBooks = [
         price: 1450,
         genre: "Sci-Fi",
         description: "Set on the desert planet Arrakis, Dune is the story of the boy Paul Atreides, heir to a noble family tasked with ruling an inhospitable world where the only thing of value is the 'spice' melange, a drug capable of extending life and enhancing consciousness. Coveted across the known universe, melange is a prize worth killing for.",
-        image: "https://placehold.co/400x600/FBBF24/white?text=Dune",
+        image: OL("9780441013593"),
         rating: 4.9,
         reviews: 410
     },
@@ -42,7 +49,7 @@ const rawSeedBooks = [
         price: 799,
         genre: "Classic",
         description: "A romantic novel of manners that follows the character development of Elizabeth Bennet, the dynamic protagonist of the book who learns about the repercussions of hasty judgments and comes to appreciate the difference between superficial goodness and actual goodness.",
-        image: "https://placehold.co/400x600/34D399/white?text=Pride+Prejudice",
+        image: OL("9780141439518"),
         rating: 4.6,
         reviews: 200
     },
@@ -53,7 +60,7 @@ const rawSeedBooks = [
         price: 1200,
         genre: "Fantasy",
         description: "A children's fantasy novel following the quest of home-loving elf Bilbo Baggins to win a share of the treasure guarded by a dragon. Bilbo's journey takes him from light-hearted, rural surroundings into more sinister territory, where he encounters spiders, giant insects, and eventually the dragon Smaug.",
-        image: "https://placehold.co/400x600/A78BFA/white?text=The+Hobbit",
+        image: OL("9780547928227"),
         rating: 5.0,
         reviews: 500
     },
@@ -64,7 +71,7 @@ const rawSeedBooks = [
         price: 1750,
         genre: "History",
         description: "Sapiens: A Brief History of Humankind explores what it means to be 'human,' surveying the history of humankind from the Stone Age to the Silicon Age. Harari addresses big questions like: How did our species succeed in the battle for dominance? Why did our foraging ancestors come together to create cities and kingdoms?",
-        image: "https://placehold.co/400x600/F472B6/white?text=Sapiens",
+        image: OL("9780062316110"),
         rating: 4.7,
         reviews: 180
     },
@@ -75,7 +82,7 @@ const rawSeedBooks = [
         price: 1100,
         genre: "Non-Fiction",
         description: "The major thesis is a dichotomy between two modes of thought: 'System 1', which is fast, instinctive and emotional; and 'System 2', which is slower, more deliberative, and more logical. The book delineates cognitive biases associated with each type of thinking.",
-        image: "https://placehold.co/400x600/FCD34D/white?text=Thinking+Fast",
+        image: OL("9780374533557"),
         rating: 4.6,
         reviews: 300
     },
@@ -86,7 +93,7 @@ const rawSeedBooks = [
         price: 950,
         genre: "Science",
         description: "A landmark volume in science writing by one of the great minds of our time, Stephen Hawking. The book explores profound questions such as: How did the universe begin? and What made its start possible? Hawking leads us on a journey to the frontiers of physics to see how the universe is more bizarre than we ever imagined.",
-        image: "https://placehold.co/400x600/60A5FA/white?text=Brief+History",
+        image: OL("9780553380163"),
         rating: 4.8,
         reviews: 450
     },
@@ -97,7 +104,7 @@ const rawSeedBooks = [
         price: 890,
         genre: "Non-Fiction",
         description: "Silent Spring is an environmental science book that documents the detrimental effects on the environment of the indiscriminate use of pesticides. Carson accuses the chemical industry of spreading disinformation and public officials of accepting industry claims uncritically.",
-        image: "https://placehold.co/400x600/34D399/white?text=Silent+Spring",
+        image: OL("9780618249060"),
         rating: 4.4,
         reviews: 150
     },
@@ -108,7 +115,7 @@ const rawSeedBooks = [
         price: 550,
         genre: "Fiction",
         description: "The novel describes the experiences of Holden Caulfield, a student in an exclusive boarding school, who runs away to New York City. The book is famous for its depiction of adolescent alienation and loss of innocence, examining the world through the cynical but sensitive eyes of its narrator.",
-        image: "https://placehold.co/400x600/6366f1/white?text=Catcher+Rye",
+        image: OL("9780316769174"),
         rating: 4.2,
         reviews: 400
     },
@@ -119,7 +126,7 @@ const rawSeedBooks = [
         price: 850,
         genre: "Classic",
         description: "The unforgettable novel of a childhood in a sleepy Southern town and the crisis of conscience that rocked it. To Kill a Mockingbird became both an instant bestseller and a critical success when it was first published in 1960. It went on to win the Pulitzer Prize in 1961.",
-        image: "https://placehold.co/400x600/e11d48/white?text=Mockingbird",
+        image: OL("9780061935466"),
         rating: 4.9,
         reviews: 1200
     },
@@ -130,7 +137,7 @@ const rawSeedBooks = [
         price: 2500,
         genre: "Fantasy",
         description: "One Ring to rule them all, One Ring to find them, One Ring to bring them all and in the darkness bind them. In ancient times the Rings of Power were crafted by the Elven-smiths, and Sauron, the Dark Lord, forged the One Ring in the fires of Mount Doom.",
-        image: "https://placehold.co/400x600/ca8a04/white?text=LOTR",
+        image: OL("9780618640157"),
         rating: 5.0,
         reviews: 3000
     },
@@ -141,7 +148,7 @@ const rawSeedBooks = [
         price: 600,
         genre: "Mystery",
         description: "While in Paris, Harvard symbologist Robert Langdon is awakened by a phone call in the dead of the night. The elderly curator of the Louvre has been murdered inside the museum, his body covered in baffling symbols. As Langdon and gifted French cryptologist Sophie Neveu sort through the bizarre riddles, they are stunned to discover a trail of clues.",
-        image: "https://placehold.co/400x600/b91c1c/white?text=Da+Vinci",
+        image: OL("9780385504201"),
         rating: 4.3,
         reviews: 800
     },
@@ -152,7 +159,7 @@ const rawSeedBooks = [
         price: 500,
         genre: "Fiction",
         description: "Paulo Coelho's enchanting novel has inspired a devoted following around the world. This story, dazzling in its powerful simplicity and inspiring wisdom, is about an Andalusian shepherd boy named Santiago who travels from his homeland in Spain to the Egyptian desert in search of a treasure buried in the Pyramids.",
-        image: "https://placehold.co/400x600/fbbf24/white?text=Alchemist+Internal",
+        image: OL("9780061122415"),
         rating: 4.7,
         reviews: 500
     },
@@ -163,7 +170,7 @@ const rawSeedBooks = [
         price: 450,
         genre: "Fiction",
         description: "One boy, one boat, one tiger. After a tragic shipwreck, a solitary lifeboat is left at the mercy of the wild blue waters of the Pacific. The only survivors are a sixteen-year-old boy named Pi, a hyena, a zebra, an orangutan, and a 450-pound Royal Bengal tiger. The scene is set for one of the most extraordinary works of fiction in recent years.",
-        image: "https://placehold.co/400x600/0ea5e9/white?text=Life+of+Pi",
+        image: OL("9780156027328"),
         rating: 4.6,
         reviews: 600
     },
@@ -174,7 +181,7 @@ const rawSeedBooks = [
         price: 700,
         genre: "Sci-Fi",
         description: "In the ruins of a place once known as North America lies the nation of Panem, a shining Capitol surrounded by twelve outlying districts. The Capitol keeps the districts in line by forcing them all to send one boy and one girl between the ages of twelve and eighteen to participate in the annual Hunger Games.",
-        image: "https://placehold.co/400x600/be123c/white?text=Hunger+Games",
+        image: OL("9780439023481"),
         rating: 4.8,
         reviews: 1500
     },
@@ -185,7 +192,7 @@ const rawSeedBooks = [
         price: 650,
         genre: "Mystery",
         description: "On a warm summer morning in North Carthage, Missouri, it is Nick and Amy Dunne's fifth wedding anniversary. Presents are being wrapped and reservations are being made when Nick's clever and beautiful wife disappears. Husband-of-the-Year Nick isn't doing himself any favors with cringe-worthy daydreams.",
-        image: "https://placehold.co/400x600/1e293b/white?text=Gone+Girl",
+        image: OL("9780307588371"),
         rating: 4.4,
         reviews: 900
     },
@@ -196,7 +203,7 @@ const rawSeedBooks = [
         price: 550,
         genre: "Romance",
         description: "Despite the tumor-shrinking medical miracle that has bought her a few years, Hazel has never been anything but terminal, her final chapter inscribed upon diagnosis. But when a gorgeous plot twist named Augustus Waters suddenly appears at Cancer Kid Support Group, Hazel's story is about to be completely rewritten.",
-        image: "https://placehold.co/400x600/3b82f6/white?text=Fault+in+Stars",
+        image: OL("9780525478812"),
         rating: 4.7,
         reviews: 1100
     },
@@ -207,7 +214,7 @@ const rawSeedBooks = [
         price: 1200,
         genre: "Biography",
         description: "Based on more than forty interviews with Jobs conducted over two years—as well as interviews with more than a hundred family members, friends, adversaries, competitors, and colleagues—Walter Isaacson has written a riveting story of the roller-coaster life and searingly intense personality of a creative entrepreneur.",
-        image: "https://placehold.co/400x600/475569/white?text=Steve+Jobs",
+        image: OL("9781451648539"),
         rating: 4.8,
         reviews: 700
     },
@@ -218,7 +225,7 @@ const rawSeedBooks = [
         price: 1100,
         genre: "Biography",
         description: "In Elon Musk: Tesla, SpaceX, and the Quest for a Fantastic Future, veteran technology journalist Ashlee Vance provides the first inside look into the extraordinary life and times of Silicon Valley's most daring entrepreneur. Written with exclusive access to Musk.",
-        image: "https://placehold.co/400x600/ef4444/white?text=Elon+Musk",
+        image: OL("9780062301239"),
         rating: 4.6,
         reviews: 650
     },
@@ -229,7 +236,7 @@ const rawSeedBooks = [
         price: 2200,
         genre: "Technology",
         description: "Even bad code can function. But if code isn't clean, it can bring a development organization to its knees. Every year, countless hours and significant resources are lost because of poorly written code. But it doesn't have to be that way.",
-        image: "https://placehold.co/400x600/10b981/white?text=Clean+Code",
+        image: OL("9780132350884"),
         rating: 4.9,
         reviews: 2000
     },
@@ -240,7 +247,7 @@ const rawSeedBooks = [
         price: 900,
         genre: "Technology",
         description: "The great secret of our time is that there are still uncharted frontiers to explore and new inventions to create. In Zero to One, legendary entrepreneur and investor Peter Thiel shows how we can find singular ways to create those new things.",
-        image: "https://placehold.co/400x600/3b82f6/white?text=Zero+to+One",
+        image: OL("9780804139021"),
         rating: 4.7,
         reviews: 1000
     },
@@ -251,7 +258,7 @@ const rawSeedBooks = [
         price: 2100,
         genre: "Technology",
         description: "The Pragmatic Programmer cuts through the increasing specialization and technicalities of modern software development to examine the core process--taking a requirement and producing working, maintainable code that delights its users. It covers topics ranging from personal responsibility to architectural techniques.",
-        image: "https://placehold.co/400x600/6366f1/white?text=Pragmatic+Dev",
+        image: OL("9780135957059"),
         rating: 4.9,
         reviews: 1800
     },
@@ -262,7 +269,7 @@ const rawSeedBooks = [
         price: 4500,
         genre: "Technology",
         description: "This title covers a broad range of algorithms in depth, yet makes their design and analysis accessible to all levels of readers. Each chapter is relatively self-contained and can be used as a unit of study. The algorithms are described in English and in a pseudocode designed to be readable.",
-        image: "https://placehold.co/400x600/8b5cf6/white?text=Algorithms",
+        image: OL("9780262033848"),
         rating: 4.8,
         reviews: 500
     },
@@ -273,7 +280,7 @@ const rawSeedBooks = [
         price: 400,
         genre: "Biography",
         description: "This is the autobiography of the former President of India, Dr. A.P.J. Abdul Kalam. It covers his early life in Rameswaram, his education, and his work at DRDO and ISRO. It is an inspiring story of a boy from a humble background who went on to become a key figure in India's space and missile programs.",
-        image: "https://placehold.co/400x600/f59e0b/white?text=Wings+of+Fire",
+        image: OL("9788173711466"),
         rating: 5.0,
         reviews: 5000
     },
@@ -284,7 +291,7 @@ const rawSeedBooks = [
         price: 500,
         genre: "Fiction",
         description: "The White Tiger offers a story of coruscating wit, blistering suspense, and questionable morality, told by the most volatile, captivating, and utterly original narrator that this reader has come across in a long time. Balram Halwai is a complicated man. Servant. Philosopher. Entrepreneur. Murderer.",
-        image: "https://placehold.co/400x600/ef4444/white?text=White+Tiger",
+        image: OL("9781416562597"),
         rating: 4.3,
         reviews: 600
     },
@@ -297,7 +304,7 @@ const rawSeedBooks = [
         price: 540,
         genre: "Non-Fiction",
         description: "No matter your goals, Atomic Habits offers a proven framework for improving--every day. James Clear, one of the world's leading experts on habit formation, reveals practical strategies that will teach you exactly how to form good habits, break bad ones, and master the tiny behaviors that lead to remarkable results.",
-        image: "https://placehold.co/400x600/ef4444/white?text=Atomic+Habits",
+        image: OL("9781847941831"),
         rating: 4.9,
         reviews: 800,
         buyLink: "https://www.flipkart.com/atomic-habits-easy-proven-way-build-good-break-bad/p/itmfcyurt9pfakjh?pid=9781847941831"
@@ -309,7 +316,7 @@ const rawSeedBooks = [
         price: 720,
         genre: "Non-Fiction",
         description: "Born to survivalists in the mountains of Idaho, Tara Westover was seventeen the first time she set foot in a classroom. Her family was so isolated from mainstream society that there was no one to ensure the children received an education, and no one to intervene when one of Tara's older brothers became violent.",
-        image: "https://placehold.co/400x600/f59e0b/white?text=Educated",
+        image: OL("9780099511021"),
         rating: 4.7,
         reviews: 600,
         buyLink: "https://www.amazon.in/Educated-Memoir-Tara-Westover/dp/0099511029"
@@ -321,7 +328,7 @@ const rawSeedBooks = [
         price: 900,
         genre: "Non-Fiction",
         description: "In a life filled with meaning and accomplishment, Michelle Obama has emerged as one of the most iconic and compelling women of our era. As First Lady of the United States of America—the first African American to serve in that role—she helped create the most welcoming and inclusive White House in history.",
-        image: "https://placehold.co/400x600/3b82f6/white?text=Becoming",
+        image: OL("9780241334140"),
         rating: 4.8,
         reviews: 1000,
         buyLink: "https://www.amazon.in/Becoming-Michelle-Obama/dp/0241334144"
@@ -333,7 +340,7 @@ const rawSeedBooks = [
         price: 350,
         genre: "Fiction",
         description: "Paulo Coelho's enchanting novel has inspired a devoted following around the world. This story, dazzling in its powerful simplicity and inspiring wisdom, is about an Andalusian shepherd boy named Santiago who travels from his homeland in Spain to the Egyptian desert in search of a treasure buried in the Pyramids.",
-        image: "https://placehold.co/400x600/eab308/white?text=Alchemist",
+        image: OL("9788172234980"),
         rating: 4.8,
         reviews: 900,
         buyLink: "https://www.flipkart.com/alchemist-journey-dreams-tale-destiny-courage/p/itmfc9jxsc7dckfm?pid=9788172234980"
@@ -345,7 +352,7 @@ const rawSeedBooks = [
         price: 400,
         genre: "Non-Fiction",
         description: "Rich Dad Poor Dad is Robert's story of growing up with two dads — his real father and the father of his best friend, his rich dad — and the ways in which both men shaped his thoughts about money and investing. The book explodes the myth that you need to earn a high income to be rich and explains the difference between working for money and having your money work for you.",
-        image: "https://placehold.co/400x600/8b5cf6/white?text=Rich+Dad",
+        image: OL("9781612680194"),
         rating: 4.8,
         reviews: 3000,
         buyLink: "https://www.amazon.in/Rich-Dad-Poor-Middle-Updates/dp/1612680194"
@@ -357,7 +364,7 @@ const rawSeedBooks = [
         price: 350,
         genre: "Non-Fiction",
         description: "The people of Japan believe that everyone has an ikigai – a reason to jump out of bed each morning. Inspiring and comforting, this book will give you the life-changing tools to uncover your personal ikigai. It will show you how to leave urgency behind, find your purpose, nurture friendships and throw yourself into your passions.",
-        image: "https://placehold.co/400x600/10b981/white?text=Ikigai",
+        image: OL("9781786330895"),
         rating: 4.7,
         reviews: 2000,
         buyLink: "https://www.amazon.in/Ikigai-Japanese-Secret-Long-Happy/dp/178633089X"
@@ -369,7 +376,7 @@ const rawSeedBooks = [
         price: 300,
         genre: "Non-Fiction",
         description: "Timeless lessons on wealth, greed, and happiness. Doing well with money isn't necessarily about what you know. It's about how you behave. And behavior is hard to teach, even to really smart people. In The Psychology of Money, the author shares 19 short stories exploring the strange ways people think about money.",
-        image: "https://placehold.co/400x600/06b6d4/white?text=Psych+Money",
+        image: OL("9789390166268"),
         rating: 4.8,
         reviews: 2500,
         buyLink: "https://www.amazon.in/Psychology-Money-Morgan-Housel/dp/9390166268"
@@ -381,7 +388,7 @@ const rawSeedBooks = [
         price: 400,
         genre: "Non-Fiction",
         description: "In this generation-defining self-help guide, a superstar blogger cuts through the crap to show us how to stop trying to be 'positive' all the time so that we can truly become better, happier people. Manson makes the argument, backed both by academic research and well-timed poop jokes, that improving our lives hinges not on our ability to turn lemons into lemonade.",
-        image: "https://placehold.co/400x600/f97316/white?text=Subtle+Art",
+        image: OL("9780062457714"),
         rating: 4.5,
         reviews: 1800,
         buyLink: "https://www.amazon.in/Subtle-Art-Not-Giving/dp/0062457713"
@@ -393,7 +400,7 @@ const rawSeedBooks = [
         price: 450,
         genre: "Non-Fiction",
         description: "Simon Sinek started a movement to help people become more inspired at work, and in turn inspire their colleagues and customers. Since then, millions have been touched by the power of his ideas, including more than 28 million who've watched his TED Talk based on START WITH WHY -- the third most popular TED video of all time.",
-        image: "https://placehold.co/400x600/6366f1/white?text=Start+Why",
+        image: OL("9780241958223"),
         rating: 4.6,
         reviews: 1200,
         buyLink: "https://www.amazon.in/Start-Why-Leaders-Inspire-Everyone/dp/0241958229"
@@ -405,7 +412,7 @@ const rawSeedBooks = [
         price: 400,
         genre: "Non-Fiction",
         description: "Deep work is the ability to focus without distraction on a cognitively demanding task. It's a skill that allows you to quickly master complicated information and produce better results in less time. Deep work will make you better at what you do and provide the sense of true fulfillment that comes from craftsmanship.",
-        image: "https://placehold.co/400x600/eab308/white?text=Deep+Work",
+        image: OL("9780349411903"),
         rating: 4.7,
         reviews: 900,
         buyLink: "https://www.amazon.in/Deep-Work-Focused-Success-Distracted/dp/0349411905"
@@ -417,7 +424,7 @@ const rawSeedBooks = [
         price: 600,
         genre: "Biography",
         description: "For David Goggins, childhood was a nightmare - poverty, prejudice, and physical abuse colored his days and haunted his nights. But through self-discipline, mental toughness, and hard work, Goggins transformed himself from a depressed, overweight young man with no future into a U.S. Armed Forces icon.",
-        image: "https://placehold.co/400x600/1e293b/white?text=Cant+Hurt+Me",
+        image: OL("9781544512280"),
         rating: 4.9,
         reviews: 1500,
         buyLink: "https://www.amazon.in/Cant-Hurt-Me-Master-Mind/dp/1544512287"
@@ -429,7 +436,7 @@ const rawSeedBooks = [
         price: 500,
         genre: "Biography",
         description: "Shoe Dog is a memoir by Nike co-founder Phil Knight. The memoir chronicles the history of Nike from its early struggles to its evolution into one of the world's most recognized and profitable companies. It is a story about the messy, perilous, and chaotic journey that is entrepreneurship.",
-        image: "https://placehold.co/400x600/ef4444/white?text=Shoe+Dog",
+        image: OL("9781471146725"),
         rating: 4.9,
         reviews: 1100,
         buyLink: "https://www.amazon.in/Shoe-Dog-Memoir-Creator-Nike/dp/1471146723"
@@ -441,7 +448,7 @@ const rawSeedBooks = [
         price: 300,
         genre: "Non-Fiction",
         description: "Psychiatrist Viktor Frankl's memoir has riveted generations of readers with its descriptions of life in Nazi death camps and its lessons for spiritual survival. Based on his own experience and the stories of his patients, Frankl argues that we cannot avoid suffering but we can choose how to cope with it.",
-        image: "https://placehold.co/400x600/475569/white?text=Meaning",
+        image: OL("9780807014271"),
         rating: 4.8,
         reviews: 2000,
         buyLink: "https://www.amazon.in/Mans-Search-Meaning-Viktor-Frankl/dp/1846041244"
@@ -453,7 +460,7 @@ const rawSeedBooks = [
         price: 550,
         genre: "Non-Fiction",
         description: "Amoral, cunning, ruthless, and instructive, this multi-million-copy New York Times bestseller is the definitive manual for anyone interested in gaining, observing, or defending against ultimate control – from the author of The Laws of Human Nature.",
-        image: "https://placehold.co/400x600/b91c1c/white?text=48+Laws",
+        image: OL("9780140280197"),
         rating: 4.6,
         reviews: 1300,
         buyLink: "https://www.amazon.in/48-Laws-Power-Robert-Greene/dp/818677512X"
@@ -465,7 +472,7 @@ const rawSeedBooks = [
         price: 200,
         genre: "Non-Fiction",
         description: "Think and Grow Rich has been called the 'Granddaddy of All Motivational Literature.' It was the first book to boldly ask, 'What makes a winner?' The man who asked and listened for the answer, Napoleon Hill, is now counted in the top ranks of the world's winners himself.",
-        image: "https://placehold.co/400x600/ca8a04/white?text=Think+Grow",
+        image: OL("9781585424337"),
         rating: 4.7,
         reviews: 4000,
         buyLink: "https://www.amazon.in/Think-Grow-Rich-Napoleon-Hill/dp/1932429239"
@@ -477,7 +484,7 @@ const rawSeedBooks = [
         price: 300,
         genre: "Non-Fiction",
         description: "Maybe it was a grandparent, or a teacher, or a colleague. Someone older, patient and wise, who understood you when you were young and searching, helped you see the world as a more profound place, gave you sound advice to help you make your way through it.",
-        image: "https://placehold.co/400x600/f472b6/white?text=Morrie",
+        image: OL("9780767905923"),
         rating: 4.8,
         reviews: 1000,
         buyLink: "https://www.amazon.in/Tuesdays-Morrie-Greatest-Lesson-Life/dp/076790592X"
@@ -489,7 +496,7 @@ const rawSeedBooks = [
         price: 400,
         genre: "Non-Fiction",
         description: "To make the journey into the Now we will need to leave our analytical mind and its false created self, the ego, behind. From the very first page of Eckhart Tolle's extraordinary book, we move rapidly into a significantly higher altitude where we breathe a lighter air.",
-        image: "https://placehold.co/400x600/facc15/white?text=Power+of+Now",
+        image: OL("9781577314806"),
         rating: 4.6,
         reviews: 1500,
         buyLink: "https://www.amazon.in/Power-Now-Guide-Spiritual-Enlightenment/dp/0340733500"
@@ -501,7 +508,7 @@ const rawSeedBooks = [
         price: 2500,
         genre: "Technology",
         description: "Data is at the center of many challenges in system design today. Difficult issues need to be figured out, such as scalability, consistency, reliability, efficiency, and maintainability. In addition, we have an overwhelming variety of tools, including relational databases, NoSQL datastores, stream or batch processors, and message brokers.",
-        image: "https://placehold.co/400x600/3b82f6/white?text=Data+Design",
+        image: OL("9781449373320"),
         rating: 5.0,
         reviews: 800,
         buyLink: "https://www.amazon.in/Designing-Data-Intensive-Applications-Reliable-Maintainable/dp/9352137237"
@@ -513,7 +520,7 @@ const rawSeedBooks = [
         price: 2000,
         genre: "Technology",
         description: "Refactoring is a controlled technique for improving the design of an existing code base. Its essence is applying a series of small behavior-preserving transformations, each of which 'too small' to be worth doing. However, the cumulative effect of each of these transformations is quite significant.",
-        image: "https://placehold.co/400x600/6366f1/white?text=Refactoring",
+        image: OL("9780134757599"),
         rating: 4.8,
         reviews: 500,
         buyLink: "https://www.amazon.in/Refactoring-Improving-Design-Existing-Code/dp/0134757599"
@@ -525,7 +532,7 @@ const rawSeedBooks = [
         price: 1800,
         genre: "Technology",
         description: "You know you don't want to reinvent the wheel (or worse, a flat tire), so you look to Design Patterns--the lessons learned by those who've faced the same software design problems. With Head First Design Patterns, you'll learn the proven patterns that hold your software together.",
-        image: "https://placehold.co/400x600/ec4899/white?text=Head+First",
+        image: OL("9780596007126"),
         rating: 4.9,
         reviews: 600,
         buyLink: "https://www.amazon.in/Head-First-Design-Patterns-Brain-Friendly/dp/0596007124"
@@ -537,7 +544,7 @@ const rawSeedBooks = [
         price: 1500,
         genre: "Technology",
         description: "No matter how much experience you have with JavaScript, odds are you don't fully understand the language. As a part of the 'You Don't Know JS' series, this compact guide explores these trickier parts of the language that many JavaScript programmers simply avoid.",
-        image: "https://placehold.co/400x600/facc15/white?text=YDKJS",
+        image: OL("9781491924464"),
         rating: 4.8,
         reviews: 400,
         buyLink: "https://github.com/getify/You-Dont-Know-JS"
@@ -549,7 +556,7 @@ const rawSeedBooks = [
         price: 2000,
         genre: "Technology",
         description: "I am not a recruiter. I am a software engineer. And as such, I know what it's like to be asked to whip up brilliant algorithms on the spot and then write flawless code on a whiteboard. I've been through this as a candidate and as an interviewer.",
-        image: "https://placehold.co/400x600/10b981/white?text=Cracking+Code",
+        image: OL("9780984782857"),
         rating: 4.9,
         reviews: 3000,
         buyLink: "https://www.amazon.in/Cracking-Coding-Interview-Programming-Questions/dp/0984782850"

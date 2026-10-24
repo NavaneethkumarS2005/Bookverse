@@ -20,9 +20,7 @@ export const validateEnvironment = (): void => {
         'JWT_SECRET',
         'CLIENT_URL',
         'STRIPE_SECRET_KEY',
-        'STRIPE_WEBHOOK_SECRET',
-        'PHONEPE_MERCHANT_ID',
-        'PHONEPE_SALT_KEY'
+        'STRIPE_WEBHOOK_SECRET'
     ];
 
     if (process.env.NODE_ENV !== 'production') return;
@@ -31,6 +29,13 @@ export const validateEnvironment = (): void => {
         const value = process.env[name]?.trim();
         return !value || (name === 'JWT_SECRET' && value.length < JWT_SECRET_MINIMUM_LENGTH);
     });
+
+    const hasV2 = Boolean(process.env.PHONEPE_CLIENT_ID?.trim() && process.env.PHONEPE_CLIENT_SECRET?.trim());
+    const hasV1 = Boolean(process.env.PHONEPE_MERCHANT_ID?.trim() && process.env.PHONEPE_SALT_KEY?.trim());
+
+    if (!hasV2 && !hasV1) {
+        missing.push('PHONEPE_CLIENT_ID & PHONEPE_CLIENT_SECRET (or PHONEPE_MERCHANT_ID & PHONEPE_SALT_KEY)');
+    }
 
     if (missing.length > 0) {
         throw new Error(`Missing or invalid production environment variables: ${missing.join(', ')}`);

@@ -22,6 +22,7 @@ export interface CatalogBookSummary {
   description?: string;
   stock?: number;
   fulfillment?: CatalogFulfillment;
+  buyLink?: string;
 }
 
 export interface CartItemContract {
@@ -86,6 +87,21 @@ const idOf = (value: unknown): string | undefined => {
   return asStringId(value);
 };
 
+export const isValidExternalUrl = (url: unknown): string | undefined => {
+  if (typeof url !== 'string') return undefined;
+  const trimmed = url.trim();
+  if (!trimmed) return undefined;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+      return trimmed;
+    }
+  } catch {
+    return undefined;
+  }
+  return undefined;
+};
+
 export const normalizeBook = (value: unknown): CatalogBookSummary => {
   if (!value || typeof value !== 'object') {
     throw new Error('Book data is required');
@@ -127,6 +143,7 @@ export const normalizeBook = (value: unknown): CatalogBookSummary => {
     description: book.description ? String(book.description) : undefined,
     stock,
     fulfillment,
+    ...(isValidExternalUrl(book.buyLink) ? { buyLink: isValidExternalUrl(book.buyLink) } : {}),
   };
 };
 
