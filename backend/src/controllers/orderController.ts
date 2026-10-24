@@ -162,6 +162,124 @@ const consumeStockOnce = async (order: any) => {
     await order.save();
 };
 
+export const createDemoOrder = async (req: AuthRequest, res: Response) => {
+    // Demo orders are disabled in production unless an operator explicitly enables them.
+    if (process.env.NODE_ENV === 'production' && process.env.ENABLE_DEMO_PAYMENTS !== 'true') {
+        return res.status(403).json({ success: false, message: 'Demo payments are disabled in this environment.' });
+    }
+
+    const requestId = req.body?.requestId;
+    if (typeof requestId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(requestId)) {
+        return res.status(400).json({ success: false, message: 'A valid demo request ID is required.' });
+    }
+
+    const paymentId = `DEMO_${requestId.toLowerCase()}`;
+    let normalized: Awaited<ReturnType<typeof loadNormalizedOrder>>;
+
+    try {
+        const orderItems = Array.isArray(req.body?.orderItems) ? req.body.orderItems : [];
+        normalized = await loadNormalizedOrder(req, orderItems);
+    } catch (err: any) {
+        return res.status(400).json({ success: false, message: err?.message || 'Invalid demo order.' });
+    }
+
+    const matchesExistingDemoOrder = (order: any) => {
+        if (!order || String(order.user) !== req.user.id ||
+            order.paymentMethod !== 'UPI_QR_DEMO' ||
+            order.status !== 'Demo Completed' ||
+            order.stockConsumed !== true ||
+            Number(order.totalPrice) !== normalized.totalPrice) return false;
+
+        const existingItems = (order.orderItems || []).map((item: any) => ({
+            bookId: String(item.bookId), quantity: Number(item.quantity), title: String(item.title), price: Number(item.price),
+        }));
+        const requestedItems = normalized.orderItems.map((item: any) => ({
+            bookId: String(item.bookId), quantity: Number(item.quantity), title: String(item.title), price: Number(item.price),
+        }));
+        const existingAddress = order.shippingAddress || {};
+        const requestedAddress = normalized.shippingAddress;
+        return JSON.stringify(existingItems) === JSON.stringify(requestedItems) &&
+            String(existingAddress.address || '') === requestedAddress.address &&
+            String(existingAddress.city || '') === requestedAddress.city &&
+            String(existingAddress.zip || '') === requestedAddress.zip &&
+            String(existingAddress.phone || '') === requestedAddress.phone;
+    };
+
+    let createdOrder: any;
+    const session = await mongoose.startSession();
+    try {
+        await session.withTransaction(async () => {
+            const existing = await Order.findOne({ paymentId }).session(session);
+            if (existing) {
+                if (!matchesExistingDemoOrder(existing)) {
+                    const conflict: any = new Error('This demo request ID has already been used for a different order.');
+                    conflict.statusCode = 409;
+                    throw conflict;
+                }
+                createdOrder = existing;
+                return;
+            }
+
+            const [order] = await Order.create([{
+                user: req.user.id,
+                orderItems: normalized.orderItems,
+                totalPrice: normalized.totalPrice,
+                paymentId,
+                paymentMethod: 'UPI_QR_DEMO',
+                status: 'Demo Completed',
+                stockConsumed: false,
+                shippingAddress: normalized.shippingAddress,
+            }], { session });
+
+            await decrementOrderStock(normalized.orderItems, session);
+            order.stockConsumed = true;
+            await order.save({ session });
+            createdOrder = order;
+        });
+    } catch (err: any) {
+        // If simultaneous retries race on the unique paymentId, the losing
+        // transaction is rolled back; return the already-committed matching order.
+        if (err?.code === 11000) {
+            const existing = await Order.findOne({ paymentId });
+            if (matchesExistingDemoOrder(existing)) {
+                return res.json({
+                    success: true,
+                    demo: true,
+                    realPayment: false,
+                    message: 'Demo order already created. No money was transferred.',
+                    orderId: existing._id.toString(),
+                    order: serializeOrder(existing),
+                });
+            }
+            return res.status(409).json({ success: false, message: 'This demo request ID has already been used.' });
+        }
+
+        const statusCode = err?.statusCode || (
+            /required|invalid|unavailable|quantity|price|book|address|order item/i.test(String(err?.message))
+                ? 400
+                : 500
+        );
+        console.error('Demo Order Error:', err);
+        return res.status(statusCode).json({ success: false, message: statusCode === 500 ? 'Unable to process demo order. Please try again.' : err.message });
+    } finally {
+        await session.endSession();
+    }
+
+    if (!createdOrder) {
+        return res.status(500).json({ success: false, message: 'Demo order could not be confirmed.' });
+    }
+
+    await sendOrderConfirmation(req, createdOrder, normalized);
+    return res.json({
+        success: true,
+        demo: true,
+        realPayment: false,
+        message: 'Demo order created successfully. No money was transferred.',
+        orderId: createdOrder._id.toString(),
+        order: serializeOrder(createdOrder),
+    });
+};
+
 export const getOrders = async (req: AuthRequest, res: Response) => {
     try {
         const orders = await Order.find({ user: new mongoose.Types.ObjectId(req.user.id) }).sort({ createdAt: -1 });
