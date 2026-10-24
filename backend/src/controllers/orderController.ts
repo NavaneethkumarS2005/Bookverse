@@ -206,6 +206,7 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
     };
 
     let createdOrder: any;
+    let createdNewOrder = false;
     const session = await mongoose.startSession();
     try {
         await session.withTransaction(async () => {
@@ -235,6 +236,7 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
             order.stockConsumed = true;
             await order.save({ session });
             createdOrder = order;
+            createdNewOrder = true;
         });
     } catch (err: any) {
         // If simultaneous retries race on the unique paymentId, the losing
@@ -269,7 +271,7 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
         return res.status(500).json({ success: false, message: 'Demo order could not be confirmed.' });
     }
 
-    await sendOrderConfirmation(req, createdOrder, normalized);
+    if (createdNewOrder) await sendOrderConfirmation(req, createdOrder, normalized);
     return res.json({
         success: true,
         demo: true,
