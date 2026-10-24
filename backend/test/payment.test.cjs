@@ -164,6 +164,13 @@ test('Payment endpoints reject unauthenticated checkout requests', async () => {
     });
     assert.equal(resSave.status, 401);
 
+    const resDemo = await fetch(`${baseUrl}/api/payment/demo-order`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ requestId: '550e8400-e29b-41d4-a716-446655440000', orderItems: [] }),
+    });
+    assert.equal(resDemo.status, 401);
+
     const resPhonepe = await fetch(`${baseUrl}/api/phonepe/pay`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -171,6 +178,48 @@ test('Payment endpoints reject unauthenticated checkout requests', async () => {
     });
     assert.equal(resPhonepe.status, 401);
   });
+});
+
+test('Demo payment endpoint is registered and disabled in production by default', async () => {
+  const app = express();
+  app.use(cookieParser());
+  app.use(express.json());
+  app.use('/api/payment', paymentRoutes);
+
+  const previousNodeEnv = process.env.NODE_ENV;
+  const previousDemoFlag = process.env.ENABLE_DEMO_PAYMENTS;
+  const previousJwtSecret = process.env.JWT_SECRET;
+  process.env.NODE_ENV = 'production';
+  process.env.JWT_SECRET = 'test-only-jwt-secret-with-32-chars';
+  delete process.env.ENABLE_DEMO_PAYMENTS;
+
+  try {
+    await withServer(app, async baseUrl => {
+      const res = await fetch(`${baseUrl}/api/payment/demo-order`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Cookie: `token=${createAuthToken()}`,
+        },
+        body: JSON.stringify({
+          requestId: '550e8400-e29b-41d4-a716-446655440000',
+          orderItems: [],
+        }),
+      });
+      assert.equal(res.status, 403);
+      assert.deepEqual(await res.json(), {
+        success: false,
+        message: 'Demo payments are disabled in this environment.',
+      });
+    });
+  } finally {
+    if (previousNodeEnv === undefined) delete process.env.NODE_ENV;
+    else process.env.NODE_ENV = previousNodeEnv;
+    if (previousJwtSecret === undefined) delete process.env.JWT_SECRET;
+    else process.env.JWT_SECRET = previousJwtSecret;
+    if (previousDemoFlag === undefined) delete process.env.ENABLE_DEMO_PAYMENTS;
+    else process.env.ENABLE_DEMO_PAYMENTS = previousDemoFlag;
+  }
 });
 
 test('Stripe webhook rejects requests when webhook secret is unconfigured', async () => {
