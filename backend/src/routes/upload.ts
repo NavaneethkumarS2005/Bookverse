@@ -44,6 +44,13 @@ const normalizeCoverUrl = (value?: string, title?: string, author?: string, cate
     return trimmed;
 };
 
+const getUploadBaseUrl = (req: Request): string => {
+    const configuredBaseUrl = process.env.BACKEND_PUBLIC_URL?.trim().replace(/\/$/, '');
+    if (configuredBaseUrl) return configuredBaseUrl;
+
+    return `${req.protocol}://${req.get('host')}`;
+};
+
 const validateCoverMutation = (bookId?: string) => {
     if (!bookId) {
         return null;
@@ -123,7 +130,7 @@ router.post('/', auth, upload.fields([
                 return normalizeCoverUrl(cloudinaryResult.secure_url, 'Uploaded Book', 'Seller', 'Used Book');
             }
 
-            return normalizeCoverUrl(`${req.protocol}://${req.get('host')}/uploads/${file.filename}`, 'Uploaded Book', 'Seller', 'Used Book');
+            return normalizeCoverUrl(`${getUploadBaseUrl(req)}/uploads/${file.filename}`, 'Uploaded Book', 'Seller', 'Used Book');
         }));
 
         const primaryImage = uploadedUrls[0];

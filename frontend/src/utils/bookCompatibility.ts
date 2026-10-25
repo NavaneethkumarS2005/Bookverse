@@ -1,4 +1,5 @@
 import { Book } from '../types';
+import { API_URL } from '../config';
 
 /** Local image keeps cards usable if a real cover cannot be loaded. */
 export const BOOK_IMAGE_FALLBACK = '/images/bookstore-hero-editorial.png';
@@ -56,6 +57,27 @@ export const isValidExternalUrl = (url: unknown): string | undefined => {
     return undefined;
 };
 
+const STALE_LOCAL_UPLOAD_ORIGINS = new Set([
+    'http://localhost:5001',
+    'http://127.0.0.1:5001',
+]);
+
+const resolveStaleLocalUploadUrl = (value: string): string => {
+    if (!API_URL || !value.toLowerCase().startsWith('http')) return value;
+
+    try {
+        const parsed = new URL(value);
+        const origin = `${parsed.protocol}//${parsed.host}`.replace(/\/$/, '').toLowerCase();
+        if (!STALE_LOCAL_UPLOAD_ORIGINS.has(origin) || !parsed.pathname.startsWith('/uploads/')) {
+            return value;
+        }
+
+        return `${API_URL.replace(/\/$/, '')}${parsed.pathname}${parsed.search}${parsed.hash}`;
+    } catch {
+        return value;
+    }
+};
+
 export const resolveBookImage = (value?: string, title?: string, author?: string, category?: string): string => {
     if (!value || !value.trim()) return buildFallbackCoverSvg(title || 'Untitled', author, category);
 
@@ -73,7 +95,7 @@ export const resolveBookImage = (value?: string, title?: string, author?: string
         return buildFallbackCoverSvg(title || 'Untitled', author, category);
     }
 
-    return normalized;
+    return resolveStaleLocalUploadUrl(normalized);
 };
 
 type UnknownRecord = Record<string, any>;
@@ -139,7 +161,7 @@ export const normalizeBook = (value: unknown, index = 0): Book => {
 
     const image = isTextPlaceholder(rawImage)
         ? buildFallbackCoverSvg(title, author, category)
-        : rawImage;
+        : resolveStaleLocalUploadUrl(rawImage || '');
 
     const price = asNumber(raw.price ?? raw.cost, 0);
     const rating = asNumber(raw.rating ?? raw.averageRating, 0);
