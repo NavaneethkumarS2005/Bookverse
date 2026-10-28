@@ -121,12 +121,12 @@ const Marketplace: React.FC = () => {
                             alt="Marketplace banner"
                             className="h-full w-full object-cover opacity-30"
                         />
-                        <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-indigo-950/80" />
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#171713] via-[#171713]/90 to-[#3a3a30]/80" />
                     </div>
 
                     <div className="relative z-10 grid gap-6 lg:grid-cols-[1.4fr_0.6fr] lg:items-end">
                         <div>
-                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-indigo-300">Curated market</p>
+                            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-[#cec5b7]">Curated market</p>
                             <h1 className="mb-3 text-4xl font-black tracking-tight text-white md:text-5xl">Find your next beloved read.</h1>
                             <p className="max-w-xl text-base text-slate-300 md:text-lg">
                                 Browse in-house LuminaBook titles and trusted external storefront listings in one premium, easy-to-shop marketplace.
@@ -150,10 +150,10 @@ const Marketplace: React.FC = () => {
 
                 <div className="mt-8 flex flex-col md:flex-row justify-between items-end md:items-center mb-10 gap-4">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Browse shelves</p>
+                        <p className="text-xs font-semibold uppercase tracking-[0.25em] text-[#78806a]">Browse shelves</p>
                         <h2 className="font-outfit text-3xl font-bold text-slate-900  mb-2">Marketplace</h2>
                     </div>
-                    <Link to="/sell" className="px-6 py-2.5 rounded-full font-semibold text-white bg-gradient-to-r from-pink-500 to-indigo-600 hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-md flex items-center gap-2">
+                    <Link to="/sell" className="px-6 py-2.5 rounded-[2px] font-semibold text-[#fffdf8] bg-[#171713] hover:bg-[#7d2428] transition-colors text-sm flex items-center gap-2">
                         <span>+</span> Sell a Book
                     </Link>
                 </div>

@@ -78,7 +78,7 @@ const Footer: React.FC = () => {
                             </a>
                         </div>
                         <p className="text-sm text-slate-500 ">
-                            Questions? <a href="mailto:support@bookverse.com" className="text-indigo-600  hover:underline">support@bookverse.com</a>
+                            Questions? <a href="mailto:support@bookverse.com" className="hover:underline">support@bookverse.com</a>
                         </p>
                     </div>
                 </div>
