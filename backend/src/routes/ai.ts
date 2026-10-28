@@ -35,7 +35,7 @@ BookVerse website knowledge (verified from the current app):
 - Admins review publisher applications and book submissions in the existing Admin Dashboard under Publishers.
 - Sell Book page: user flow for listing books to sell.
 - Wishlist, Cart, Orders, Profile, Login, Contact: authenticated or public user flows.
-- Checkout and payment: current supported flows include PhonePe, Stripe card checkout, and Cash on Delivery as described in the app's store policy.
+- Checkout and payment: current supported flows include demo UPI QR, Stripe card checkout, and Cash on Delivery as described in the app's store policy.
 - Authentication: JWT-based session auth with cookie-based login flow.
 - Admin dashboard: admin functionality exists for store administration.
 - Current limitations: there is no verified live-weather integration, no external web search integration in this codebase, and the assistant should only describe features implemented in the app.
@@ -354,7 +354,7 @@ RESPONSE GUIDELINES:
 STORE POLICIES:
 - Shipping: Free on all orders, 3-5 business days
 - Returns: 7-day return policy for undamaged books
-- Payment: PhonePe, Credit/Debit Card via Stripe, and Cash on Delivery
+- Payment: Demo UPI QR, Credit/Debit Card via Stripe, and Cash on Delivery
 
 Always greet the customer warmly by their name if it is provided.`;
 
@@ -557,7 +557,7 @@ router.post('/chat', [
         const faqResponses: { [key: string]: string } = {
             'shipping': 'Shipping is free on all orders and takes 3-5 business days across India.',
             'return': 'We offer a 7-day return policy for undamaged books. Contact our support team to start a return.',
-            'payment': 'BookVerse accepts PhonePe, Credit/Debit Card payments through Stripe, and Cash on Delivery.',
+            'payment': 'BookVerse accepts demo UPI QR orders, Credit/Debit Card payments through Stripe, and Cash on Delivery.',
             'order': 'You can view your orders in the Orders page once you are logged in.',
             'sell': 'You can sell books through the Sell page. Just fill in the details and submit your book for listing.'
         };

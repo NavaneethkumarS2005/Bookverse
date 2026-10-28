@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import InlineAlert from '../components/InlineAlert';
 // @ts-ignore
 import { API_URL } from '../config';
+import BookCover from '../components/BookCover';
 
 interface BookFormData {
     title: string;
@@ -159,9 +160,9 @@ const SellBook: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+        <div className="min-h-screen pt-28 pb-20 bg-slate-50  transition-colors duration-300">
             <div className="max-w-2xl mx-auto px-5">
-                <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 md:p-10 shadow-xl border border-slate-200 dark:border-slate-800">
+                <div className="bg-white  rounded-3xl p-8 md:p-10 shadow-xl border border-slate-200 ">
                     <h1 className="font-outfit text-3xl md:text-4xl font-bold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent text-center mb-8">
                         Sell Your Book
                     </h1>
@@ -177,52 +178,52 @@ const SellBook: React.FC = () => {
 
                     <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Book Title *</label>
+                            <label className="block text-sm font-medium text-slate-500  mb-2">Book Title *</label>
                             <input
                                 type="text"
                                 name="title"
                                 value={formData.title}
                                 onChange={handleChange}
                                 placeholder="e.g. The Alchemist"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                 required
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Author *</label>
+                            <label className="block text-sm font-medium text-slate-500  mb-2">Author *</label>
                             <input
                                 type="text"
                                 name="author"
                                 value={formData.author}
                                 onChange={handleChange}
                                 placeholder="e.g. Paulo Coelho"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                 required
                             />
                         </div>
 
                         <div className="flex gap-6">
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Price (₹) *</label>
+                                <label className="block text-sm font-medium text-slate-500  mb-2">Price (₹) *</label>
                                 <input
                                     type="number"
                                     name="price"
                                     value={formData.price}
                                     onChange={handleChange}
                                     placeholder="499"
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                     required
                                     min="1"
                                 />
                             </div>
                             <div className="flex-1">
-                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Genre *</label>
+                                <label className="block text-sm font-medium text-slate-500  mb-2">Genre *</label>
                                 <select
                                     name="genre"
                                     value={formData.genre}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                     required
                                 >
                                     <option value="">Select Genre</option>
@@ -240,23 +241,23 @@ const SellBook: React.FC = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div>
-                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">ISBN (Optional)</label>
+                                <label className="block text-sm font-medium text-slate-500  mb-2">ISBN (Optional)</label>
                                 <input
                                     type="text"
                                     name="isbn"
                                     value={formData.isbn}
                                     onChange={handleChange}
                                     placeholder="9780000000000"
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                 />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Condition</label>
+                                <label className="block text-sm font-medium text-slate-500  mb-2">Condition</label>
                                 <select
                                     name="condition"
                                     value={formData.condition}
                                     onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                    className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                 >
                                     <option value="Like New">Like New</option>
                                     <option value="Good">Good</option>
@@ -267,22 +268,22 @@ const SellBook: React.FC = () => {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Book Description</label>
+                            <label className="block text-sm font-medium text-slate-500  mb-2">Book Description</label>
                             <textarea
                                 name="description"
                                 value={formData.description}
                                 onChange={handleChange}
                                 rows={4}
                                 placeholder="Briefly describe the book condition and edition"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                             />
                         </div>
 
                         <div>
-                            <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Cover & Condition Images *</label>
-                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                            <label className="block text-sm font-medium text-slate-500  mb-2">Cover & Condition Images *</label>
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300  rounded-xl cursor-pointer hover:bg-slate-50  transition-colors">
                                 <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                                    <p className="mb-2 text-sm text-slate-500 dark:text-slate-400">
+                                    <p className="mb-2 text-sm text-slate-500 ">
                                         <span className="font-semibold text-indigo-600">Click to upload</span> or drag and drop
                                     </p>
                                     <p className="text-xs text-slate-400">Upload 1 cover photo + up to 5 condition photos (PNG, JPG, WEBP; MAX. 5MB each)</p>
@@ -299,7 +300,7 @@ const SellBook: React.FC = () => {
                             {formData.images.length > 0 && (
                                 <div className="mt-4 flex flex-wrap gap-3">
                                     {formData.images.map((img, index) => (
-                                        <div key={`${img}-${index}`} className="p-2 bg-slate-100 dark:bg-slate-800 rounded-xl inline-block">
+                                        <div key={`${img}-${index}`} className="p-2 bg-slate-100  rounded-xl inline-block">
                                             <img src={img} alt={`Condition ${index + 1}`} className="h-20 w-20 rounded-lg object-cover" onError={(e) => {
                                                 (e.currentTarget as HTMLImageElement).src = '/images/bookstore-hero-editorial.png';
                                             }} />
@@ -316,14 +317,12 @@ const SellBook: React.FC = () => {
                                 >
                                     Fetch official cover
                                 </button>
-                                <span className="text-xs text-slate-500 dark:text-slate-400">Uses ISBN lookup when available.</span>
+                                <span className="text-xs text-slate-500 ">Uses ISBN lookup when available.</span>
                             </div>
 
                             {formData.image && (
-                                <div className="mt-4 p-2 bg-slate-100 dark:bg-slate-800 rounded-xl inline-block">
-                                    <img src={formData.image} alt="Preview" className="h-24 rounded-lg object-cover" onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).src = '/images/bookstore-hero-editorial.png';
-                                    }} />
+                                <div className="mt-4 p-2 bg-slate-100  rounded-xl inline-block">
+                                    <BookCover image={formData.image} title={formData.title || 'Book preview'} author={formData.author} className="h-24 w-16" alt="Preview" />
                                 </div>
                             )}
                         </div>

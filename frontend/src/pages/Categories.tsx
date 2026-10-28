@@ -12,25 +12,25 @@ const collectionCards = [
         title: 'Bestsellers',
         description: 'Readers keep returning to these celebrated favorites for a reason.',
         accent: 'from-indigo-600 to-blue-500',
-        image: 'https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80',
+        image: '/images/reading corner.jpeg',
     },
     {
         title: 'New Arrivals',
         description: 'Fresh voices, bold debuts, and titles the community is reading now.',
         accent: 'from-pink-500 to-rose-500',
-        image: 'https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&q=80',
+        image: '/images/future library.jpeg',
     },
     {
         title: 'Staff Picks',
         description: 'A carefully chosen list for readers who want atmosphere and depth.',
         accent: 'from-amber-500 to-orange-500',
-        image: 'https://images.unsplash.com/photo-1524578271613-d550eacf6090?auto=format&fit=crop&q=80',
+        image: '/images/genres.jpeg',
     },
     {
         title: 'Slow Reads',
         description: 'Thoughtful, atmospheric books designed for deep evenings and long weekends.',
         accent: 'from-emerald-500 to-teal-500',
-        image: 'https://images.unsplash.com/photo-1507842217121-9e96e4769ea0?auto=format&fit=crop&q=80',
+        image: '/images/genre-collection.png',
     },
 ];
 
@@ -75,7 +75,7 @@ const Categories: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="flex min-h-screen items-center justify-center pt-24 text-slate-500 dark:text-slate-400">
+            <div className="flex min-h-screen items-center justify-center pt-24 text-slate-500 ">
                 <div className="flex flex-col items-center gap-4">
                     <div className="h-10 w-10 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
                     <p>Loading bookstore collection...</p>
@@ -85,12 +85,12 @@ const Categories: React.FC = () => {
     }
 
     return (
-        <div className="min-h-screen bg-slate-50 pb-20 pt-20 text-slate-900 dark:bg-slate-950 dark:text-white">
+        <div className="min-h-screen bg-slate-50 pb-20 pt-20 text-slate-900  ">
             <div className="mx-auto max-w-7xl px-5">
-                <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 px-6 py-8 shadow-2xl shadow-slate-200/50 dark:border-slate-800 dark:shadow-none sm:px-8 lg:px-10">
+                <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 px-6 py-8 shadow-2xl shadow-slate-200/50   sm:px-8 lg:px-10">
                     <div className="absolute inset-0">
                         <img
-                            src="https://images.unsplash.com/photo-1507842217121-9e96e4769ea0?auto=format&fit=crop&q=80"
+                            src="/images/reading corner.jpeg"
                             alt="Bookstore banner"
                             className="h-full w-full object-cover opacity-30"
                         />
@@ -124,10 +124,10 @@ const Categories: React.FC = () => {
                 </section>
 
                 <div className="mt-10 grid gap-8 xl:grid-cols-[280px_minmax(0,1fr)]">
-                    <aside className="h-fit rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 xl:sticky xl:top-24">
+                    <aside className="h-fit rounded-[1.75rem] border border-slate-200 bg-white p-5 shadow-sm xl:sticky xl:top-24">
                         <div className="mb-6">
                             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-indigo-500">Browse</p>
-                            <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-white">Categories</h2>
+                            <h2 className="mt-2 text-2xl font-bold text-slate-900">Categories</h2>
                         </div>
 
                         <div className="space-y-2">
@@ -136,14 +136,14 @@ const Categories: React.FC = () => {
                                     key={genre}
                                     type="button"
                                     onClick={() => setSelectedCategory(genre)}
-                                    className={`flex w-full items-center justify-between rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
+                                    className={`flex w-full items-center justify-between gap-3 rounded-2xl border px-4 py-3 text-left text-sm font-medium transition-all ${
                                         selectedCategory === genre
-                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm dark:border-indigo-400 dark:bg-indigo-950/30 dark:text-indigo-300'
-                                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300 dark:hover:border-slate-600 dark:hover:bg-slate-800'
+                                            ? 'border-indigo-500 bg-indigo-50 text-indigo-700 shadow-sm'
+                                            : 'border-slate-200 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-slate-100'
                                     }`}
                                 >
-                                    <span>{genre}</span>
-                                    <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs dark:bg-slate-800">
+                                    <span className="truncate">{genre}</span>
+                                    <span className="rounded-full bg-white/80 px-2 py-0.5 text-xs shrink-0">
                                         {genre === 'All' ? books.length : books.filter((book) => book.genre === genre).length}
                                     </span>
                                 </button>
@@ -152,7 +152,7 @@ const Categories: React.FC = () => {
 
                         <div className="mt-8 rounded-2xl bg-gradient-to-br from-indigo-500 via-violet-500 to-purple-600 p-4 text-white shadow-lg shadow-indigo-500/20">
                             <p className="text-xs uppercase tracking-[0.2em] text-indigo-100">Curator’s note</p>
-                            <h3 className="mt-2 text-xl font-bold">Weekend reading picks</h3>
+                            <h3 className="mt-2 text-xl font-bold text-white">Weekend reading picks</h3>
                             <p className="mt-2 text-sm text-indigo-100">A hand-picked stack of atmospheric, thoughtful stories for slower evenings and deep reads.</p>
                         </div>
                     </aside>
@@ -162,16 +162,16 @@ const Categories: React.FC = () => {
                             <div className="mb-5 flex items-end justify-between gap-4">
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-500">Collections</p>
-                                    <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">Curated shelves</h2>
+                                    <h2 className="mt-2 text-3xl font-bold text-slate-900 ">Curated shelves</h2>
                                 </div>
-                                <Link to="/marketplace" className="hidden text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 sm:inline-block">
+                                <Link to="/marketplace" className="hidden text-sm font-semibold text-indigo-600 hover:text-indigo-500  sm:inline-block">
                                     Explore marketplace →
                                 </Link>
                             </div>
 
                             <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
                                 {collectionCards.map((card) => (
-                                    <div key={card.title} className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
+                                    <div key={card.title} className="group overflow-hidden rounded-[1.5rem] border border-slate-200 bg-white shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg  ">
                                         <div className={`h-40 bg-gradient-to-r ${card.accent}`}>
                                             <img
                                                 src={card.image}
@@ -180,32 +180,32 @@ const Categories: React.FC = () => {
                                             />
                                         </div>
                                         <div className="p-5">
-                                            <h3 className="text-xl font-bold text-slate-900 dark:text-white">{card.title}</h3>
-                                            <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{card.description}</p>
+                                            <h3 className="text-xl font-bold text-slate-900 ">{card.title}</h3>
+                                            <p className="mt-2 text-sm text-slate-600 ">{card.description}</p>
                                         </div>
                                     </div>
                                 ))}
                             </div>
                         </section>
 
-                        <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+                        <section className="rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm   sm:p-6">
                             <div className="mb-6 flex items-center justify-between gap-4">
                                 <div>
                                     <p className="text-xs font-semibold uppercase tracking-[0.22em] text-indigo-500">Featured</p>
-                                    <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+                                    <h2 className="mt-2 text-3xl font-bold text-slate-900 ">
                                         {selectedCategory === 'All' ? 'All books' : `${selectedCategory} books`}
                                     </h2>
                                 </div>
-                                <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                                <div className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600   ">
                                     {filteredBooks.length} titles
                                 </div>
                             </div>
 
                             {filteredBooks.length === 0 ? (
-                                <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 py-16 text-center dark:border-slate-700 dark:bg-slate-950/40">
+                                <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50 py-16 text-center  ">
                                     <div className="text-5xl opacity-30">📚</div>
-                                    <h3 className="mt-4 text-2xl font-bold text-slate-800 dark:text-slate-200">No books found</h3>
-                                    <p className="mt-2 text-slate-500 dark:text-slate-400">Try selecting a different category.</p>
+                                    <h3 className="mt-4 text-2xl font-bold text-slate-800 ">No books found</h3>
+                                    <p className="mt-2 text-slate-500 ">Try selecting a different category.</p>
                                 </div>
                             ) : (
                                 <>

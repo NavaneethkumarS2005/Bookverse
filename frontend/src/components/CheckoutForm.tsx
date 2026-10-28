@@ -100,7 +100,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
                 <button
                     type="button"
                     onClick={onCancel}
-                    className="flex-1 py-3 rounded-xl border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                    className="flex-1 py-3 rounded-xl border border-slate-300  text-slate-700  font-medium hover:bg-slate-50  transition-colors"
                 >
                     Cancel
                 </button>

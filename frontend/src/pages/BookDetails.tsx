@@ -5,9 +5,10 @@ import axios from 'axios';
 import { API_URL } from '../config';
 import { useCart } from '../context/CartContext';
 import ProductCard from '../components/ProductCard';
+import BookCover from '../components/BookCover';
 import { Book, IReview } from '../types';
 import InlineAlert from '../components/InlineAlert';
-import { BOOK_IMAGE_FALLBACK, resolveBookImage } from '../utils/bookCompatibility';
+import { resolveBookImage } from '../utils/bookCompatibility';
 
 const BookDetails: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -129,7 +130,7 @@ const BookDetails: React.FC = () => {
     };
 
     if (loading) return (
-        <div className="min-h-screen pt-24 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <div className="min-h-screen pt-24 flex items-center justify-center text-slate-500 ">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <p>Loading details...</p>
@@ -138,7 +139,7 @@ const BookDetails: React.FC = () => {
     );
 
     if (!book) return (
-        <div className="min-h-screen pt-24 flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 px-5 text-center">
+        <div className="min-h-screen pt-24 flex flex-col items-center justify-center text-slate-500  px-5 text-center">
             <h2 className="text-2xl font-bold mb-3">
                 {loadError ? 'Unable to load book' : 'Book not found'}
             </h2>
@@ -150,7 +151,7 @@ const BookDetails: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen pt-[72px] bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+        <div className="min-h-screen pt-[72px] bg-slate-50  transition-colors duration-300">
             {/* Inline Alert */}
             {alertMessage && (
                 <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50">
@@ -163,13 +164,13 @@ const BookDetails: React.FC = () => {
             )}
 
             {/* STICKY NAV HEADER */}
-            <div className="sticky top-[72px] z-40 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 py-3 px-5 md:hidden flex justify-between items-center transition-all">
-                <span className="font-bold text-slate-900 dark:text-white truncate max-w-[200px]">{book.title}</span>
-                <span className="font-bold text-indigo-600 dark:text-indigo-400">₹{book.price}</span>
+            <div className="sticky top-[72px] z-40 bg-white/80  backdrop-blur-md border-b border-slate-200  py-3 px-5 md:hidden flex justify-between items-center transition-all">
+                <span className="font-bold text-slate-900  truncate max-w-[200px]">{book.title}</span>
+                <span className="font-bold text-indigo-600 ">₹{book.price}</span>
             </div>
 
             <div className="max-w-7xl mx-auto px-5 py-8 md:py-12">
-                <Link to="/marketplace" className="inline-flex items-center text-slate-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 mb-8 transition-colors group">
+                <Link to="/marketplace" className="inline-flex items-center text-slate-500 hover:text-indigo-600   mb-8 transition-colors group">
                     <span className="mr-2 group-hover:-translate-x-1 transition-transform">←</span> Back to Marketplace
                 </Link>
 
@@ -177,14 +178,14 @@ const BookDetails: React.FC = () => {
 
                     {/* LEFT COLUMN: IMAGE GALLERY */}
                     <div className="md:col-span-5 lg:col-span-5 space-y-4">
-                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-200 dark:bg-slate-800 shadow-xl border border-slate-200 dark:border-slate-700 group">
-                            <img
-                                src={resolveBookImage(activeImage)}
-                                alt={book.title}
-                                className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-                                onError={(e) => {
-                                    (e.currentTarget as HTMLImageElement).src = BOOK_IMAGE_FALLBACK;
-                                }}
+                        <div className="relative aspect-[3/4] rounded-2xl overflow-hidden bg-slate-200  shadow-xl border border-slate-200  group">
+                            <BookCover
+                                image={activeImage}
+                                title={book.title}
+                                author={book.author}
+                                category={book.category}
+                                className="h-full w-full"
+                                imageClassName="transition-transform duration-700 group-hover:scale-105"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"></div>
                         </div>
@@ -194,15 +195,15 @@ const BookDetails: React.FC = () => {
                                 <button
                                     key={idx}
                                     onClick={() => setActiveImage(img)}
-                                    className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? 'border-indigo-600 ring-2 ring-indigo-600/20' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600'}`}
+                                    className={`relative w-20 h-24 flex-shrink-0 rounded-lg overflow-hidden border-2 transition-all ${activeImage === img ? 'border-indigo-600 ring-2 ring-indigo-600/20' : 'border-transparent hover:border-slate-300 '}`}
                                 >
-                                    <img
-                                        src={img}
+                                    <BookCover
+                                        image={img}
+                                        title={book.title}
+                                        author={book.author}
+                                        category={book.category}
+                                        className="h-full w-full"
                                         alt="Thumbnail"
-                                        className="w-full h-full object-cover"
-                                        onError={(e) => {
-                                            (e.currentTarget as HTMLImageElement).src = BOOK_IMAGE_FALLBACK;
-                                        }}
                                     />
                                 </button>
                             ))}
@@ -212,10 +213,10 @@ const BookDetails: React.FC = () => {
                     {/* RIGHT COLUMN: PRODUCT DETAILS */}
                     <div className="md:col-span-7 lg:col-span-7 flex flex-col">
                         <div className="mb-3 flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 text-xs font-bold uppercase tracking-wider">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100  text-indigo-700  text-xs font-bold uppercase tracking-wider">
                                 {book.category}
                             </span>
-                            <span className="inline-flex items-center px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300">
+                            <span className="inline-flex items-center px-3 py-1 rounded-full border border-emerald-200 bg-emerald-50 text-emerald-700 text-xs font-semibold   ">
                                 Verified quality
                             </span>
                         </div>
@@ -224,18 +225,18 @@ const BookDetails: React.FC = () => {
 
                         <div className="flex flex-wrap items-center gap-4 mb-6 text-sm">
                             <div className="flex items-center gap-1 text-amber-400">{'★'.repeat(5)}</div>
-                            <span className="text-slate-500 dark:text-slate-400">4.8 rating</span>
-                            <span className="text-slate-400 border-l border-slate-300 dark:border-slate-700 pl-4">{reviews.length} Reviews</span>
-                            <span className="text-slate-400 border-l border-slate-300 dark:border-slate-700 pl-4">In Stock</span>
+                            <span className="text-slate-500 ">4.8 rating</span>
+                            <span className="text-slate-400 border-l border-slate-300  pl-4">{reviews.length} Reviews</span>
+                            <span className="text-slate-400 border-l border-slate-300  pl-4">In Stock</span>
                         </div>
 
-                        <div className="text-3xl font-extrabold text-slate-900 dark:text-white mb-8">
+                        <div className="text-3xl font-extrabold text-slate-900  mb-8">
                             ₹{book.price} <span className="text-lg font-normal text-slate-500 line-through ml-2">₹{book.price + 150}</span>
                         </div>
 
-                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900/70 mb-8">
-                            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400 dark:text-slate-500">Book summary</p>
-                            <div className="prose dark:prose-invert max-w-none text-slate-600 dark:text-slate-300 mt-3">
+                        <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm   mb-8">
+                            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-slate-400 ">Book summary</p>
+                            <div className="prose  max-w-none text-slate-600  mt-3">
                                 <p>{book.description || "Immerse yourself in this captivating story. A masterpiece of storytelling that weaves together complex characters and thrilling plot twists."}</p>
                             </div>
                         </div>
@@ -272,28 +273,28 @@ const BookDetails: React.FC = () => {
                                     )}
                                 </button>
                             )}
-                            <button className="px-8 py-4 rounded-xl font-bold text-slate-700 dark:text-slate-200 border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all text-lg">
+                            <button className="px-8 py-4 rounded-xl font-bold text-slate-700  border border-slate-300  hover:bg-slate-50  transition-all text-lg">
                                 ❤ Save
                             </button>
                         </div>
 
                         {/* FEATURES / META */}
-                        <div className="grid grid-cols-2 gap-6 border-t border-slate-200 dark:border-slate-800 pt-8">
+                        <div className="grid grid-cols-2 gap-6 border-t border-slate-200  pt-8">
                             <div>
                                 <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Author</span>
-                                <span className="font-medium text-slate-900 dark:text-white">{book.author}</span>
+                                <span className="font-medium text-slate-900 ">{book.author}</span>
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Language</span>
-                                <span className="font-medium text-slate-900 dark:text-white">English</span>
+                                <span className="font-medium text-slate-900 ">English</span>
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Pages</span>
-                                <span className="font-medium text-slate-900 dark:text-white">324</span>
+                                <span className="font-medium text-slate-900 ">324</span>
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Publisher</span>
-                                <span className="font-medium text-slate-900 dark:text-white">Penguin Books</span>
+                                <span className="font-medium text-slate-900 ">Penguin Books</span>
                             </div>
                         </div>
                     </div>
@@ -304,7 +305,7 @@ const BookDetails: React.FC = () => {
                     <h2 className="mb-8">Customer Reviews</h2>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                         {/* Review writing form */}
-                        <div className="bg-white dark:bg-slate-900 p-8 rounded-2xl border border-slate-200 dark:border-slate-800">
+                        <div className="bg-white  p-8 rounded-2xl border border-slate-200 ">
                             <h3 className="mb-6">Write a Review</h3>
                             <form onSubmit={handleReviewSubmit}>
                                 <div className="mb-4">
@@ -316,34 +317,34 @@ const BookDetails: React.FC = () => {
                                     </div>
                                 </div>
                                 <textarea
-                                    className="w-full mb-4 p-3 rounded-lg bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 focus:ring-2 ring-indigo-500 outline-none"
+                                    className="w-full mb-4 p-3 rounded-lg bg-slate-50  border border-slate-200  focus:ring-2 ring-indigo-500 outline-none"
                                     rows={3}
                                     placeholder="Share your thoughts..."
                                     value={newReview.comment}
                                     onChange={e => setNewReview({ ...newReview, comment: e.target.value })}
                                     required
                                 ></textarea>
-                                <button type="submit" disabled={submitting} className="w-full py-3 bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold rounded-lg hover:opacity-90 transition-opacity">
+                                <button type="submit" disabled={submitting} className="w-full py-3 bg-slate-900 text-white   font-bold rounded-lg hover:opacity-90 transition-opacity">
                                     {submitting ? 'Posting...' : 'Post Review'}
                                 </button>
                             </form>
                         </div>
 
                         {/* Reviews List */}
-                        <div className="bg-slate-50 dark:bg-slate-900/50 p-8 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 max-h-[500px] overflow-y-auto">
+                        <div className="bg-slate-50  p-8 rounded-2xl border border-dashed border-slate-300  max-h-[500px] overflow-y-auto">
                             {reviews.length === 0 ? (
                                 <p className="text-slate-500 text-center italic">No reviews yet.</p>
                             ) : (
                                 <div className="space-y-6">
                                     {reviews.map((rev, i) => (
-                                        <div key={i} className="border-b border-slate-200 dark:border-slate-700 pb-4 last:border-0 last:pb-0">
+                                        <div key={i} className="border-b border-slate-200  pb-4 last:border-0 last:pb-0">
                                             <div className="flex justify-between items-center mb-2">
                                                 <div className="flex items-center gap-2">
                                                     <span className="font-bold">
                                                         {typeof rev.user === 'object' && rev.user !== null ? rev.user.name : 'Anonymous User'}
                                                     </span>
                                                     {rev.isVerified && (
-                                                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium border border-green-200 dark:bg-green-900/30 dark:text-green-400 dark:border-green-800 flex items-center gap-1">
+                                                        <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs font-medium border border-green-200    flex items-center gap-1">
                                                             <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path></svg>
                                                             Verified Purchase
                                                         </span>
@@ -351,7 +352,7 @@ const BookDetails: React.FC = () => {
                                                 </div>
                                                 <span className="text-amber-400 text-sm">{'★'.repeat(rev.rating)}</span>
                                             </div>
-                                            <p className="text-slate-600 dark:text-slate-400 text-sm">{rev.comment}</p>
+                                            <p className="text-slate-600  text-sm">{rev.comment}</p>
                                         </div>
                                     ))}
                                 </div>

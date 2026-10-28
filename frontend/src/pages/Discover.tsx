@@ -76,11 +76,11 @@ const formatDate = (value?: string): string =>
     : 'Date TBA';
 
 const CATEGORY_ACCENT: Record<string, string> = {
-  ISBN: 'bg-sky-50 text-sky-700 dark:bg-sky-900/30 dark:text-sky-300',
-  COPYRIGHT: 'bg-violet-50 text-violet-700 dark:bg-violet-900/30 dark:text-violet-300',
-  SUBMISSIONS: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300',
-  ORGANIZATIONS: 'bg-amber-50 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
-  STANDARDS: 'bg-rose-50 text-rose-700 dark:bg-rose-900/30 dark:text-rose-300',
+  ISBN: 'bg-sky-50 text-sky-700  ',
+  COPYRIGHT: 'bg-violet-50 text-violet-700  ',
+  SUBMISSIONS: 'bg-emerald-50 text-emerald-700  ',
+  ORGANIZATIONS: 'bg-amber-50 text-amber-700  ',
+  STANDARDS: 'bg-rose-50 text-rose-700  ',
 };
 
 // ---------------------------------------------------------------------------
@@ -111,25 +111,25 @@ const Section: React.FC<SectionProps> = ({
   <section>
     <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500 dark:text-indigo-400">
+        <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500 ">
           {icon} {eyebrow}
         </p>
-        <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">{title}</h2>
+        <h2 className="mt-2 text-3xl font-bold text-slate-900 ">{title}</h2>
       </div>
       <Link
         to={href}
-        className="hidden shrink-0 text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200 sm:inline-block"
+        className="hidden shrink-0 text-sm font-semibold text-indigo-600 hover:text-indigo-500   sm:inline-block"
       >
         {viewAllLabel}
       </Link>
     </div>
 
     {empty ? (
-      <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50/60 py-12 text-center dark:border-slate-700 dark:bg-slate-950/40">
-        <p className="text-slate-500 dark:text-slate-400">{emptyMessage}</p>
+      <div className="rounded-[1.5rem] border border-dashed border-slate-300 bg-slate-50/60 py-12 text-center  ">
+        <p className="text-slate-500 ">{emptyMessage}</p>
         <Link
           to={href}
-          className="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:underline dark:text-indigo-400"
+          className="mt-3 inline-block text-sm font-semibold text-indigo-600 hover:underline "
         >
           {viewAllLabel}
         </Link>
@@ -141,7 +141,7 @@ const Section: React.FC<SectionProps> = ({
     <div className="mt-4 sm:hidden">
       <Link
         to={href}
-        className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+        className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 "
       >
         {viewAllLabel}
       </Link>
@@ -193,7 +193,7 @@ const Discover: React.FC = () => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="min-h-screen bg-slate-50 pb-20 pt-24 dark:bg-slate-950"
+      className="min-h-screen bg-slate-50 pb-20 pt-24 "
     >
       <div className="mx-auto max-w-7xl px-5">
 
@@ -260,13 +260,13 @@ const Discover: React.FC = () => {
         {/* Error state                                                        */}
         {/* ----------------------------------------------------------------- */}
         {error && (
-          <div className="rounded-2xl border border-red-200 bg-red-50 p-6 dark:border-red-800/50 dark:bg-red-950/30">
-            <p className="font-semibold text-red-700 dark:text-red-300">{error}</p>
+          <div className="rounded-2xl border border-red-200 bg-red-50 p-6  ">
+            <p className="font-semibold text-red-700 ">{error}</p>
             <button
               id="discover-retry-btn"
               type="button"
               onClick={load}
-              className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-200 dark:bg-red-900/30 dark:text-red-300 dark:hover:bg-red-900/50"
+              className="mt-3 rounded-xl bg-red-100 px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-200   "
             >
               Retry
             </button>
@@ -302,6 +302,7 @@ const Discover: React.FC = () => {
                     to="/upcoming-books"
                     fallbackSeed={`discover-upcoming:${book._id}`}
                     fallbackIndex={index}
+                    bookCover
                   />
                 ))}
               </div>
@@ -423,16 +424,16 @@ const Discover: React.FC = () => {
               <section>
                 <div className="mb-6 flex items-end justify-between gap-4">
                   <div>
-                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500 dark:text-indigo-400">
+                    <p className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500 ">
                       <FiShield /> Industry Guide
                     </p>
-                    <h2 className="mt-2 text-3xl font-bold text-slate-900 dark:text-white">
+                    <h2 className="mt-2 text-3xl font-bold text-slate-900 ">
                       Verified publishing resources
                     </h2>
                   </div>
                   <Link
                     to="/industry-guide"
-                    className="hidden shrink-0 text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-300 dark:hover:text-indigo-200 sm:inline-block"
+                    className="hidden shrink-0 text-sm font-semibold text-indigo-600 hover:text-indigo-500   sm:inline-block"
                   >
                     Full guide →
                   </Link>
@@ -442,7 +443,7 @@ const Discover: React.FC = () => {
                   {data.industryResources.map((resource) => {
                     const accentClass =
                       CATEGORY_ACCENT[resource.category] ??
-                      'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300';
+                      'bg-slate-100 text-slate-700  ';
                     return (
                       <a
                         key={resource.id}
@@ -450,7 +451,7 @@ const Discover: React.FC = () => {
                         href={resource.sourceUrl}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="group flex flex-col rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md dark:border-slate-800 dark:bg-slate-900 dark:hover:border-indigo-500/30"
+                        className="group flex flex-col rounded-[1.5rem] border border-slate-200 bg-white p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-md   "
                       >
                         <div className="mb-3 flex items-start justify-between gap-2">
                           <span
@@ -460,13 +461,13 @@ const Discover: React.FC = () => {
                           </span>
                           <FiArrowUpRight className="shrink-0 text-slate-400 transition-colors group-hover:text-indigo-500" />
                         </div>
-                        <h3 className="text-base font-bold leading-snug text-slate-900 transition-colors group-hover:text-indigo-600 dark:text-white dark:group-hover:text-indigo-400">
+                        <h3 className="text-base font-bold leading-snug text-slate-900 transition-colors group-hover:text-indigo-600  ">
                           {resource.title}
                         </h3>
-                        <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 line-clamp-3 dark:text-slate-300">
+                        <p className="mt-2 flex-1 text-sm leading-relaxed text-slate-600 line-clamp-3 ">
                           {resource.description}
                         </p>
-                        <p className="mt-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
+                        <p className="mt-4 text-xs font-semibold text-slate-500 ">
                           {resource.organization} · {resource.region}
                         </p>
                       </a>
@@ -477,7 +478,7 @@ const Discover: React.FC = () => {
                 <div className="mt-4 sm:hidden">
                   <Link
                     to="/industry-guide"
-                    className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 dark:text-indigo-400"
+                    className="text-sm font-semibold text-indigo-600 hover:text-indigo-500 "
                   >
                     Full guide →
                   </Link>

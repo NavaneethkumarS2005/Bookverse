@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useCart } from '../context/CartContext';
 import { Link } from 'react-router-dom';
+import BookCover from './BookCover';
 
 const CartDrawer: React.FC = () => {
     const { isCartOpen, toggleCart, cart, removeFromCart, getCartTotal, updateQuantity } = useCart();
@@ -38,19 +39,19 @@ const CartDrawer: React.FC = () => {
             {/* Drawer Panel */}
             <div
                 ref={drawerRef}
-                className={`fixed top-0 right-0 h-full w-full max-w-md bg-white dark:bg-slate-900 shadow-2xl z-[1004] transform transition-transform duration-300 ease-in-out flex flex-col ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`fixed top-0 right-0 h-full w-full max-w-md bg-white  shadow-2xl z-[1004] transform transition-transform duration-300 ease-in-out flex flex-col ${isCartOpen ? 'translate-x-0' : 'translate-x-full'}`}
                 role="dialog"
                 aria-modal="true"
                 aria-label="Shopping Cart"
             >
                 {/* Header */}
-                <div className="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-800">
-                    <h2 className="text-xl font-bold font-outfit text-slate-900 dark:text-white flex items-center gap-2">
+                <div className="flex items-center justify-between p-5 border-b border-slate-200 ">
+                    <h2 className="text-xl font-bold font-outfit text-slate-900  flex items-center gap-2">
                         <span>🛒</span> Your Cart ({cart.length})
                     </h2>
                     <button
                         onClick={toggleCart}
-                        className="p-2 text-slate-500 hover:text-red-500 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
+                        className="p-2 text-slate-500 hover:text-red-500 transition-colors rounded-full hover:bg-slate-100 "
                         aria-label="Close cart"
                     >
                         ✕
@@ -62,7 +63,7 @@ const CartDrawer: React.FC = () => {
                     {cart.length === 0 ? (
                         <div className="h-full flex flex-col items-center justify-center text-center space-y-4 opacity-70">
                             <span className="text-6xl">🛍️</span>
-                            <h3 className="text-lg font-semibold text-slate-900 dark:text-white">Your cart is empty</h3>
+                            <h3 className="text-lg font-semibold text-slate-900 ">Your cart is empty</h3>
                             <p className="text-sm text-slate-500">Looks like you haven't added any books yet.</p>
                             <button onClick={toggleCart} className="text-indigo-600 font-medium hover:underline">
                                 Continue Browsing
@@ -74,38 +75,36 @@ const CartDrawer: React.FC = () => {
                             const lineTotal = item.book.price * quantity;
                             return (
                                 <div key={item.bookId} className="flex gap-4 animate-fadeIn">
-                                    <div className="w-20 h-28 flex-shrink-0 bg-slate-100 rounded-lg overflow-hidden border border-slate-200 dark:border-slate-800">
-                                        <img src={item.book.image} alt={item.book.title} className="w-full h-full object-cover" />
-                                    </div>
+                                    <BookCover book={item.book} className="h-28 w-20 flex-shrink-0" />
                                     <div className="flex-1 flex flex-col justify-between">
                                         <div>
-                                            <h4 className="font-bold text-slate-900 dark:text-white line-clamp-1">{item.book.title}</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">{item.book.author}</p>
+                                            <h4 className="font-bold text-slate-900  line-clamp-1">{item.book.title}</h4>
+                                            <p className="text-xs text-slate-500  mb-1">{item.book.author}</p>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-indigo-600 dark:text-indigo-400 font-bold">₹{item.book.price}</span>
-                                                <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                                                    Total: <span className="font-semibold text-slate-800 dark:text-slate-100">₹{lineTotal}</span>
+                                                <span className="text-indigo-600  font-bold">₹{item.book.price}</span>
+                                                <span className="text-[11px] text-slate-500 ">
+                                                    Total: <span className="font-semibold text-slate-800 ">₹{lineTotal}</span>
                                                 </span>
                                             </div>
                                         </div>
 
                                         <div className="flex items-center justify-between mt-2">
-                                            <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                                            <div className="inline-flex items-center rounded-full bg-slate-100  px-2 py-1">
                                                 <button
                                                     type="button"
                                                     onClick={() => updateQuantity(item as any, quantity - 1)}
-                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-slate-600  hover:bg-slate-200  text-xs"
                                                     aria-label="Decrease quantity"
                                                 >
                                                     −
                                                 </button>
-                                                <span className="px-2 text-xs font-medium text-slate-800 dark:text-slate-100">
+                                                <span className="px-2 text-xs font-medium text-slate-800 ">
                                                     {quantity}
                                                 </span>
                                                 <button
                                                     type="button"
                                                     onClick={() => updateQuantity(item as any, quantity + 1)}
-                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs"
+                                                    className="w-5 h-5 flex items-center justify-center rounded-full text-slate-600  hover:bg-slate-200  text-xs"
                                                     aria-label="Increase quantity"
                                                 >
                                                     +
@@ -127,10 +126,10 @@ const CartDrawer: React.FC = () => {
 
                 {/* Footer - Subtotal & Checkout */}
                 {cart.length > 0 && (
-                    <div className="p-5 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-950/50">
+                    <div className="p-5 border-t border-slate-200  bg-slate-50 ">
                         <div className="flex items-center justify-between mb-4">
-                            <span className="text-slate-600 dark:text-slate-400">Subtotal</span>
-                            <span className="text-2xl font-bold text-slate-900 dark:text-white font-outfit">₹{getCartTotal().toFixed(2)}</span>
+                            <span className="text-slate-600 ">Subtotal</span>
+                            <span className="text-2xl font-bold text-slate-900  font-outfit">₹{getCartTotal().toFixed(2)}</span>
                         </div>
                         <p className="text-xs text-slate-500 mb-4 text-center">Shipping and taxes calculated at checkout.</p>
                         <Link

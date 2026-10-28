@@ -5,38 +5,34 @@ import { API_URL } from '../config';
 export const BOOK_IMAGE_FALLBACK = '/images/bookstore-hero-editorial.png';
 
 const buildFallbackCoverSvg = (title: string, author = '', category = '') => {
-    const safeTitle = title?.trim() || 'Untitled';
-    const safeAuthor = author?.trim() || 'LuminaBook';
+    const safeTitle = title?.trim() || 'Untitled book';
+    const safeAuthor = author?.trim() || 'Lumina Book AI';
     const safeCategory = category?.trim() || 'Featured';
-    const palette = [
-        ['#4f46e5', '#7c3aed', '#ec4899'],
-        ['#0f766e', '#14b8a6', '#22c55e'],
-        ['#f59e0b', '#f97316', '#ef4444'],
-        ['#2563eb', '#38bdf8', '#8b5cf6'],
-        ['#0f172a', '#475569', '#a855f7'],
-        ['#9d174d', '#e11d48', '#f59e0b']
-    ];
-    const paint = palette[Math.abs(safeTitle.split('').reduce((sum, char) => sum + char.charCodeAt(0), 0)) % palette.length];
-    const initials = safeTitle.split(/\s+/).filter(Boolean).slice(0, 2).map(part => part.slice(0, 1).toUpperCase()).join('') || 'LB';
-    const labelTitle = safeTitle.length > 20 ? `${safeTitle.slice(0, 18)}…` : safeTitle;
-    const labelAuthor = safeAuthor.length > 24 ? `${safeAuthor.slice(0, 22)}…` : safeAuthor;
+    const labelTitle = safeTitle.length > 26 ? `${safeTitle.slice(0, 24)}…` : safeTitle;
+    const labelAuthor = safeAuthor.length > 28 ? `${safeAuthor.slice(0, 26)}…` : safeAuthor;
     const svg = `
         <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="1800" viewBox="0 0 1200 1800">
             <defs>
-                <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
-                    <stop offset="0%" stop-color="${paint[0]}" />
-                    <stop offset="50%" stop-color="${paint[1]}" />
-                    <stop offset="100%" stop-color="${paint[2]}" />
+                <linearGradient id="panel" x1="0" x2="1" y1="0" y2="1">
+                    <stop offset="0%" stop-color="#f9f5ef" />
+                    <stop offset="100%" stop-color="#efe5d9" />
                 </linearGradient>
             </defs>
-            <rect width="1200" height="1800" fill="url(#g)" />
-            <circle cx="980" cy="220" r="240" fill="rgba(255,255,255,0.12)" />
-            <circle cx="260" cy="1550" r="300" fill="rgba(255,255,255,0.10)" />
-            <rect x="120" y="120" width="960" height="1560" rx="72" fill="rgba(15,23,42,0.16)" stroke="rgba(255,255,255,0.33)" />
-            <text x="600" y="780" text-anchor="middle" font-size="300" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="rgba(255,255,255,0.95)">${initials}</text>
-            <text x="600" y="1020" text-anchor="middle" font-size="92" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#ffffff">${labelTitle}</text>
-            <text x="600" y="1120" text-anchor="middle" font-size="52" font-family="Arial, Helvetica, sans-serif" fill="rgba(255,255,255,0.82)">${safeCategory}</text>
-            <text x="600" y="1200" text-anchor="middle" font-size="46" font-family="Arial, Helvetica, sans-serif" fill="rgba(255,255,255,0.76)">${labelAuthor}</text>
+            <rect width="1200" height="1800" fill="#f5efe7" />
+            <rect x="100" y="140" width="1000" height="1520" rx="60" fill="url(#panel)" stroke="#d7cab6" stroke-width="12"/>
+            <rect x="190" y="260" width="820" height="220" rx="24" fill="#e7dcc8" stroke="#cbbca7" stroke-width="8"/>
+            <rect x="250" y="330" width="700" height="18" rx="9" fill="#bca78a" opacity="0.9"/>
+            <rect x="250" y="370" width="540" height="18" rx="9" fill="#bca78a" opacity="0.75"/>
+            <rect x="250" y="470" width="700" height="12" rx="6" fill="#d4c2a4" opacity="0.9"/>
+            <rect x="250" y="510" width="620" height="12" rx="6" fill="#d4c2a4" opacity="0.8"/>
+            <rect x="250" y="550" width="540" height="12" rx="6" fill="#d4c2a4" opacity="0.7"/>
+            <path d="M420 1200 C520 1080, 680 1080, 780 1200 L780 1470 C680 1570, 520 1570, 420 1470 Z" fill="#ddd1c1" stroke="#baa884" stroke-width="8"/>
+            <path d="M505 1230 C555 1200, 645 1200, 695 1230" stroke="#a69271" stroke-width="10" stroke-linecap="round" fill="none"/>
+            <text x="600" y="915" text-anchor="middle" font-size="76" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#4f463e">Cover unavailable</text>
+            <text x="600" y="1035" text-anchor="middle" font-size="104" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#2f2930">${labelTitle}</text>
+            <text x="600" y="1140" text-anchor="middle" font-size="58" font-family="Arial, Helvetica, sans-serif" fill="#5a524d">${safeCategory}</text>
+            <text x="600" y="1215" text-anchor="middle" font-size="48" font-family="Arial, Helvetica, sans-serif" fill="#635d59">${labelAuthor}</text>
+            <text x="600" y="1500" text-anchor="middle" font-size="36" font-family="Arial, Helvetica, sans-serif" font-weight="700" fill="#8a7664" letter-spacing="6">LUMINA BOOK AI</text>
         </svg>
     `;
     return `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`;

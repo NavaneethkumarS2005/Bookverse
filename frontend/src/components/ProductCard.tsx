@@ -1,23 +1,18 @@
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FiHeart } from 'react-icons/fi';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { Book } from '../types';
-import { resolveBookImage } from '../utils/bookCompatibility';
 import { useWishlist } from '../context/WishlistContext';
+import BookCover from './BookCover';
 
 interface ProductCardProps {
     book: Book;
 }
 
 const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
-    const [imageSrc, setImageSrc] = useState(resolveBookImage(book.image, book.title, book.author, book.category));
     const { isWishlisted, toggleWishlist } = useWishlist();
     const [wishlistBusy, setWishlistBusy] = useState(false);
-
-    useEffect(() => {
-        setImageSrc(resolveBookImage(book.image, book.title, book.author, book.category));
-    }, [book.image, book.title, book.author, book.category]);
 
     const bookId = String(book._id || book.id);
     const saved = isWishlisted(bookId);
@@ -101,21 +96,10 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
             style={{ rotateX, rotateY, transformStyle: "preserve-3d" }}
-            className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-3.5 shadow-sm transition-colors duration-300 hover:border-indigo-400 hover:shadow-[0_20px_45px_rgba(99,102,241,0.16)] dark:border-slate-700 dark:bg-slate-800/90"
+            className="group relative flex h-full flex-col overflow-hidden rounded-[1.75rem] border border-slate-200 bg-white p-3.5 shadow-sm transition-all duration-300 hover:border-indigo-400 hover:shadow-[0_20px_45px_rgba(99,102,241,0.16)]"
         >
-            <div className="relative mb-4 overflow-hidden rounded-[1.25rem] bg-slate-100 dark:bg-slate-700" style={{ transform: "translateZ(50px)" }}>
-                <div className="aspect-[2/3]">
-                    <img
-                        src={imageSrc}
-                        alt={book.title}
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        loading="lazy"
-                        onError={() => {
-                            const nextValue = resolveBookImage(undefined, book.title, book.author, book.category);
-                            if (imageSrc !== nextValue) setImageSrc(nextValue);
-                        }}
-                    />
-                </div>
+            <div className="relative mb-4 overflow-hidden rounded-[1.25rem] bg-slate-100" style={{ transform: "translateZ(50px)" }}>
+                <BookCover book={book} className="aspect-[2/3]" imageClassName="transition-transform duration-500 group-hover:scale-105" />
 
                 <button
                     type="button"
@@ -123,7 +107,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
                     disabled={wishlistBusy}
                     aria-label={saved ? `Remove ${book.title} from wishlist` : `Add ${book.title} to wishlist`}
                     title={saved ? 'Remove from wishlist' : 'Add to wishlist'}
-                    className={`absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md shadow-lg transition-all ${saved ? 'bg-pink-500 text-white' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-pink-500 dark:bg-slate-900/90 dark:text-slate-200 dark:hover:text-pink-400'} disabled:cursor-wait disabled:opacity-60`}
+                    className={`absolute left-3 top-3 flex h-10 w-10 items-center justify-center rounded-full backdrop-blur-md shadow-lg transition-all ${saved ? 'bg-pink-500 text-white' : 'bg-white/90 text-slate-700 hover:bg-white hover:text-pink-500'} disabled:cursor-wait disabled:opacity-60`}
                 >
                     <FiHeart className={`text-lg ${saved ? 'fill-current' : ''}`} />
                 </button>
@@ -135,7 +119,7 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
 
             <div className="flex flex-1 flex-col">
                 <div className="mb-2 flex items-center justify-between gap-2">
-                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-600 dark:bg-indigo-950/50 dark:text-indigo-300">
+                    <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-indigo-600">
                         {book.genre || 'Bestseller'}
                     </span>
                     <div className="flex items-center gap-1 text-xs font-medium text-amber-500">
@@ -144,20 +128,20 @@ const ProductCard: React.FC<ProductCardProps> = ({ book }) => {
                     </div>
                 </div>
 
-                <div className="min-h-[3.5rem]">
-                    <h3 className="line-clamp-2 font-outfit text-lg font-bold text-slate-900 dark:text-white" title={book.title}>{book.title}</h3>
-                    <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">{book.author}</p>
+                <div className="min-h-[4.25rem]">
+                    <h3 className="line-clamp-2 font-outfit text-lg font-bold leading-6 text-slate-900" title={book.title}>{book.title}</h3>
+                    <p className="mt-1 text-sm text-slate-500">{book.author}</p>
                 </div>
 
-                <div className="mt-4 flex items-end justify-between gap-2 border-t border-slate-200 pt-4 dark:border-slate-700">
+                <div className="mt-auto flex items-end justify-between gap-2 border-t border-slate-200 pt-4">
                     <div>
                         <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-slate-400">Price</p>
-                        <span className="text-2xl font-black text-indigo-600 dark:text-indigo-400">
+                        <span className="text-2xl font-black text-indigo-600">
                             {book.price === 0 ? 'Free' : `₹${book.price}`}
                         </span>
                     </div>
 
-                    <div className="flex items-center gap-2">
+                    <div className="flex shrink-0 items-center gap-2">
                         {retailer && book.buyLink && (
                             <a
                                 href={book.buyLink}

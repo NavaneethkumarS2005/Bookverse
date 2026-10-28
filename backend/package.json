@@ -7,7 +7,7 @@
     "start": "node dist/server.js",
     "dev": "nodemon --watch src --ext ts --exec \"npm run build && node dist/server.js\"",
     "build": "tsc",
-    "test": "npm run build && node --test test/phase1.test.cjs test/phase2.test.cjs test/phase5.test.cjs test/publisher.test.cjs test/boothBooking.test.cjs test/phonepeRedirect.test.cjs",
+    "test": "npm run build && node --test test/phase1.test.cjs test/phase2.test.cjs test/phase5.test.cjs test/publisher.test.cjs test/boothBooking.test.cjs test/payment.test.cjs",
     "inventory:maintain": "tsx src/scripts/maintainDemoInventory.ts"
   },
   "dependencies": {
@@ -18,8 +18,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/mongoose": "^5.11.96",
     "@types/multer": "^2.0.0",
-    "@types/nodemailer": "^7.0.9",
-    "axios": "^1.13.4",
+    "axios": "^1.20.0",
     "bcryptjs": "^3.0.3",
     "cloudinary": "^2.11.0",
     "cookie-parser": "^1.4.7",
@@ -34,8 +33,7 @@
     "helmet": "^8.3.0",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.5.0",
-    "multer": "^2.0.2",
-    "nodemailer": "^7.0.13",
+    "multer": "^2.5.0",
     "nodemon": "^3.0.1",
     "razorpay": "^2.9.6",
     "resend": "^6.18.1",
@@ -43,8 +41,12 @@
     "sha256": "^0.2.0",
     "stripe": "^20.2.0",
     "ts-node": "^10.9.2",
-    "tsx": "^4.21.0",
+    "tsx": "^4.23.15",
     "typescript": "^5.9.3"
+  },
+  "overrides": {
+    "follow-redirects": "^1.16.1",
+    "proxy-addr": "^2.0.8"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",

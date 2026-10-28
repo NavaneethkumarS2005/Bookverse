@@ -18,8 +18,9 @@ interface OrderItem {
 
 interface Order {
     _id: string;
-    items: OrderItem[];
-    totalAmount: number;
+    orderItems: OrderItem[];
+    totalPrice: number;
+    paymentMethod: string;
     status: string;
     createdAt: string;
 }
@@ -72,27 +73,27 @@ const Profile: React.FC = () => {
     if (!user) return null;
 
     return (
-        <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+        <div className="min-h-screen pt-28 pb-20 bg-slate-50  transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
                 <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
 
                     {/* SIDEBAR */}
                     <div className="lg:col-span-1">
-                        <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 sticky top-28">
+                        <div className="bg-white  rounded-2xl p-6 shadow-sm border border-slate-200  sticky top-28">
                             <div className="text-center mb-8">
                                 <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white shadow-lg">
                                     {user.name.charAt(0).toUpperCase()}
                                 </div>
-                                <h3 className="font-bold text-xl text-slate-900 dark:text-white mb-1">{user.name}</h3>
-                                <p className="text-slate-500 dark:text-slate-400 text-sm truncate">{user.email}</p>
+                                <h3 className="font-bold text-xl text-slate-900  mb-1">{user.name}</h3>
+                                <p className="text-slate-500  text-sm truncate">{user.email}</p>
                             </div>
 
                             <div className="space-y-2">
                                 <button
                                     onClick={() => setActiveTab('profile')}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'profile'
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        ? 'bg-indigo-50  text-indigo-600  font-semibold'
+                                        : 'text-slate-600  hover:bg-slate-50 '
                                         }`}
                                 >
                                     <span>👤</span> My Profile
@@ -100,21 +101,21 @@ const Profile: React.FC = () => {
                                 <button
                                     onClick={() => setActiveTab('orders')}
                                     className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${activeTab === 'orders'
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 font-semibold'
-                                        : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
+                                        ? 'bg-indigo-50  text-indigo-600  font-semibold'
+                                        : 'text-slate-600  hover:bg-slate-50 '
                                         }`}
                                 >
                                     <span>📦</span> My Orders
                                 </button>
                                 {user.role === 'admin' && (
-                                    <Link to="/admin" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-amber-600 dark:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/10 transition-all font-medium">
+                                    <Link to="/admin" className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-amber-600  hover:bg-amber-50  transition-all font-medium">
                                         <span>🛡️</span> Admin Dashboard
                                     </Link>
                                 )}
-                                <div className="h-px bg-slate-200 dark:bg-slate-800 my-4"></div>
+                                <div className="h-px bg-slate-200  my-4"></div>
                                 <button
                                     onClick={handleLogout}
-                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 transition-all font-medium"
+                                    className="w-full flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50  transition-all font-medium"
                                 >
                                     <span>🚪</span> Logout
                                 </button>
@@ -125,27 +126,27 @@ const Profile: React.FC = () => {
                     {/* CONTENT AREA */}
                     <div className="lg:col-span-3">
                         {loading ? (
-                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center shadow-sm border border-slate-200 dark:border-slate-800">
+                            <div className="bg-white  rounded-2xl p-12 text-center shadow-sm border border-slate-200 ">
                                 <div className="w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                                 <p className="text-slate-500">Loading...</p>
                             </div>
                         ) : (
                             <>
                                 {activeTab === 'profile' && (
-                                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-sm border border-slate-200 dark:border-slate-800 animate-fade-in">
+                                    <div className="bg-white  rounded-2xl p-8 shadow-sm border border-slate-200  animate-fade-in">
                                         <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent mb-8">Profile Details</h2>
                                         <div className="grid gap-6 max-w-lg">
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Full Name</label>
-                                                <div className="px-4 py-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800">{user.name}</div>
+                                                <label className="block text-sm font-medium text-slate-500  mb-2">Full Name</label>
+                                                <div className="px-4 py-3 bg-slate-50  rounded-xl text-slate-900  border border-slate-200 ">{user.name}</div>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Email Address</label>
-                                                <div className="px-4 py-3 bg-slate-50 dark:bg-slate-950/50 rounded-xl text-slate-900 dark:text-white border border-slate-200 dark:border-slate-800">{user.email}</div>
+                                                <label className="block text-sm font-medium text-slate-500  mb-2">Email Address</label>
+                                                <div className="px-4 py-3 bg-slate-50  rounded-xl text-slate-900  border border-slate-200 ">{user.email}</div>
                                             </div>
                                             <div>
-                                                <label className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Account Type</label>
-                                                <div className="inline-block px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-lg text-sm font-bold uppercase tracking-wide border border-indigo-200 dark:border-indigo-800">{user.role}</div>
+                                                <label className="block text-sm font-medium text-slate-500  mb-2">Account Type</label>
+                                                <div className="inline-block px-3 py-1 bg-indigo-100  text-indigo-700  rounded-lg text-sm font-bold uppercase tracking-wide border border-indigo-200 ">{user.role}</div>
                                             </div>
                                         </div>
                                     </div>
@@ -155,45 +156,50 @@ const Profile: React.FC = () => {
                                     <div className="animate-fade-in">
                                         <h2 className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent mb-6">Order History</h2>
                                         {orders.length === 0 ? (
-                                            <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm">
+                                            <div className="bg-white  rounded-2xl p-12 text-center border border-slate-200  shadow-sm">
                                                 <p className="text-slate-500 mb-6">No orders found.</p>
                                                 <Link to="/marketplace" className="inline-block px-6 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all">Start Shopping</Link>
                                             </div>
                                         ) : (
                                             <div className="space-y-6">
                                                 {orders.map(order => (
-                                                    <div key={order._id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800">
-                                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
+                                                    <div key={order._id} className="bg-white  rounded-2xl p-6 shadow-sm border border-slate-200 ">
+                                                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 border-b border-slate-100  pb-4 gap-4">
                                                             <div className="flex gap-6">
                                                                 <div>
                                                                     <div className="text-xs text-slate-400 uppercase font-bold">Order ID</div>
-                                                                    <div className="font-mono text-sm text-slate-700 dark:text-slate-300">#{order._id.slice(-6).toUpperCase()}</div>
+                                                                    <div className="font-mono text-sm text-slate-700 ">#{order._id.slice(-6).toUpperCase()}</div>
                                                                 </div>
                                                                 <div>
                                                                     <div className="text-xs text-slate-400 uppercase font-bold">Date</div>
-                                                                    <div className="text-sm text-slate-700 dark:text-slate-300">{new Date(order.createdAt).toLocaleDateString()}</div>
+                                                                    <div className="text-sm text-slate-700 ">{new Date(order.createdAt).toLocaleDateString()}</div>
                                                                 </div>
                                                                 <div>
                                                                     <div className="text-xs text-slate-400 uppercase font-bold">Total</div>
-                                                                    <div className="font-bold text-indigo-600 dark:text-indigo-400">₹{order.totalAmount}</div>
+                                                                    <div className="font-bold text-indigo-600 ">₹{order.totalPrice}</div>
                                                                 </div>
                                                             </div>
                                                             <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'Paid'
-                                                                ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                                                : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                                                ? 'bg-green-100  text-green-700 '
+                                                                : 'bg-amber-100  text-amber-700 '
                                                                 }`}>
                                                                 {order.status}
                                                             </span>
+                                                            {order.paymentMethod === 'UPI_QR_DEMO' && (
+                                                                <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800  ">
+                                                                    Demo UPI
+                                                                </span>
+                                                            )}
                                                         </div>
                                                         <div className="space-y-3">
-                                                            {order.items.map((item, idx) => (
+                                                            {order.orderItems.map((item, idx) => (
                                                                 <div key={idx} className="flex justify-between items-center text-sm">
                                                                     <div className="flex items-center gap-2">
                                                                         <span className="text-slate-400">📖</span>
-                                                                        <span className="font-medium text-slate-800 dark:text-slate-200">{item.title}</span>
+                                                                        <span className="font-medium text-slate-800 ">{item.title}</span>
                                                                         <span className="text-slate-500 text-xs">x{item.quantity}</span>
                                                                     </div>
-                                                                    <span className="font-medium text-slate-700 dark:text-slate-300">₹{item.price * item.quantity}</span>
+                                                                    <span className="font-medium text-slate-700 ">₹{item.price * item.quantity}</span>
                                                                 </div>
                                                             ))}
                                                         </div>

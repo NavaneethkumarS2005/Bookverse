@@ -50,7 +50,7 @@ const Contact: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative">
+        <div className="min-h-screen pt-28 pb-20 bg-slate-50  transition-colors duration-300 relative">
 
             {/* TOAST POPUP */}
             {popup.show && (
@@ -62,20 +62,20 @@ const Contact: React.FC = () => {
 
             <div className="max-w-4xl mx-auto px-5">
                 <header className="text-center mb-16">
-                    <h1 className="font-outfit text-4xl md:text-5xl font-bold text-slate-900 dark:text-white mb-4">
+                    <h1 className="font-outfit text-4xl md:text-5xl font-bold text-slate-900  mb-4">
                         Get in <span className="bg-gradient-to-r from-indigo-500 to-pink-500 bg-clip-text text-transparent">Touch</span>
                     </h1>
-                    <p className="text-slate-500 dark:text-slate-400 text-lg">Have a question about an order or a listing? We're here to help.</p>
+                    <p className="text-slate-500  text-lg">Have a question about an order or a listing? We're here to help.</p>
                 </header>
 
-                <div className="bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-200 dark:border-slate-800 p-8 md:p-12">
+                <div className="bg-white  rounded-3xl shadow-xl border border-slate-200  p-8 md:p-12">
                     <form id="contactForm" onSubmit={handleSubmit} className="space-y-6">
                         <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Name</label>
+                            <label htmlFor="name" className="block text-sm font-medium text-slate-500  mb-2">Name</label>
                             <input
                                 type="text"
                                 id="name"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                 placeholder="Your Name"
                                 required
                                 value={formData.name}
@@ -83,11 +83,11 @@ const Contact: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label htmlFor="email" className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Email</label>
+                            <label htmlFor="email" className="block text-sm font-medium text-slate-500  mb-2">Email</label>
                             <input
                                 type="email"
                                 id="email"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
                                 placeholder="your@email.com"
                                 required
                                 value={formData.email}
@@ -95,10 +95,10 @@ const Contact: React.FC = () => {
                             />
                         </div>
                         <div>
-                            <label htmlFor="message" className="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-2">Message</label>
+                            <label htmlFor="message" className="block text-sm font-medium text-slate-500  mb-2">Message</label>
                             <textarea
                                 id="message"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all min-h-[150px]"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-slate-50  text-slate-900  focus:ring-2 focus:ring-indigo-500 outline-none transition-all min-h-[150px]"
                                 placeholder="How can we help?"
                                 required
                                 value={formData.message}

@@ -81,20 +81,20 @@ const Login: React.FC = () => {
     };
 
     return (
-        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-20 px-5 bg-gradient-to-br from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
-            <div className="w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-xl p-8 md:p-10 border border-slate-200 dark:border-slate-800 relative overflow-hidden">
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] py-20 px-5 bg-gradient-to-br from-slate-50 to-white  ">
+            <div className="w-full max-w-md bg-white  rounded-3xl shadow-xl p-8 md:p-10 border border-slate-200  relative overflow-hidden">
                 {/* Decorative background blur */}
                 <div className="absolute -top-20 -right-20 w-40 h-40 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
                 <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-pink-500/10 rounded-full blur-3xl pointer-events-none"></div>
 
-                <h2 className="text-center mb-8 text-3xl font-outfit font-bold text-slate-900 dark:text-white relative z-10">
+                <h2 className="text-center mb-8 text-3xl font-outfit font-bold text-slate-900  relative z-10">
                     {isLogin ? 'Welcome Back' : 'Join the BookVerse'}
                 </h2>
 
                 {message && (
                     <div className={`p-4 rounded-xl mb-6 text-center text-sm font-medium relative z-10 ${message.includes('success') || message.includes('sent')
-                        ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800'
-                        : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 border border-red-200 dark:border-red-800'
+                        ? 'bg-emerald-50 text-emerald-600   border border-emerald-200 '
+                        : 'bg-red-50 text-red-600   border border-red-200 '
                         }`}>
                         {message}
                     </div>
@@ -103,11 +103,11 @@ const Login: React.FC = () => {
                 <form onSubmit={handleSubmit} className="space-y-5 relative z-10">
                     {!isLogin && (
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Name</label>
+                            <label className="block text-sm font-medium text-slate-700  mb-1.5 ml-1">Name</label>
                             <input
                                 type="text"
                                 name="name"
-                                className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                                className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-white  text-slate-900  focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                                 value={formData.name}
                                 onChange={handleChange}
                                 required={!isLogin}
@@ -117,11 +117,11 @@ const Login: React.FC = () => {
                     )}
 
                     <div>
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Email</label>
+                        <label className="block text-sm font-medium text-slate-700  mb-1.5 ml-1">Email</label>
                         <input
                             type="email"
                             name="email"
-                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-white  text-slate-900  focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all"
                             value={formData.email}
                             onChange={handleChange}
                             required
@@ -130,11 +130,11 @@ const Login: React.FC = () => {
                     </div>
 
                     <div className="relative">
-                        <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5 ml-1">Password</label>
+                        <label className="block text-sm font-medium text-slate-700  mb-1.5 ml-1">Password</label>
                         <input
                             type={showPassword ? "text" : "password"}
                             name="password"
-                            className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pr-12"
+                            className="w-full px-4 py-3 rounded-xl border border-slate-300  bg-white  text-slate-900  focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all pr-12"
                             value={formData.password}
                             onChange={handleChange}
                             required
@@ -143,7 +143,7 @@ const Login: React.FC = () => {
                         <button
                             type="button"
                             onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-4 top-[34px] text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                            className="absolute right-4 top-[34px] text-slate-400 hover:text-indigo-600  transition-colors"
                         >
                             {showPassword ? '👁️' : '🔒'}
                         </button>
@@ -164,7 +164,7 @@ const Login: React.FC = () => {
                         <div className="text-center mt-4">
                             <Link
                                 to="/forgot-password"
-                                className="text-sm text-slate-500 hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+                                className="text-sm text-slate-500 hover:text-indigo-600  transition-colors"
                             >
                                 Forgot Password?
                             </Link>
@@ -172,11 +172,11 @@ const Login: React.FC = () => {
                     )}
                 </form>
 
-                <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-800 text-center text-slate-600 dark:text-slate-400 text-sm relative z-10">
+                <div className="mt-8 pt-6 border-t border-slate-200  text-center text-slate-600  text-sm relative z-10">
                     {isLogin ? "Don't have an account? " : "Already have an account? "}
                     <button
                         onClick={() => { setIsLogin(!isLogin); setMessage(''); }}
-                        className="font-bold text-indigo-600 dark:text-indigo-400 hover:underline bg-transparent border-none cursor-pointer"
+                        className="font-bold text-indigo-600  hover:underline bg-transparent border-none cursor-pointer"
                     >
                         {isLogin ? 'Sign Up' : 'Login'}
                     </button>

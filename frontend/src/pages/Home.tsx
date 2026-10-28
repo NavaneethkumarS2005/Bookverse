@@ -2,16 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import ProductCard from '../components/ProductCard';
-import { useCart } from '../context/CartContext';
-import { useTheme } from '../context/ThemeContext';
-// @ts-ignore
+import BookCover from '../components/BookCover';
 import { API_URL } from '../config';
 import { Book } from '../types';
 import { normalizeBook, normalizeBookCollection } from '../utils/bookCompatibility';
 
+const genres = [
+    { name: 'Fiction', image: '/images/reading corner.jpeg', tone: 'bg-[#F8E7A1]', description: 'Stories to settle into, return to, and carry with you.' },
+    { name: 'Sci-Fi', image: '/images/genre-collection.png', tone: 'bg-[#DCD6F7]', description: 'Strange futures, big questions, and new worlds.' },
+    { name: 'History', image: '/images/future library.jpeg', tone: 'bg-[#B9D5BE]', description: 'Human stories that give the present more depth.' },
+    { name: 'Technology', image: '/images/genres.jpeg', tone: 'bg-[#FFCCB8]', description: 'Ideas and practical insight for curious minds.' },
+];
+
 const Home: React.FC = () => {
-    const { clearCart } = useCart();
-    const { theme } = useTheme();
     const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
     const [recommendations, setRecommendations] = useState<Book[]>([]);
     const [recommendationLabel, setRecommendationLabel] = useState('Live picks for you');
@@ -20,55 +23,6 @@ const Home: React.FC = () => {
     const [recommendationError, setRecommendationError] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [paymentComplete, setPaymentComplete] = useState(false);
-    const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
-
-    useEffect(() => {
-        const query = new URLSearchParams(window.location.search);
-        const payment = query.get('payment');
-        if (payment !== 'success' && payment !== 'pending') return;
-
-        const merchantTransactionId = query.get('txnId');
-        if (!merchantTransactionId) {
-            setPaymentMessage('Payment status could not be verified. Your cart has not been cleared.');
-            return;
-        }
-
-        let active = true;
-        let clearResultUrl = false;
-        const verifyPayment = async () => {
-            try {
-                const response = await fetch(`${API_URL}/api/phonepe/status/${encodeURIComponent(merchantTransactionId)}`, {
-                    credentials: 'include',
-                });
-                const result = await response.json();
-                if (!active) return;
-
-                if (response.ok && result.success === true && result.status === 'Paid') {
-                    setPaymentComplete(true);
-                    setPaymentMessage(null);
-                    void clearCart();
-                    clearResultUrl = true;
-                } else if (result.status === 'Failed') {
-                    setPaymentMessage('PhonePe payment was not completed. Your cart has not been cleared.');
-                    clearResultUrl = true;
-                } else {
-                    setPaymentMessage('PhonePe payment is still being confirmed. Your cart has not been cleared.');
-                }
-            } catch {
-                if (active) {
-                    setPaymentMessage('PhonePe payment status is unavailable. Your cart has not been cleared.');
-                }
-            } finally {
-                if (active && clearResultUrl) window.history.replaceState({}, '', window.location.pathname);
-            }
-        };
-
-        void verifyPayment();
-        return () => {
-            active = false;
-        };
-    }, [clearCart]);
 
     useEffect(() => {
         const fetchBooks = async () => {
@@ -131,7 +85,7 @@ const Home: React.FC = () => {
                 })
                 .slice(0, 4);
 
-            const nextSignature = normalizedBooks.map((book: Book): string => getBookIdentifier(book)).join('|');
+            const nextSignature = normalizedBooks.map(getBookIdentifier).join('|');
             if (refresh && attempt < 2 && lastRecommendationSignatureRef.current && nextSignature === lastRecommendationSignatureRef.current && normalizedBooks.length > 1) {
                 return fetchRecommendations(true, attempt + 1);
             }
@@ -161,218 +115,140 @@ const Home: React.FC = () => {
         };
     }, []);
 
-    const recommendationSection = theme === 'dark'
-        ? 'bg-slate-950 text-white'
-        : 'bg-gradient-to-br from-indigo-50 via-white to-pink-50 text-slate-900';
+    const heroBooks = featuredBooks.slice(0, 3);
 
     return (
-        <>
-            {paymentComplete && <div className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-xl">Payment successful! Your order has been placed.</div>}
-            {paymentMessage && <div role="status" className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-amber-100 px-5 py-3 text-sm font-semibold text-amber-900 shadow-xl">{paymentMessage}</div>}
-
-            <header className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-white py-20 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950">
-                <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                    <div className="absolute -left-20 top-12 h-72 w-72 rounded-full bg-indigo-500/15 blur-[120px]" />
-                    <div className="absolute right-0 top-20 h-80 w-80 rounded-full bg-pink-500/15 blur-[120px]" />
-                    <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-cyan-500/10 blur-[120px]" />
-                </div>
-
-                <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-12 px-5 md:grid-cols-[1.1fr_0.9fr]">
-                    <div className="animate-[fadeIn_0.6s_ease-out_forwards]">
-                        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200">
-                            AI-native reading discovery
-                        </div>
-
-                        <h1 className="mb-6 max-w-xl text-5xl font-black leading-tight text-slate-900 dark:text-white md:text-7xl">
-                            Read by <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-500 bg-clip-text text-transparent">mood</span>, not just title.
+        <main className="overflow-hidden">
+            <header className="relative bg-[#FFFDF8] py-14 sm:py-24 lg:py-28">
+                <div className="absolute -right-40 top-0 h-96 w-96 rounded-full bg-[#F8E7A1]/35 blur-3xl" />
+                <div className="absolute bottom-0 left-0 h-72 w-72 rounded-full bg-[#B9D5BE]/25 blur-3xl" />
+                <div className="relative mx-auto grid max-w-7xl items-center gap-12 px-5 lg:grid-cols-[0.9fr_1.1fr] lg:gap-20 lg:px-8">
+                    <div className="max-w-2xl">
+                        <p className="mb-6 text-xs font-semibold uppercase tracking-[0.3em] text-[#7965D8]">Lumina Book AI · an independent bookstore online</p>
+                        <h1 className="max-w-xl font-serif text-5xl font-semibold leading-[0.95] tracking-[-0.05em] text-[#29243A] sm:text-7xl">
+                            Stories worth <em className="text-[#7965D8]">keeping close.</em>
                         </h1>
-
-                        <p className="mb-8 max-w-xl text-lg text-slate-600 dark:text-slate-300">
-                            Discover books through vibe, theme, trope, and story emotion. Buy your next favorite, sell used treasures, and read with a smart assistant built around your taste.
+                        <p className="mt-7 max-w-lg text-lg leading-8 text-[#716B7E] sm:text-xl">
+                            Thoughtful discovery, real catalogue titles, and a little help finding the book that fits the moment.
                         </p>
-
-                        <div className="flex flex-wrap gap-4">
-                            <Link to="/marketplace" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-7 py-4 text-lg font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-1 hover:shadow-xl">
-                                Browse the shelf <span>→</span>
+                        <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+                            <Link to="/marketplace" className="inline-flex items-center justify-center rounded-full bg-[#7965D8] px-7 py-3.5 text-sm font-semibold text-white shadow-lg shadow-[#7965D8]/20 transition hover:-translate-y-0.5 hover:bg-[#6754C4] focus-visible:ring-4 focus-visible:ring-[#7965D8]/25">
+                                Explore the shelves <span className="ml-2 text-lg">→</span>
                             </Link>
-                            <Link to="/sell" className="inline-flex items-center rounded-xl border border-slate-200 bg-white/80 px-7 py-4 text-lg font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
-                                Sell a book
+                            <Link to="/discover" className="inline-flex items-center justify-center rounded-full border border-[#DAD2C5] bg-white/70 px-7 py-3.5 text-sm font-semibold text-[#29243A] transition hover:-translate-y-0.5 hover:border-[#7965D8]">
+                                Discover by feeling
                             </Link>
                         </div>
-
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            {['Dark fantasy romance', 'Cozy literary fiction', 'Slow-burn thrillers', 'Philosophical sci-fi'].map((tag) => (
-                                <span key={tag} className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-                                    {tag}
-                                </span>
-                            ))}
+                        <div className="mt-10 flex items-center gap-4 border-t border-[#E7E1D8] pt-5 text-sm text-[#716B7E]">
+                            <span className="font-mono text-xs uppercase tracking-[0.18em] text-[#7965D8]">01 / welcome in</span>
+                            <span className="h-px w-10 bg-[#DAD2C5]" />
+                            <span>For curious readers and repeat visitors</span>
                         </div>
                     </div>
 
-                    <div className="relative animate-[fadeIn_0.6s_ease-out_0.2s_forwards] opacity-0">
-                        <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-slate-950 p-4 shadow-[0_30px_80px_rgba(79,70,229,0.25)]">
-                            <div className="rounded-[1.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-3">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-indigo-200">Trending AI shelf</p>
-                                        <h3 className="mt-2 text-2xl font-bold text-white">For your next obsession</h3>
-                                    </div>
-                                    <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">Live</span>
-                                </div>
-
-                                <div className="mt-5 space-y-3">
-                                    {[
-                                        { title: 'The Glass Archive', author: 'Aarav Sen', tag: 'Literary mystery', price: '₹499' },
-                                        { title: 'Signal of the Ember Sea', author: 'Naira Khanna', tag: 'Epic sci-fi', price: '₹649' },
-                                        { title: 'The Orchard Between Worlds', author: 'Rhea Mishra', tag: 'Romantic fantasy', price: '₹579' }
-                                    ].map((book) => (
-                                        <div key={book.title} className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900/60 p-3">
-                                            <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80" alt={book.title} className="h-20 w-16 rounded-xl object-cover" />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold text-white">{book.title}</p>
-                                                <p className="text-xs text-slate-400">{book.author}</p>
-                                                <span className="mt-1 inline-block rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-200">{book.tag}</span>
-                                            </div>
-                                            <div className="text-right text-sm font-bold text-indigo-300">{book.price}</div>
-                                        </div>
-                                    ))}
-                                </div>
+                    <div className="relative min-h-[410px] sm:min-h-[540px]">
+                        <div className="absolute inset-0 overflow-hidden rounded-[2rem] border border-[#E7E1D8] bg-[#F7F3EC] shadow-[0_24px_70px_rgba(41,36,58,0.12)]">
+                            <img src="/images/bookstore-hero-editorial.png" alt="Warm independent bookstore with an open book" className="h-full w-full object-cover opacity-80 mix-blend-multiply" />
+                            <div className="absolute inset-0 bg-gradient-to-t from-[#29243A]/65 via-[#29243A]/5 to-transparent" />
+                            <div className="absolute bottom-6 left-6 right-6 text-white sm:bottom-8 sm:left-8">
+                                <p className="text-xs uppercase tracking-[0.24em] text-[#F8E7A1]">The reading room</p>
+                                <p className="mt-2 max-w-xs font-serif text-2xl leading-tight sm:text-3xl">Make space for a story that stays.</p>
                             </div>
                         </div>
+                        {heroBooks.length > 0 && (
+                            <div className="absolute -bottom-8 right-3 flex items-end gap-2 sm:-right-6 sm:gap-3">
+                                {heroBooks.map((book, index) => (
+                                    <Link key={getBookIdentifier(book)} to={`/book/${getBookIdentifier(book)}`} aria-label={`View ${book.title}`} className={`block overflow-hidden rounded-lg border-4 border-[#FFFDF8] shadow-xl transition hover:-translate-y-2 ${index === 1 ? 'w-24 sm:w-32' : 'w-20 sm:w-28'}`}>
+                                        <BookCover book={book} className="aspect-[2/3] w-full" imageClassName="object-cover" />
+                                    </Link>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
             </header>
 
-            <section className="relative py-20">
-                <div className="mx-auto max-w-7xl px-5">
-                    <div className="mb-12 text-center">
-                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-500">Why LuminaBook AI</p>
-                        <h2 className="mt-3 text-4xl font-bold text-slate-900 dark:text-white">One platform for discovery, buying, and reading.</h2>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+            <section className="bg-white py-16 sm:py-20">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <div className="grid gap-8 border-y border-[#E7E1D8] py-8 md:grid-cols-3">
                         {[
-                            {
-                                title: 'Mood-based discovery',
-                                text: 'Tell the AI what you want to feel, and it surfaces books that match your emotional taste.',
-                                icon: '✦'
-                            },
-                            {
-                                title: 'Used-book marketplace',
-                                text: 'Buy and sell secondhand books with trust, quality checks, and cleaner inventory.',
-                                icon: '↺'
-                            },
-                            {
-                                title: 'Semantic search',
-                                text: 'Search the catalogue by concept, theme, or story similarity rather than exact titles.',
-                                icon: '⌕'
-                            },
-                            {
-                                title: 'AI reading assistant',
-                                text: 'Generate reading paths, summaries, and smarter recommendations as you explore.',
-                                icon: '⚡'
-                            }
-                        ].map((feature) => (
-                            <div key={feature.title} className="group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/80">
-                                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-pink-500 text-xl font-bold text-white shadow-lg shadow-indigo-500/20">
-                                    {feature.icon}
+                            ['01', 'Find your feeling', 'Explore by mood, theme, and curiosity.'],
+                            ['02', 'Meet your next book', 'Browse live titles with real details.'],
+                            ['03', 'Keep reading', 'Save favourites and build your cart.'],
+                        ].map(([number, title, text]) => (
+                            <div key={number} className="flex gap-4">
+                                <span className="font-mono text-xs text-[#7965D8]">{number}</span>
+                                <div>
+                                    <h2 className="font-serif text-2xl text-[#29243A]">{title}</h2>
+                                    <p className="mt-2 text-sm leading-6 text-[#716B7E]">{text}</p>
                                 </div>
-                                <h3 className="mb-3 text-2xl font-bold text-slate-900 dark:text-white">{feature.title}</h3>
-                                <p className="text-base text-slate-600 dark:text-slate-300">{feature.text}</p>
                             </div>
                         ))}
                     </div>
                 </div>
             </section>
 
-            <section className={`relative overflow-hidden py-20 transition-colors duration-300 ${recommendationSection}`}>
-                <div className="pointer-events-none absolute -left-24 top-0 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-                <div className="pointer-events-none absolute -right-24 bottom-0 h-64 w-64 rounded-full bg-pink-500/15 blur-3xl" />
-                <div className="relative mx-auto max-w-7xl px-5">
-                    <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+            <section className="bg-[#FFFDF8] py-20 sm:py-24">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <div className="mb-10 flex items-end justify-between gap-5">
                         <div>
-                            <p className={`mb-2 text-sm font-semibold uppercase tracking-[0.22em] ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`}>Live recommendations</p>
-                            <h2 className="text-3xl font-bold sm:text-4xl">{recommendationLabel}</h2>
-                            <p className={`mt-3 max-w-xl ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                                {recommendationBasis === 'history' ? 'Personalized from your LuminaBook reading history.' : 'Fresh picks from the live catalog and reader preferences.'}
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7965D8]">From the live catalogue</p>
+                            <h2 className="mt-3 font-serif text-4xl text-[#29243A] sm:text-5xl">Books to linger over</h2>
+                        </div>
+                        <Link to="/marketplace" className="hidden text-sm font-semibold text-[#7965D8] hover:text-[#6754C4] sm:block">View all books →</Link>
+                    </div>
+                    {loading ? (
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-80 animate-pulse rounded-2xl bg-[#F0EBE3]" />)}</div>
+                    ) : error ? (
+                        <div className="rounded-2xl border border-dashed border-[#D7A7A7] bg-[#FFF6F6] p-8 text-center text-[#9A4747]">{error}</div>
+                    ) : (
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">{featuredBooks.map((book, index) => <ProductCard key={getBookIdentifier(book) || `featured-${index}`} book={book} />)}</div>
+                    )}
+                    <Link to="/marketplace" className="mt-8 inline-flex text-sm font-semibold text-[#7965D8] sm:hidden">View all books →</Link>
+                </div>
+            </section>
+
+            <section className="bg-[#F7F3EC] py-20 sm:py-24">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <div className="mb-10 flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
+                        <div className="max-w-2xl">
+                            <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7965D8]">A little help from Lumina</p>
+                            <h2 className="mt-3 font-serif text-4xl text-[#29243A]  sm:text-5xl">{recommendationLabel}</h2>
+                            <p className="mt-3 text-[#716B7E] ">
+                                {recommendationBasis === 'history' ? 'Personalized from your Lumina Book AI reading history.' : 'Fresh picks from the live catalogue and reader preferences.'}
                             </p>
                         </div>
-
-                        <button onClick={() => void fetchRecommendations(true)} disabled={recommendationLoading} className={`self-start rounded-xl border px-5 py-3 text-sm font-semibold transition sm:self-auto disabled:cursor-not-allowed disabled:opacity-60 ${theme === 'dark' ? 'border-white/20 bg-white/10 hover:bg-white/20 text-white' : 'border-indigo-200 bg-white/80 text-indigo-700 shadow-sm hover:bg-white hover:border-indigo-300'}`}>
+                        <button onClick={() => void fetchRecommendations(true)} disabled={recommendationLoading} className="self-start rounded-full border border-[#CFC5B7] bg-white/70 px-5 py-2.5 text-sm font-semibold text-[#29243A] transition hover:border-[#7965D8] disabled:cursor-not-allowed disabled:opacity-60    sm:self-auto">
                             {recommendationLoading ? 'Refreshing…' : 'Refresh picks ↻'}
                         </button>
                     </div>
-
                     {recommendationLoading ? (
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className={`h-80 animate-pulse rounded-2xl ${theme === 'dark' ? 'bg-white/10' : 'bg-indigo-100/70'}`} />
-                            ))}
-                        </div>
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">{Array.from({ length: 4 }).map((_, index) => <div key={index} className="h-80 animate-pulse rounded-2xl bg-[#E8E1D7] " />)}</div>
                     ) : recommendations.length ? (
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                            {recommendations.map((book, index) => (
-                                <ProductCard key={book._id || book.id || `recommendation-${index}`} book={book} />
-                            ))}
-                        </div>
+                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">{recommendations.map((book, index) => <ProductCard key={getBookIdentifier(book) || `recommendation-${index}`} book={book} />)}</div>
                     ) : (
-                        <div className={`rounded-2xl border p-8 ${theme === 'dark' ? 'border-white/10 bg-white/5 text-slate-300' : 'border-indigo-100 bg-white/80 text-slate-600 shadow-sm'}`}>
-                            Recommendations will appear when books are available in the catalog.
-                        </div>
+                        <div className="rounded-2xl border border-dashed border-[#CFC5B7] p-8 text-center text-[#716B7E]  ">Recommendations will appear when books are available in the catalogue.</div>
                     )}
-
-                    {recommendationError && (
-                        <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${theme === 'dark' ? 'border-amber-500/30 bg-amber-500/10 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-                            {recommendationError}
-                        </div>
-                    )}
+                    {recommendationError && <p className="mt-5 rounded-xl border border-[#E5C7A5] bg-[#FFF7E9] px-4 py-3 text-sm text-[#76501F]   ">{recommendationError}</p>}
                 </div>
             </section>
 
-            <section className="py-24 relative">
-                <div className="mx-auto max-w-7xl px-5">
-                    <div className="mb-16 text-center">
-                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-500">Featured titles</p>
-                        <h2 className="mt-3 text-4xl font-bold text-slate-900 dark:text-white">Curated favorites from the community</h2>
+            <section className="bg-[#FFFDF8] py-20  sm:py-24">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <div className="mb-10 max-w-2xl">
+                        <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#7965D8]">Choose a doorway</p>
+                        <h2 className="mt-3 font-serif text-4xl text-[#29243A]  sm:text-5xl">Where are you wandering today?</h2>
                     </div>
-
-                    {loading ? (
-                        <div className="text-center p-10 text-slate-500 animate-pulse">Loading bestsellers...</div>
-                    ) : error ? (
-                        <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/60 p-8 text-center text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-                            {error}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                            {featuredBooks.map((book, index) => (
-                                <ProductCard key={book._id || book.id || `featured-${index}`} book={book} />
-                            ))}
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            <section className="bg-slate-50 py-24 dark:bg-slate-900/60">
-                <div className="mx-auto max-w-7xl px-5">
-                    <div className="mb-12 text-center">
-                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-500">Popular genres</p>
-                        <h2 className="mt-3 text-4xl font-bold text-slate-900 dark:text-white">Explore shelves built for every kind of reader</h2>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                        {[
-                            { name: 'Fiction', image: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80', accent: 'from-indigo-600 to-blue-500', description: 'Stories that stay with you long after the final page.' },
-                            { name: 'Sci-Fi', image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&q=80', accent: 'from-purple-600 to-pink-500', description: 'Bold futures, deep ideas, and impossible worlds.' },
-                            { name: 'History', image: 'https://images.unsplash.com/photo-1524578271613-d550eacf6090?auto=format&fit=crop&q=80', accent: 'from-amber-500 to-orange-500', description: 'Grounded narratives and human stories that endure.' },
-                            { name: 'Technology', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80', accent: 'from-cyan-500 to-indigo-600', description: 'Practical insight for curious minds and builders.' }
-                        ].map((genre) => (
-                            <Link key={genre.name} to={`/categories?genre=${genre.name}`} className="group relative overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-sm transition-transform hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
-                                <div className={`h-52 bg-gradient-to-r ${genre.accent}`}>
-                                    <img src={genre.image} alt={genre.name} className="h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105" />
+                    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+                        {genres.map((genre) => (
+                            <Link key={genre.name} to={`/categories?genre=${encodeURIComponent(genre.name)}`} className={`group overflow-hidden rounded-2xl border border-[#E7E1D8] ${genre.tone} shadow-sm transition hover:-translate-y-1 hover:shadow-lg `}>
+                                <div className="h-36 overflow-hidden">
+                                    <img src={genre.image} alt="" className="h-full w-full object-cover mix-blend-multiply transition duration-500 group-hover:scale-105  " />
                                 </div>
                                 <div className="p-5">
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{genre.name}</h3>
-                                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{genre.description}</p>
+                                    <h3 className="font-serif text-2xl text-[#29243A]">{genre.name}</h3>
+                                    <p className="mt-2 text-sm leading-6 text-[#716B7E]">{genre.description}</p>
+                                    <span className="mt-5 inline-block text-sm font-semibold text-[#6754C4]">Explore {genre.name} →</span>
                                 </div>
                             </Link>
                         ))}
@@ -380,18 +256,15 @@ const Home: React.FC = () => {
                 </div>
             </section>
 
-            <section className="py-24 text-center">
-                <div className="mx-auto max-w-5xl px-5">
-                    <h2 className="mb-6 text-5xl font-bold text-slate-900 dark:text-white">Build your personal library with LuminaBook AI</h2>
-                    <p className="mx-auto mb-10 max-w-2xl text-xl text-slate-500 dark:text-slate-400">
-                        Follow recommendations, trade secondhand finds, and discover your next favorite read through one seamless discovery engine.
-                    </p>
-                    <Link to="/login" className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500 to-indigo-600 px-10 py-4 text-lg font-bold text-white shadow-2xl shadow-indigo-500/30 transition-all hover:-translate-y-1">
-                        Get started
-                    </Link>
+            <section className="bg-[#7965D8] px-5 py-20 text-center text-white sm:py-24">
+                <div className="mx-auto max-w-3xl">
+                    <p className="text-xs font-semibold uppercase tracking-[0.28em] text-[#F8E7A1]">Keep a good story nearby</p>
+                    <h2 className="mt-4 font-serif text-4xl sm:text-6xl">Your next favourite is waiting on a shelf.</h2>
+                    <p className="mx-auto mt-5 max-w-xl text-base leading-7 text-white/80">Browse real catalogue titles, follow your curiosity, and let Lumina Book AI help you find the book that feels right.</p>
+                    <Link to="/marketplace" className="mt-8 inline-flex rounded-full bg-[#FFFDF8] px-7 py-3.5 text-sm font-semibold text-[#29243A] transition hover:-translate-y-0.5 hover:bg-white">Browse the marketplace →</Link>
                 </div>
             </section>
-        </>
+        </main>
     );
 };
 

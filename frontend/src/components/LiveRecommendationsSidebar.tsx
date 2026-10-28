@@ -36,7 +36,7 @@ const LiveRecommendationsSidebar: React.FC = () => {
                         author: "Frank Herbert",
                         price: 599,
                         category: "Sci-Fi",
-                        image: "https://images.unsplash.com/photo-1614729939124-032f0b56c9ce?auto=format&fit=crop&w=400&q=80",
+                    image: "/images/genre-collection.png",
                     } as unknown as Book,
                     {
                         _id: "mock2",
@@ -44,7 +44,7 @@ const LiveRecommendationsSidebar: React.FC = () => {
                         author: "William Gibson",
                         price: 499,
                         category: "Sci-Fi",
-                        image: "https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&w=400&q=80",
+                    image: "/images/hero-book.png",
                     } as unknown as Book
                 ]);
             }
@@ -86,24 +86,24 @@ const LiveRecommendationsSidebar: React.FC = () => {
                         animate={{ x: 0, opacity: 1 }}
                         exit={{ x: '100%', opacity: 0.5 }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed right-0 top-0 z-[101] h-full w-full max-w-sm border-l border-slate-200 bg-white/95 shadow-2xl backdrop-blur-xl dark:border-slate-800 dark:bg-slate-950/95 sm:max-w-md"
+                        className="fixed right-0 top-0 z-[101] h-full w-full max-w-sm border-l border-slate-200 bg-white/95 shadow-2xl backdrop-blur-xl   sm:max-w-md"
                     >
                         <div className="flex h-full flex-col">
                             {/* Header */}
-                            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 dark:border-slate-800">
+                            <div className="flex items-center justify-between border-b border-slate-200 px-6 py-5 ">
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="relative flex h-3 w-3">
                                             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
                                             <span className="relative inline-flex h-3 w-3 rounded-full bg-indigo-500"></span>
                                         </span>
-                                        <h2 className="text-lg font-bold text-slate-900 dark:text-white">Live Recommendations</h2>
+                                        <h2 className="text-lg font-bold text-slate-900 ">Live Recommendations</h2>
                                     </div>
-                                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">Updating based on your activity...</p>
+                                    <p className="text-xs text-slate-500  mt-1">Updating based on your activity...</p>
                                 </div>
                                 <button
                                     onClick={() => setIsOpen(false)}
-                                    className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200 dark:bg-slate-900 dark:text-slate-400 dark:hover:bg-slate-800"
+                                    className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition-colors hover:bg-slate-200   "
                                 >
                                     ✕
                                 </button>

@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { FiMessageCircle, FiX } from 'react-icons/fi';
 import { useCart } from '../context/CartContext';
+import BookCover from './BookCover';
 // @ts-ignore
 import { API_URL } from '../config';
 
@@ -178,11 +180,11 @@ const AIChatbot: React.FC = () => {
         <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end">
             {/* Chat Window */}
             {isOpen && (
-                <div className="bg-white dark:bg-slate-900 w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 mb-4 overflow-hidden flex flex-col transition-all duration-300 min-h-0 max-h-[70vh] h-[min(70vh,32rem)]">
+                <div className="bg-white  w-80 sm:w-96 rounded-2xl shadow-2xl border border-slate-200  mb-4 overflow-hidden flex flex-col transition-all duration-300 min-h-0 max-h-[70vh] h-[min(70vh,32rem)]">
                     {/* Header */}
                     <div className="shrink-0 bg-gradient-to-r from-indigo-600 to-pink-500 p-4 text-white flex justify-between items-center">
                         <div className="flex items-center gap-2">
-                            <span className="text-2xl">🤖</span>
+                            <FiMessageCircle className="text-2xl" aria-hidden="true" />
                             <div>
                                 <h3 className="font-bold text-lg">LuminaBook AI</h3>
                                 <p className="text-xs text-indigo-100">{botStatus}</p>
@@ -196,15 +198,15 @@ const AIChatbot: React.FC = () => {
                     </div>
 
                     {/* Messages Area */}
-                    <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 bg-slate-50 dark:bg-slate-950">
+                    <div ref={messagesContainerRef} className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-4 space-y-4 bg-slate-50 ">
                         {messages.map((msg) => (
                             <div key={msg.id} className={`flex ${msg.isBot ? 'justify-start' : 'justify-end'}`}>
                                 <div className={`max-w-[80%] p-3 rounded-2xl text-sm ${msg.isBot
-                                    ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-200 rounded-tl-none border border-slate-100 dark:border-slate-700 shadow-sm'
+                                    ? 'bg-white  text-slate-800  rounded-tl-none border border-slate-100  shadow-sm'
                                     : 'bg-indigo-600 text-white rounded-tr-none shadow-md'}`}>
                                     {msg.text}
                                     {msg.meta && (
-                                        <div className="text-[10px] mt-2 text-slate-400 dark:text-slate-500">
+                                        <div className="text-[10px] mt-2 text-slate-400 ">
                                             {msg.meta}
                                         </div>
                                     )}
@@ -219,12 +221,16 @@ const AIChatbot: React.FC = () => {
                                         const title = item.title || item.name || item.boothNumber || 'Discovery result';
                                         const subtitle = item.author || item.city || item.publisherId?.name || item.fairId?.name || item.genre;
                                         const image = item.image || item.coverImage || item.profileImage || item.logo;
-                                        return <div key={`${id}-${index}`} className="mt-3 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900">
+                                        return <div key={`${id}-${index}`} className="mt-3 overflow-hidden rounded-xl border border-slate-200  bg-slate-50 ">
                                             <div className="flex gap-2 p-2">
-                                                {image && <img src={image} alt="" className="h-14 w-10 rounded object-cover" />}
+                                                {image && result.type === 'book' ? (
+                                                    <BookCover image={image} title={title} author={subtitle} className="h-14 w-10 flex-shrink-0" alt="" />
+                                                ) : image ? (
+                                                    <img src={image} alt="" className="h-14 w-10 rounded object-cover" />
+                                                ) : null}
                                                 <div className="min-w-0 flex-1"><div className="truncate font-semibold">{title}</div><div className="truncate text-xs text-slate-500">{subtitle}{item.price || item.expectedPrice ? ` · ₹${item.price || item.expectedPrice}` : ''}</div></div>
                                             </div>
-                                            <div className="flex gap-2 border-t border-slate-200 dark:border-slate-700 p-2">
+                                            <div className="flex gap-2 border-t border-slate-200  p-2">
                                                 <button onClick={() => { navigate(target); setIsOpen(false); }} className="rounded-lg bg-indigo-600 px-2 py-1 text-xs font-semibold text-white">View</button>
                                                 {result.type === 'book' && item.fulfillment !== 'external' && <button onClick={() => addToCart(item).catch(() => setBotStatus('Could not add to cart'))} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Add to cart</button>}
                                                 {result.type === 'upcoming_book' && <button onClick={() => navigate('/upcoming-books')} className="rounded-lg border border-indigo-300 px-2 py-1 text-xs font-semibold text-indigo-600">Pre-order</button>}
@@ -236,7 +242,7 @@ const AIChatbot: React.FC = () => {
                         ))}
                         {isTyping && (
                             <div className="flex justify-start">
-                                <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-none border border-slate-100 dark:border-slate-700 shadow-sm flex gap-1 items-center h-10">
+                                <div className="bg-white  p-3 rounded-2xl rounded-tl-none border border-slate-100  shadow-sm flex gap-1 items-center h-10">
                                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
                                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
                                     <div className="w-2 h-2 bg-indigo-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
@@ -247,12 +253,12 @@ const AIChatbot: React.FC = () => {
                     </div>
 
                     {/* Input Area */}
-                    <div className="shrink-0 p-3 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2">
+                    <div className="shrink-0 p-3 bg-white  border-t border-slate-200 ">
+                        <div className="flex items-center gap-2 bg-slate-100  rounded-full px-4 py-2">
                             {recognitionRef.current && (
                                 <button
                                     onClick={toggleListen}
-                                    className={`focus:outline-none transition-colors ${isListening ? 'text-pink-500 animate-pulse' : 'text-slate-400 hover:text-indigo-500 dark:text-slate-500'}`}
+                                    className={`focus:outline-none transition-colors ${isListening ? 'text-pink-500 animate-pulse' : 'text-slate-400 hover:text-indigo-500 '}`}
                                     title="Click to speak"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
@@ -266,12 +272,12 @@ const AIChatbot: React.FC = () => {
                                 onChange={(e) => setInput(e.target.value)}
                                 onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
                                 placeholder={isListening ? "Listening..." : "Ask me anything..."}
-                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-800 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 outline-none"
+                                className="flex-1 bg-transparent border-none focus:ring-0 text-sm text-slate-800  placeholder-slate-400  outline-none"
                             />
                             <button
                                 onClick={() => handleSendMessage()}
                                 disabled={!input.trim()}
-                                className={`flex items-center justify-center w-8 h-8 rounded-full ${input.trim() ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-700' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'} transition-colors`}
+                                className={`flex items-center justify-center w-8 h-8 rounded-full ${input.trim() ? 'bg-indigo-600 text-white shadow-md hover:bg-indigo-700' : 'bg-slate-200  text-slate-400'} transition-colors`}
                             >
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 transform rotate-90" viewBox="0 0 20 20" fill="currentColor">
                                     <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
@@ -285,9 +291,11 @@ const AIChatbot: React.FC = () => {
             {/* Floating Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className={`w-14 h-14 rounded-full shadow-lg flex items-center justify-center text-2xl transition-transform hover:scale-110 active:scale-95 ${isOpen ? 'bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900' : 'bg-gradient-to-r from-indigo-600 to-pink-500 text-white animate-bounce-slow'}`}
+                className={`lumina-chat-toggle flex h-14 w-14 items-center justify-center rounded-full text-xl transition hover:-translate-y-1 active:translate-y-0 ${isOpen ? 'lumina-chat-toggle-open' : ''}`}
+                aria-label={isOpen ? 'Close LuminaBook AI chat' : 'Open LuminaBook AI chat'}
+                aria-pressed={isOpen}
             >
-                {isOpen ? '✕' : '🤖'}
+                {isOpen ? <FiX aria-hidden="true" /> : <FiMessageCircle aria-hidden="true" />}
             </button>
             <style dangerouslySetInnerHTML={{__html: `
                 @keyframes bounce-slow {
