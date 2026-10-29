@@ -493,7 +493,7 @@ export const createDemoOrder = async (req: AuthRequest, res: Response) => {
         // transaction is rolled back; return the already-committed matching order.
         if (err?.code === 11000) {
             const existing = await Order.findOne({ paymentId });
-            if (matchesExistingDemoOrder(existing)) {
+            if (existing && matchesExistingDemoOrder(existing)) {
                 return res.json({
                     success: true,
                     demo: true,
