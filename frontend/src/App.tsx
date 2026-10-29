@@ -1,7 +1,6 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import { WishlistProvider } from './context/WishlistContext';
-import { ThemeProvider } from './context/ThemeContext';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
@@ -28,6 +27,7 @@ import IndustryGuide from './pages/IndustryGuide';
 import BookstoreExplorer from './pages/BookstoreExplorer';
 import Discover from './pages/Discover';
 import PublisherWorkspace from './pages/PublisherWorkspace';
+import DemoPayment from './pages/DemoPayment';
 
 import CartDrawer from './components/CartDrawer';
 import AIChatbot from './components/AIChatbot';
@@ -37,15 +37,14 @@ function App() {
   return (
     <CartProvider>
       <WishlistProvider>
-        <ThemeProvider>
-          <Router>
-            <div className="app-container">
-              <CartDrawer />
-              <AIChatbot />
-              <LiveSupport />
-              <Navbar />
-              <div className="app-shell">
-                <Routes>
+        <Router>
+          <div className="app-container">
+            <CartDrawer />
+            <AIChatbot />
+            <LiveSupport />
+            <Navbar />
+            <div className="app-shell">
+              <Routes>
                   <Route path="/" element={<Home />} />
                   <Route path="/sell" element={<SellBook />} />
                   <Route path="/contact" element={<Contact />} />
@@ -65,6 +64,7 @@ function App() {
                   <Route path="/booths/:id" element={<BoothDetails />} />
                   <Route path="/login" element={<Login />} />
                   <Route path="/cart" element={<Cart />} />
+                  <Route path="/demo-payment/:sessionKey" element={<DemoPayment />} />
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/admin" element={<AdminDashboard />} />
@@ -73,12 +73,11 @@ function App() {
                   <Route path="/forgot-password" element={<ForgotPassword />} />
                   <Route path="/reset-password/:token" element={<ResetPassword />} />
                   <Route path="/community" element={<div style={{ paddingTop: '100px', textAlign: 'center' }}>Community Coming Soon</div>} />
-                </Routes>
-              </div>
-              <Footer />
+              </Routes>
             </div>
-          </Router>
-        </ThemeProvider>
+            <Footer />
+          </div>
+        </Router>
       </WishlistProvider>
     </CartProvider>
   );

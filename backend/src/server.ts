@@ -23,7 +23,6 @@ import paymentRoutes from './routes/payment.js';
 import contactRoutes from './routes/contact.js';
 import reviewRoutes from './routes/reviews.js';
 import uploadRoutes from './routes/upload.js';
-import phonePeRoutes from './routes/phonepe.js';
 import cartRoutes from './routes/cart.js';
 import adminRoutes from './routes/admin.js';
 import aiRoutes from './routes/ai.js';
@@ -47,18 +46,17 @@ validateEnvironment();
 export const createApp = (): express.Express => {
     const app = express();
 
-    // Render terminates requests at its load balancer before forwarding them to
-    // this service. Trust that single proxy hop so rate limiting can use the
-    // client address supplied by Render, without trusting arbitrary chains.
+    // Trust the local development proxy hop without accepting arbitrary chains.
     app.set('trust proxy', 1);
 
-    const allowedOrigins = [
+    const localOrigins = [
         'http://localhost:5173',
-        'http://localhost:5174',
-        'https://book-vers.netlify.app',
-        'https://bookverse-neon.vercel.app',
-        process.env.CLIENT_URL
-    ].filter(Boolean).map(url => url?.replace(/\/$/, '')) as string[];
+        'http://127.0.0.1:5173',
+    ];
+    const configuredOrigin = process.env.CLIENT_URL?.replace(/\/$/, '');
+    const allowedOrigins = process.env.NODE_ENV === 'production'
+        ? configuredOrigin ? [configuredOrigin] : []
+        : localOrigins;
 
     app.use(requestId);
 
@@ -119,9 +117,8 @@ export const createApp = (): express.Express => {
     app.use(cookieParser());
     app.use(express.urlencoded({ extended: true, limit: '1mb' }));
     app.use('/api/payment/webhook', express.raw({ type: 'application/json', limit: '1mb' }));
-    app.use('/api/phonepe/callback', express.raw({ type: '*/*', limit: '1mb' }));
     app.use((req, res, next) => {
-        if (req.originalUrl === '/api/payment/webhook' || req.originalUrl === '/api/phonepe/callback') return next();
+        if (req.originalUrl === '/api/payment/webhook') return next();
         express.json({ limit: '1mb' })(req, res, next);
     });
 
@@ -132,7 +129,7 @@ export const createApp = (): express.Express => {
 
     // Do not allow routes backed by Mongoose to buffer and later time out while
     // MongoDB is disconnected. /health remains available to report readiness.
-    app.use(/^\/api\/(?:auth|books|orders|payment|contact|reviews|upload|phonepe|cart|wishlist|admin|ai|discovery|recommendations|industry-guide|authors|publishers|upcoming-books|book-fairs|booth-bookings)(?:\/|$)/, requireDatabase);
+    app.use(/^\/api\/(?:auth|books|orders|payment|contact|reviews|upload|cart|wishlist|admin|ai|discovery|recommendations|industry-guide|authors|publishers|upcoming-books|book-fairs|booth-bookings)(?:\/|$)/, requireDatabase);
 
     app.use('/api/auth', authRoutes);
     app.use('/api/books', bookRoutes);
@@ -141,7 +138,6 @@ export const createApp = (): express.Express => {
     app.use('/api/contact', contactRoutes);
     app.use('/api/reviews', reviewRoutes);
     app.use('/api/upload', uploadRoutes);
-    app.use('/api/phonepe', phonePeRoutes);
     app.use('/api/cart', cartRoutes);
     app.use('/api/wishlist', wishlistRoutes);
     app.use('/api/admin', adminRoutes);
@@ -196,8 +192,10 @@ export const createApp = (): express.Express => {
 const PORT = Number(process.env.PORT || 5000);
 
 const startServer = (port: number) => {
-    const server = createApp().listen(port, () => console.log(`🚀 Server running on port ${port}`));
-
+    // const server = createApp().listen(port, () => console.log(`🚀 Server running on port ${port}`));
+const server = createApp().listen(port, '0.0.0.0', () => {
+    console.log(`🚀 Server running on port ${port}`);
+});
     server.on('error', (error: NodeJS.ErrnoException) => {
         if (error.code === 'EADDRINUSE') {
             const fallbackPort = port + 1;

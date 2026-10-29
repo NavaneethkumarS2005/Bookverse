@@ -1,80 +1,83 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
+import { motion } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
-import { useCart } from '../context/CartContext';
-import { useTheme } from '../context/ThemeContext';
-// @ts-ignore
+import BookCover from '../components/BookCover';
+import SectionHeader from '../components/SectionHeader';
 import { API_URL } from '../config';
 import { Book } from '../types';
-import { normalizeBook, normalizeBookCollection } from '../utils/bookCompatibility';
+import { normalizeBookCollection } from '../utils/bookCompatibility';
+
+interface AuthorCard {
+    _id?: string;
+    name: string;
+    bio?: string;
+    nationality?: string;
+    image?: string;
+}
+
+const SAMPLE_AUTHORS: AuthorCard[] = [
+    {
+        name: 'Mara Venn',
+        nationality: 'British · Coastal fiction',
+        bio: 'Writes quiet novels about maps, tides, and the people who stay behind to chart them.',
+    },
+    {
+        name: 'Elias Wren',
+        nationality: 'Irish · Night gardens',
+        bio: 'His stories grow after dark — greenhouse letters, moonlit orchards, and second chances.',
+    },
+    {
+        name: 'Clara Vale',
+        nationality: 'English · Domestic essays',
+        bio: 'Essays on Sundays, long tables, and the small ceremonies that hold a household together.',
+    },
+    {
+        name: 'Theo Mercer',
+        nationality: 'Welsh · Weather writing',
+        bio: 'Field notes on rain, light, and common weather — the everyday skies we forget to read.',
+    },
+];
+
+const JOURNAL_POSTS = [
+    {
+        tag: 'Field Notes',
+        title: 'Why Independent Bookshops Still Matter',
+        teaser: 'On curation, conversation, and the quiet case for buying books from people who have read them.',
+    },
+    {
+        tag: 'Reading Life',
+        title: 'How to Build a Reading Year',
+        teaser: 'A gentler approach to reading goals — twelve months of books chosen for the life you actually live.',
+    },
+    {
+        tag: 'Design',
+        title: 'The Art of the Small Press Cover',
+        teaser: 'Why the most beautiful jackets this year are coming from the smallest printing runs.',
+    },
+];
+
+const fadeUp = {
+    initial: { opacity: 0, y: 24 },
+    whileInView: { opacity: 1, y: 0 },
+    viewport: { once: true, margin: '-80px' },
+    transition: { duration: 0.6, ease: 'easeOut' as const },
+};
 
 const Home: React.FC = () => {
-    const { clearCart } = useCart();
-    const { theme } = useTheme();
     const [featuredBooks, setFeaturedBooks] = useState<Book[]>([]);
-    const [recommendations, setRecommendations] = useState<Book[]>([]);
-    const [recommendationLabel, setRecommendationLabel] = useState('Live picks for you');
-    const [recommendationBasis, setRecommendationBasis] = useState<'general' | 'history'>('general');
-    const [recommendationLoading, setRecommendationLoading] = useState(true);
-    const [recommendationError, setRecommendationError] = useState<string | null>(null);
+    const [authors, setAuthors] = useState<AuthorCard[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [paymentComplete, setPaymentComplete] = useState(false);
-    const [paymentMessage, setPaymentMessage] = useState<string | null>(null);
 
-    useEffect(() => {
-        const query = new URLSearchParams(window.location.search);
-        const payment = query.get('payment');
-        if (payment !== 'success' && payment !== 'pending') return;
-
-        const merchantTransactionId = query.get('txnId');
-        if (!merchantTransactionId) {
-            setPaymentMessage('Payment status could not be verified. Your cart has not been cleared.');
-            return;
-        }
-
-        let active = true;
-        let clearResultUrl = false;
-        const verifyPayment = async () => {
-            try {
-                const response = await fetch(`${API_URL}/api/phonepe/status/${encodeURIComponent(merchantTransactionId)}`, {
-                    credentials: 'include',
-                });
-                const result = await response.json();
-                if (!active) return;
-
-                if (response.ok && result.success === true && result.status === 'Paid') {
-                    setPaymentComplete(true);
-                    setPaymentMessage(null);
-                    void clearCart();
-                    clearResultUrl = true;
-                } else if (result.status === 'Failed') {
-                    setPaymentMessage('PhonePe payment was not completed. Your cart has not been cleared.');
-                    clearResultUrl = true;
-                } else {
-                    setPaymentMessage('PhonePe payment is still being confirmed. Your cart has not been cleared.');
-                }
-            } catch {
-                if (active) {
-                    setPaymentMessage('PhonePe payment status is unavailable. Your cart has not been cleared.');
-                }
-            } finally {
-                if (active && clearResultUrl) window.history.replaceState({}, '', window.location.pathname);
-            }
-        };
-
-        void verifyPayment();
-        return () => {
-            active = false;
-        };
-    }, [clearCart]);
+    const getBookIdentifier = (book: Book): string => String(book._id ?? book.id ?? book.title);
 
     useEffect(() => {
         const fetchBooks = async () => {
             try {
-                const res = await axios.get(`${API_URL}/api/books?limit=4`);
-                const normalized = normalizeBookCollection(res.data).books.slice(0, 4);
+                const res = await axios.get(`${API_URL}/api/books?limit=6`);
+                const normalized = normalizeBookCollection(res.data).books.slice(0, 6);
                 if (normalized.length) {
                     setFeaturedBooks(normalized);
                     setError(null);
@@ -93,305 +96,218 @@ const Home: React.FC = () => {
         void fetchBooks();
     }, []);
 
-    const lastRecommendationSignatureRef = React.useRef<string>('');
-    const recommendationRequestRef = React.useRef(false);
-    const getBookIdentifier = (book: Book): string => String(book._id ?? book.id ?? book.title);
-
-    const fetchRecommendations = async (refresh = false, attempt = 0) => {
-        if (recommendationRequestRef.current) return;
-
-        recommendationRequestRef.current = true;
-        setRecommendationLoading(true);
-
-        try {
-            const isAuthenticated = Boolean(localStorage.getItem('user'));
-            const endpoint = isAuthenticated ? '/api/recommendations/personalized' : '/api/recommendations/general';
-            let response;
-            try {
-                response = await axios.get(`${API_URL}${endpoint}`, {
-                    withCredentials: true,
-                    params: refresh ? { refresh: 'true' } : undefined,
-                });
-            } catch (personalizedError) {
-                if (!isAuthenticated) throw personalizedError;
-                response = await axios.get(`${API_URL}/api/recommendations/general`, {
-                    params: refresh ? { refresh: 'true' } : undefined,
-                });
-            }
-
-            const rawBooks = Array.isArray(response.data?.books) ? response.data.books : [];
-            const seenIds = new Set<string>();
-            const normalizedBooks: Book[] = rawBooks
-                .map((book: unknown, index: number): Book => normalizeBook(book, index))
-                .filter((book: Book): boolean => {
-                    const id = getBookIdentifier(book);
-                    if (seenIds.has(id)) return false;
-                    seenIds.add(id);
-                    return true;
-                })
-                .slice(0, 4);
-
-            const nextSignature = normalizedBooks.map((book: Book): string => getBookIdentifier(book)).join('|');
-            if (refresh && attempt < 2 && lastRecommendationSignatureRef.current && nextSignature === lastRecommendationSignatureRef.current && normalizedBooks.length > 1) {
-                return fetchRecommendations(true, attempt + 1);
-            }
-
-            setRecommendations(normalizedBooks);
-            lastRecommendationSignatureRef.current = nextSignature;
-            setRecommendationLabel(response.data?.label || 'Live picks for you');
-            setRecommendationBasis(response.data?.basis === 'history' ? 'history' : 'general');
-            setRecommendationError(null);
-        } catch (err) {
-            console.error('Failed to load recommendations', err);
-            setRecommendationError('Recommendations are temporarily unavailable. The catalog or backend request is not responding right now.');
-        } finally {
-            recommendationRequestRef.current = false;
-            setRecommendationLoading(false);
-        }
-    };
-
     useEffect(() => {
-        void fetchRecommendations();
-        const handleAuthChange = () => void fetchRecommendations(true);
-        window.addEventListener('storage', handleAuthChange);
-        const refreshTimer = window.setInterval(() => void fetchRecommendations(true), 5 * 60 * 1000);
-        return () => {
-            window.removeEventListener('storage', handleAuthChange);
-            window.clearInterval(refreshTimer);
+        const fetchAuthors = async () => {
+            try {
+                const { data } = await axios.get(`${API_URL}/api/discovery/authors`);
+                const list: AuthorCard[] = Array.isArray(data) ? data : (Array.isArray(data?.authors) ? data.authors : []);
+                setAuthors(list.slice(0, 4));
+            } catch (err) {
+                console.error('Failed to load authors, using sample shelf', err);
+                setAuthors([]);
+            }
         };
+        void fetchAuthors();
     }, []);
 
-    const recommendationSection = theme === 'dark'
-        ? 'bg-slate-950 text-white'
-        : 'bg-gradient-to-br from-indigo-50 via-white to-pink-50 text-slate-900';
+    const shelfAuthors: AuthorCard[] = authors.length ? authors : SAMPLE_AUTHORS;
 
     return (
-        <>
-            {paymentComplete && <div className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-green-600 px-5 py-3 text-sm font-semibold text-white shadow-xl">Payment successful! Your order has been placed.</div>}
-            {paymentMessage && <div role="status" className="fixed top-24 left-1/2 z-50 -translate-x-1/2 rounded-xl bg-amber-100 px-5 py-3 text-sm font-semibold text-amber-900 shadow-xl">{paymentMessage}</div>}
+        <main className="overflow-hidden bg-[#f4efe5]">
+            {/* ── Hero ── */}
+            <header className="relative py-20 sm:py-28 lg:py-32">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <motion.p {...fadeUp} className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#68675f]">
+                        Lumina Book AI · Independent booksellers
+                    </motion.p>
+                    <motion.h1 {...fadeUp} className="mt-6 max-w-3xl font-serif text-5xl font-medium leading-[1.02] text-[#171713] sm:text-7xl">
+                        Stories worth <em className="italic text-[#7d2428]">keeping close.</em>
+                    </motion.h1>
+                    <motion.p {...fadeUp} className="mt-7 max-w-xl text-lg leading-8 text-[#68675f]">
+                        A small, carefully curated collection of fiction, essays, poetry, and field notes — chosen for the lives they might accompany.
+                    </motion.p>
+                    <motion.div {...fadeUp} className="mt-9 flex flex-col gap-3 sm:flex-row">
+                        <Link
+                            to="/marketplace"
+                            className="inline-flex items-center justify-center rounded-[2px] bg-[#171713] px-7 py-3.5 text-sm font-semibold text-[#fffdf8] transition-colors hover:bg-[#7d2428]"
+                        >
+                            Shop the collection
+                        </Link>
+                        <a
+                            href="#our-story"
+                            className="inline-flex items-center justify-center rounded-[2px] border border-[#cec5b7] bg-transparent px-7 py-3.5 text-sm font-semibold text-[#171713] transition-colors hover:border-[#171713]"
+                        >
+                            Our story
+                        </a>
+                    </motion.div>
 
-            <header className="relative min-h-[calc(100vh-72px)] overflow-hidden bg-gradient-to-b from-indigo-50 via-white to-white py-20 dark:from-slate-950 dark:via-slate-950 dark:to-slate-950">
-                <div className="pointer-events-none absolute inset-0 overflow-hidden">
-                    <div className="absolute -left-20 top-12 h-72 w-72 rounded-full bg-indigo-500/15 blur-[120px]" />
-                    <div className="absolute right-0 top-20 h-80 w-80 rounded-full bg-pink-500/15 blur-[120px]" />
-                    <div className="absolute bottom-0 left-1/3 h-64 w-64 rounded-full bg-cyan-500/10 blur-[120px]" />
-                </div>
-
-                <div className="relative z-10 mx-auto grid w-full max-w-7xl items-center gap-12 px-5 md:grid-cols-[1.1fr_0.9fr]">
-                    <div className="animate-[fadeIn_0.6s_ease-out_forwards]">
-                        <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-indigo-200 bg-indigo-50 px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-indigo-700 dark:border-indigo-500/30 dark:bg-indigo-500/10 dark:text-indigo-200">
-                            AI-native reading discovery
-                        </div>
-
-                        <h1 className="mb-6 max-w-xl text-5xl font-black leading-tight text-slate-900 dark:text-white md:text-7xl">
-                            Read by <span className="bg-gradient-to-r from-indigo-600 via-violet-600 to-pink-500 bg-clip-text text-transparent">mood</span>, not just title.
-                        </h1>
-
-                        <p className="mb-8 max-w-xl text-lg text-slate-600 dark:text-slate-300">
-                            Discover books through vibe, theme, trope, and story emotion. Buy your next favorite, sell used treasures, and read with a smart assistant built around your taste.
-                        </p>
-
-                        <div className="flex flex-wrap gap-4">
-                            <Link to="/marketplace" className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 px-7 py-4 text-lg font-bold text-white shadow-lg shadow-indigo-500/25 transition-all hover:-translate-y-1 hover:shadow-xl">
-                                Browse the shelf <span>→</span>
-                            </Link>
-                            <Link to="/sell" className="inline-flex items-center rounded-xl border border-slate-200 bg-white/80 px-7 py-4 text-lg font-bold text-slate-700 shadow-sm transition-all hover:-translate-y-1 hover:border-indigo-300 hover:bg-white dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-200">
-                                Sell a book
-                            </Link>
-                        </div>
-
-                        <div className="mt-8 flex flex-wrap gap-3">
-                            {['Dark fantasy romance', 'Cozy literary fiction', 'Slow-burn thrillers', 'Philosophical sci-fi'].map((tag) => (
-                                <span key={tag} className="rounded-full border border-slate-200 bg-white/70 px-3 py-1.5 text-xs font-medium text-slate-600 shadow-sm dark:border-slate-700 dark:bg-slate-900/70 dark:text-slate-300">
-                                    {tag}
-                                </span>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="relative animate-[fadeIn_0.6s_ease-out_0.2s_forwards] opacity-0">
-                        <div className="relative overflow-hidden rounded-[2rem] border border-white/60 bg-slate-950 p-4 shadow-[0_30px_80px_rgba(79,70,229,0.25)]">
-                            <div className="rounded-[1.5rem] bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950 p-3">
-                                <div className="flex items-center justify-between">
-                                    <div>
-                                        <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-indigo-200">Trending AI shelf</p>
-                                        <h3 className="mt-2 text-2xl font-bold text-white">For your next obsession</h3>
-                                    </div>
-                                    <span className="rounded-full bg-emerald-500/15 px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-emerald-300">Live</span>
-                                </div>
-
-                                <div className="mt-5 space-y-3">
-                                    {[
-                                        { title: 'The Glass Archive', author: 'Aarav Sen', tag: 'Literary mystery', price: '₹499' },
-                                        { title: 'Signal of the Ember Sea', author: 'Naira Khanna', tag: 'Epic sci-fi', price: '₹649' },
-                                        { title: 'The Orchard Between Worlds', author: 'Rhea Mishra', tag: 'Romantic fantasy', price: '₹579' }
-                                    ].map((book) => (
-                                        <div key={book.title} className="flex items-center gap-3 rounded-2xl border border-slate-700 bg-slate-900/60 p-3">
-                                            <img src="https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&q=80" alt={book.title} className="h-20 w-16 rounded-xl object-cover" />
-                                            <div className="min-w-0 flex-1">
-                                                <p className="truncate text-sm font-semibold text-white">{book.title}</p>
-                                                <p className="text-xs text-slate-400">{book.author}</p>
-                                                <span className="mt-1 inline-block rounded-full bg-slate-800 px-2 py-0.5 text-[10px] text-slate-200">{book.tag}</span>
-                                            </div>
-                                            <div className="text-right text-sm font-bold text-indigo-300">{book.price}</div>
+                    <motion.div {...fadeUp} className="mt-16 grid gap-4 sm:grid-cols-3 lg:gap-6">
+                        {Array.from({ length: Math.min(3, Math.max(featuredBooks.length, 1)) }).map((_, index) => (
+                            <div key={index} className="relative overflow-hidden rounded-[3px] border border-[#e8e1d4] bg-[#fffdf8]">
+                                {featuredBooks.length ? (
+                                    <Link to={`/book/${getBookIdentifier(featuredBooks[index])}`} className="block">
+                                        <div className="aspect-[4/5] w-full overflow-hidden">
+                                            <BookCover
+                                                book={featuredBooks[index]}
+                                                className="aspect-[4/5] w-full"
+                                                imageClassName="object-cover transition-transform duration-700 hover:scale-[1.03]"
+                                            />
                                         </div>
-                                    ))}
-                                </div>
+                                        <div className="flex items-center justify-between border-t border-[#e8e1d4] px-4 py-3">
+                                            <span className="font-serif text-lg text-[#171713]">{featuredBooks[index].title}</span>
+                                            <span className="text-sm font-medium text-[#68675f]">
+                                                {featuredBooks[index].price === 0 ? 'Free' : `₹${featuredBooks[index].price}`}
+                                            </span>
+                                        </div>
+                                    </Link>
+                                ) : (
+                                    <div className="aspect-[4/5] w-full animate-pulse bg-[#ece6d9]" />
+                                )}
                             </div>
-                        </div>
-                    </div>
+                        ))}
+                    </motion.div>
                 </div>
             </header>
 
-            <section className="relative py-20">
-                <div className="mx-auto max-w-7xl px-5">
-                    <div className="mb-12 text-center">
-                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-500">Why LuminaBook AI</p>
-                        <h2 className="mt-3 text-4xl font-bold text-slate-900 dark:text-white">One platform for discovery, buying, and reading.</h2>
-                    </div>
-
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                        {[
-                            {
-                                title: 'Mood-based discovery',
-                                text: 'Tell the AI what you want to feel, and it surfaces books that match your emotional taste.',
-                                icon: '✦'
-                            },
-                            {
-                                title: 'Used-book marketplace',
-                                text: 'Buy and sell secondhand books with trust, quality checks, and cleaner inventory.',
-                                icon: '↺'
-                            },
-                            {
-                                title: 'Semantic search',
-                                text: 'Search the catalogue by concept, theme, or story similarity rather than exact titles.',
-                                icon: '⌕'
-                            },
-                            {
-                                title: 'AI reading assistant',
-                                text: 'Generate reading paths, summaries, and smarter recommendations as you explore.',
-                                icon: '⚡'
-                            }
-                        ].map((feature) => (
-                            <div key={feature.title} className="group rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:border-indigo-300 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900/80">
-                                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-indigo-500 to-pink-500 text-xl font-bold text-white shadow-lg shadow-indigo-500/20">
-                                    {feature.icon}
-                                </div>
-                                <h3 className="mb-3 text-2xl font-bold text-slate-900 dark:text-white">{feature.title}</h3>
-                                <p className="text-base text-slate-600 dark:text-slate-300">{feature.text}</p>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            <section className={`relative overflow-hidden py-20 transition-colors duration-300 ${recommendationSection}`}>
-                <div className="pointer-events-none absolute -left-24 top-0 h-64 w-64 rounded-full bg-indigo-500/20 blur-3xl" />
-                <div className="pointer-events-none absolute -right-24 bottom-0 h-64 w-64 rounded-full bg-pink-500/15 blur-3xl" />
-                <div className="relative mx-auto max-w-7xl px-5">
-                    <div className="mb-10 flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
-                        <div>
-                            <p className={`mb-2 text-sm font-semibold uppercase tracking-[0.22em] ${theme === 'dark' ? 'text-indigo-300' : 'text-indigo-600'}`}>Live recommendations</p>
-                            <h2 className="text-3xl font-bold sm:text-4xl">{recommendationLabel}</h2>
-                            <p className={`mt-3 max-w-xl ${theme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
-                                {recommendationBasis === 'history' ? 'Personalized from your LuminaBook reading history.' : 'Fresh picks from the live catalog and reader preferences.'}
-                            </p>
-                        </div>
-
-                        <button onClick={() => void fetchRecommendations(true)} disabled={recommendationLoading} className={`self-start rounded-xl border px-5 py-3 text-sm font-semibold transition sm:self-auto disabled:cursor-not-allowed disabled:opacity-60 ${theme === 'dark' ? 'border-white/20 bg-white/10 hover:bg-white/20 text-white' : 'border-indigo-200 bg-white/80 text-indigo-700 shadow-sm hover:bg-white hover:border-indigo-300'}`}>
-                            {recommendationLoading ? 'Refreshing…' : 'Refresh picks ↻'}
-                        </button>
-                    </div>
-
-                    {recommendationLoading ? (
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-                            {Array.from({ length: 4 }).map((_, i) => (
-                                <div key={i} className={`h-80 animate-pulse rounded-2xl ${theme === 'dark' ? 'bg-white/10' : 'bg-indigo-100/70'}`} />
-                            ))}
-                        </div>
-                    ) : recommendations.length ? (
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
-                            {recommendations.map((book, index) => (
-                                <ProductCard key={book._id || book.id || `recommendation-${index}`} book={book} />
-                            ))}
-                        </div>
-                    ) : (
-                        <div className={`rounded-2xl border p-8 ${theme === 'dark' ? 'border-white/10 bg-white/5 text-slate-300' : 'border-indigo-100 bg-white/80 text-slate-600 shadow-sm'}`}>
-                            Recommendations will appear when books are available in the catalog.
-                        </div>
-                    )}
-
-                    {recommendationError && (
-                        <div className={`mt-6 rounded-xl border px-4 py-3 text-sm ${theme === 'dark' ? 'border-amber-500/30 bg-amber-500/10 text-amber-200' : 'border-amber-200 bg-amber-50 text-amber-900'}`}>
-                            {recommendationError}
-                        </div>
-                    )}
-                </div>
-            </section>
-
-            <section className="py-24 relative">
-                <div className="mx-auto max-w-7xl px-5">
-                    <div className="mb-16 text-center">
-                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-500">Featured titles</p>
-                        <h2 className="mt-3 text-4xl font-bold text-slate-900 dark:text-white">Curated favorites from the community</h2>
-                    </div>
-
+            {/* ── The current shelf ── */}
+            <section className="py-20 sm:py-24">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <motion.div {...fadeUp}>
+                        <SectionHeader
+                            eyebrow="The current shelf"
+                            title="Books to begin with"
+                            linkTo="/marketplace"
+                            linkLabel="Browse all books"
+                        />
+                    </motion.div>
                     {loading ? (
-                        <div className="text-center p-10 text-slate-500 animate-pulse">Loading bestsellers...</div>
+                        <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6">
+                            {Array.from({ length: 6 }).map((_, index) => <div key={index} className="aspect-[2/3] animate-pulse rounded-[2px] bg-[#ece6d9]" />)}
+                        </div>
                     ) : error ? (
-                        <div className="rounded-2xl border border-dashed border-red-200 bg-red-50/60 p-8 text-center text-red-600 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300">
-                            {error}
-                        </div>
+                        <div className="border border-dashed border-[#cec5b7] p-8 text-center text-[#68675f]">{error}</div>
                     ) : (
-                        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+                        <motion.div {...fadeUp} className="grid grid-cols-2 gap-x-6 gap-y-12 sm:grid-cols-3 lg:grid-cols-6">
                             {featuredBooks.map((book, index) => (
-                                <ProductCard key={book._id || book.id || `featured-${index}`} book={book} />
+                                <ProductCard key={getBookIdentifier(book) || `featured-${index}`} book={book} />
                             ))}
-                        </div>
+                        </motion.div>
                     )}
                 </div>
             </section>
 
-            <section className="bg-slate-50 py-24 dark:bg-slate-900/60">
-                <div className="mx-auto max-w-7xl px-5">
-                    <div className="mb-12 text-center">
-                        <p className="text-sm font-semibold uppercase tracking-[0.25em] text-indigo-500">Popular genres</p>
-                        <h2 className="mt-3 text-4xl font-bold text-slate-900 dark:text-white">Explore shelves built for every kind of reader</h2>
-                    </div>
+            {/* ── About / values ── */}
+            <section id="our-story" className="border-y border-[#e8e1d4] bg-[#fffdf8] py-20 sm:py-28">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <motion.div {...fadeUp} className="mx-auto max-w-2xl text-center">
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#78806a]">A place for slow discovery</p>
+                        <h2 className="mt-5 font-serif text-4xl leading-[1.1] text-[#171713] sm:text-5xl">
+                            We choose books for the lives they might accompany.
+                        </h2>
+                        <p className="mt-6 leading-8 text-[#68675f]">
+                            Every title on our shelves is read, argued over, and kept only if it earns its place. No algorithms deciding your next chapter — just human curation, honest notes, and books that stay with you long after the last page.
+                        </p>
+                        <Link to="/discover" className="mt-8 inline-flex items-center gap-2 border-b border-[#cec5b7] pb-1 text-sm font-semibold text-[#171713] transition-colors hover:border-[#7d2428] hover:text-[#7d2428]">
+                            Read our story <span aria-hidden="true">→</span>
+                        </Link>
+                    </motion.div>
+                </div>
+            </section>
 
-                    <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
-                        {[
-                            { name: 'Fiction', image: 'https://images.unsplash.com/photo-1516979187457-637abb4f9353?auto=format&fit=crop&q=80', accent: 'from-indigo-600 to-blue-500', description: 'Stories that stay with you long after the final page.' },
-                            { name: 'Sci-Fi', image: 'https://images.unsplash.com/photo-1515879218367-8466d910aaa4?auto=format&fit=crop&q=80', accent: 'from-purple-600 to-pink-500', description: 'Bold futures, deep ideas, and impossible worlds.' },
-                            { name: 'History', image: 'https://images.unsplash.com/photo-1524578271613-d550eacf6090?auto=format&fit=crop&q=80', accent: 'from-amber-500 to-orange-500', description: 'Grounded narratives and human stories that endure.' },
-                            { name: 'Technology', image: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&q=80', accent: 'from-cyan-500 to-indigo-600', description: 'Practical insight for curious minds and builders.' }
-                        ].map((genre) => (
-                            <Link key={genre.name} to={`/categories?genre=${genre.name}`} className="group relative overflow-hidden rounded-[1.8rem] border border-slate-200 bg-white shadow-sm transition-transform hover:-translate-y-1 hover:shadow-lg dark:border-slate-800 dark:bg-slate-900">
-                                <div className={`h-52 bg-gradient-to-r ${genre.accent}`}>
-                                    <img src={genre.image} alt={genre.name} className="h-full w-full object-cover opacity-80 transition-transform duration-500 group-hover:scale-105" />
-                                </div>
-                                <div className="p-5">
-                                    <h3 className="text-2xl font-bold text-slate-900 dark:text-white">{genre.name}</h3>
-                                    <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{genre.description}</p>
-                                </div>
+            {/* ── Authors ── */}
+            <section className="py-20 sm:py-24">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <motion.div {...fadeUp}>
+                        <SectionHeader
+                            eyebrow="Writers on our shelves"
+                            title="Meet the voices behind the books."
+                            linkTo="/authors"
+                            linkLabel="All authors"
+                        />
+                    </motion.div>
+                    <motion.div {...fadeUp} className="grid gap-px overflow-hidden border border-[#e8e1d4] bg-[#e8e1d4] sm:grid-cols-2 lg:grid-cols-4">
+                        {shelfAuthors.map((author, index) => (
+                            <Link
+                                key={author._id || author.name}
+                                to={author._id ? `/authors/${author._id}` : '/authors'}
+                                className="group bg-[#fffdf8] p-8 transition-colors hover:bg-[#f4efe5]"
+                            >
+                                <p className="font-mono text-[10px] uppercase tracking-[0.2em] text-[#78806a]">{String(index + 1).padStart(2, '0')}</p>
+                                <h3 className="mt-6 font-serif text-2xl text-[#171713]">{author.name}</h3>
+                                <p className="mt-1 text-xs uppercase tracking-[0.14em] text-[#68675f]">{author.nationality || 'On our shelves'}</p>
+                                {author.bio && <p className="mt-4 text-sm leading-7 text-[#68675f] line-clamp-4">{author.bio}</p>}
+                                <span className="mt-6 inline-block border-b border-transparent pb-0.5 text-xs font-semibold text-[#171713] transition-colors group-hover:border-[#7d2428] group-hover:text-[#7d2428]">
+                                    View author →
+                                </span>
                             </Link>
                         ))}
-                    </div>
+                    </motion.div>
                 </div>
             </section>
 
-            <section className="py-24 text-center">
-                <div className="mx-auto max-w-5xl px-5">
-                    <h2 className="mb-6 text-5xl font-bold text-slate-900 dark:text-white">Build your personal library with LuminaBook AI</h2>
-                    <p className="mx-auto mb-10 max-w-2xl text-xl text-slate-500 dark:text-slate-400">
-                        Follow recommendations, trade secondhand finds, and discover your next favorite read through one seamless discovery engine.
-                    </p>
-                    <Link to="/login" className="inline-flex items-center rounded-full bg-gradient-to-r from-pink-500 to-indigo-600 px-10 py-4 text-lg font-bold text-white shadow-2xl shadow-indigo-500/30 transition-all hover:-translate-y-1">
-                        Get started
-                    </Link>
+            {/* ── Journal ── */}
+            <section className="py-20 sm:py-24">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <motion.div {...fadeUp}>
+                        <SectionHeader
+                            eyebrow="From the journal"
+                            title="Notes for a richer reading life"
+                            linkTo="/discover"
+                            linkLabel="Read the journal"
+                        />
+                    </motion.div>
+                    <motion.div {...fadeUp} className="grid gap-8 md:grid-cols-3">
+                        {JOURNAL_POSTS.map((post) => (
+                            <Link key={post.title} to="/discover" className="group border-t-2 border-[#171713] pt-6">
+                                <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-[#7d2428]">{post.tag}</p>
+                                <h3 className="mt-4 font-serif text-2xl leading-snug text-[#171713] transition-colors group-hover:text-[#7d2428]">{post.title}</h3>
+                                <p className="mt-3 text-sm leading-7 text-[#68675f]">{post.teaser}</p>
+                                <span className="mt-5 inline-block text-xs font-semibold uppercase tracking-[0.16em] text-[#68675f] transition-colors group-hover:text-[#7d2428]">
+                                    Read note →
+                                </span>
+                            </Link>
+                        ))}
+                    </motion.div>
                 </div>
             </section>
-        </>
+
+            {/* ── Visit ── */}
+            <section className="bg-[#171713] py-20 text-[#f4efe5] sm:py-28">
+                <div className="mx-auto max-w-7xl px-5 lg:px-8">
+                    <motion.div {...fadeUp} className="grid items-center gap-12 lg:grid-cols-2">
+                        <div>
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.32em] text-[#cec5b7]">Visit the shop</p>
+                            <h2 className="mt-5 font-serif text-4xl leading-[1.08] sm:text-5xl" style={{ color: '#f4efe5' }}>Come for one book. Leave with a new direction.</h2>
+                            <p className="mt-6 max-w-lg leading-8 text-[#cec5b7]">
+                                Browse the shelves online, or find independent bookstores near you on our live map. Every visit starts with a single title.
+                            </p>
+                            <Link
+                                to="/bookstore-explorer"
+                                className="mt-9 inline-flex items-center justify-center rounded-[2px] bg-[#f4efe5] px-7 py-3.5 text-sm font-semibold text-[#171713] transition-colors hover:bg-[#fffdf8]"
+                            >
+                                Plan your visit
+                            </Link>
+                        </div>
+                        <div className="border border-[#3a3a34] p-8 sm:p-10">
+                            <dl className="space-y-6 text-sm">
+                                <div>
+                                    <dt className="text-[10px] uppercase tracking-[0.24em] text-[#918d85]">The shop</dt>
+                                    <dd className="mt-2 font-serif text-xl text-[#f4efe5]">Lumina Book AI — Online & on the map</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-[10px] uppercase tracking-[0.24em] text-[#918d85]">Hours</dt>
+                                    <dd className="mt-2 font-serif text-xl text-[#f4efe5]">Open daily · 10am – 6pm</dd>
+                                </div>
+                                <div>
+                                    <dt className="text-[10px] uppercase tracking-[0.24em] text-[#918d85]">Say hello</dt>
+                                    <dd className="mt-2 font-serif text-xl text-[#f4efe5]">support@bookverse.com</dd>
+                                </div>
+                            </dl>
+                        </div>
+                    </motion.div>
+                </div>
+            </section>
+        </main>
     );
 };
 

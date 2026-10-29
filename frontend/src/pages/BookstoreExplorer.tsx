@@ -395,15 +395,15 @@ const BookstoreExplorer: React.FC = () => {
   }, []);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-5 pb-12 pt-12 dark:bg-slate-950">
+    <main className="min-h-screen bg-slate-50 px-5 pb-12 pt-12 ">
       <div className="mx-auto max-w-7xl">
         <ExplorerHeader />
 
-        <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+        <section className="mt-8 rounded-[2rem] border border-slate-200 bg-white p-5 shadow-sm   sm:p-6">
           <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Find bookstores in a selected place</h2>
-              <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-300">
+              <h2 className="text-2xl font-bold text-slate-900 ">Find bookstores in a selected place</h2>
+              <p className="mt-2 max-w-2xl text-sm text-slate-600 ">
                 Your location is requested only after you select the button, and is used for this nearby search.
               </p>
             </div>
@@ -419,8 +419,8 @@ const BookstoreExplorer: React.FC = () => {
             </button>
           </div>
 
-          <form onSubmit={searchPlace} className="mt-6 grid gap-3 border-t border-slate-200 pt-5 dark:border-slate-800 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
-            <label className="block text-sm font-semibold text-slate-700 dark:text-slate-200">
+          <form onSubmit={searchPlace} className="mt-6 grid gap-3 border-t border-slate-200 pt-5  sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end">
+            <label className="block text-sm font-semibold text-slate-700 ">
               Search by bookstore or place name
               <input
                 type="search"
@@ -440,7 +440,7 @@ const BookstoreExplorer: React.FC = () => {
               <FiSearch />
               Search place
             </button>
-            <p className="text-xs text-slate-500 dark:text-slate-400 sm:col-span-2">
+            <p className="text-xs text-slate-500  sm:col-span-2">
               {GEOAPIFY_API_KEY
                 ? <>Place lookup and bookstores by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline">Geoapify</a>; searches run only when submitted.</>
                 : <>Geoapify is not configured. Place lookup uses <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noreferrer" className="underline">OpenStreetMap Nominatim</a>, with bookstore results from OpenStreetMap.</>}
@@ -448,14 +448,14 @@ const BookstoreExplorer: React.FC = () => {
           </form>
 
           {!GEOAPIFY_API_KEY && (
-            <p role="note" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200">
+            <p role="note" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900   ">
               Add <code>VITE_GEOAPIFY_API_KEY</code> to <code>frontend/.env.local</code> and restart Vite to enable Geoapify geocoding and Places search. Vite exposes this public key in browser code; restrict it by site referrer and enable only Geocoding and Places APIs. Existing OpenStreetMap search remains available meanwhile.
             </p>
           )}
 
           {placeMatches.length > 0 && (
             <div className="mt-4" aria-label="Choose a matching location">
-              <h3 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Choose a location</h3>
+              <h3 className="text-sm font-semibold text-slate-800 ">Choose a location</h3>
               <ul className="mt-2 grid gap-2 sm:grid-cols-2">
                 {placeMatches.map(location => (
                   <li key={location.id}>
@@ -463,15 +463,15 @@ const BookstoreExplorer: React.FC = () => {
                       type="button"
                       onClick={() => selectGeoapifyLocation(location)}
                       disabled={status === 'searching'}
-                      className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-60 dark:border-slate-700 dark:hover:bg-slate-800"
+                      className="w-full rounded-xl border border-slate-200 p-3 text-left transition hover:border-indigo-300 hover:bg-indigo-50 disabled:opacity-60  "
                     >
-                      <span className="block font-semibold text-slate-900 dark:text-white">{location.name}</span>
-                      <span className="mt-1 block text-xs font-medium text-indigo-700 dark:text-indigo-300">
+                      <span className="block font-semibold text-slate-900 ">{location.name}</span>
+                      <span className="mt-1 block text-xs font-medium text-indigo-700 ">
                         {location.isBookstore ? 'Bookstore match' : location.resultType.replace(/_/g, ' ')}
                         {location.confidence != null ? ` · ${Math.round(location.confidence * 100)}% match` : ''}
                       </span>
-                      <span className="mt-1 block text-sm text-slate-600 dark:text-slate-300">{location.formatted}</span>
-                      <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
+                      <span className="mt-1 block text-sm text-slate-600 ">{location.formatted}</span>
+                      <span className="mt-1 block text-xs text-slate-500 ">
                         {[location.city, location.state, location.country].filter(Boolean).join(', ')}
                       </span>
                     </button>
@@ -481,20 +481,20 @@ const BookstoreExplorer: React.FC = () => {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end border-t border-slate-200 pt-5 dark:border-slate-800">
+          <div className="mt-6 flex justify-end border-t border-slate-200 pt-5 ">
             <button
               type="button"
               onClick={() => center && void searchNearby(center, searchLocation, true, viewportRef.current?.bounds)}
               disabled={!center || status === 'loading-map' || status === 'geocoding' || status === 'searching'}
-              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50 dark:border-slate-700 dark:text-slate-200"
+              className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-semibold text-slate-700 transition hover:border-indigo-300 hover:text-indigo-600 disabled:cursor-not-allowed disabled:opacity-50  "
             >
               <FiSearch />
               Search this area
             </button>
           </div>
 
-          <form onSubmit={useManualLocation} className="mt-5 grid gap-3 border-t border-slate-200 pt-5 dark:border-slate-800 sm:grid-cols-3">
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+          <form onSubmit={useManualLocation} className="mt-5 grid gap-3 border-t border-slate-200 pt-5  sm:grid-cols-3">
+            <label className="text-sm font-medium text-slate-700 ">
               Latitude
               <input
                 inputMode="decimal"
@@ -505,7 +505,7 @@ const BookstoreExplorer: React.FC = () => {
               />
             </label>
 
-            <label className="text-sm font-medium text-slate-700 dark:text-slate-200">
+            <label className="text-sm font-medium text-slate-700 ">
               Longitude
               <input
                 inputMode="decimal"
@@ -519,7 +519,7 @@ const BookstoreExplorer: React.FC = () => {
             <button
               type="submit"
               disabled={status === 'loading-map' || status === 'geocoding' || status === 'searching'}
-              className="min-h-11 self-end rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60 dark:border-indigo-900 dark:bg-indigo-950/30 dark:text-indigo-300"
+              className="min-h-11 self-end rounded-xl border border-indigo-200 bg-indigo-50 px-5 py-3 text-sm font-semibold text-indigo-700 transition hover:bg-indigo-100 disabled:opacity-60   "
             >
               Search coordinates
             </button>
@@ -530,21 +530,21 @@ const BookstoreExplorer: React.FC = () => {
           role="status"
           className={`mt-5 rounded-xl border px-4 py-3 text-sm ${
             status === 'error' || status === 'permission-denied'
-              ? 'border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-200'
-              : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300'
+              ? 'border-amber-200 bg-amber-50 text-amber-900   '
+              : 'border-slate-200 bg-white text-slate-600   '
           }`}
         >
           {(status === 'loading-map' || status === 'geocoding' || status === 'searching') && <FiLoader className="mr-2 inline animate-spin" />}
           {message}
         </p>
         {GEOAPIFY_API_KEY && (
-          <p className="mt-2 text-right text-xs text-slate-500 dark:text-slate-400">
+          <p className="mt-2 text-right text-xs text-slate-500 ">
             Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline">Geoapify</a> · Data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">OpenStreetMap contributors</a>
           </p>
         )}
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[minmax(0,1.5fr)_minmax(18rem,0.75fr)]">
-          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-200 dark:border-slate-800 dark:bg-slate-800">
+          <div className="overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-200  ">
             {center ? (
               <MapContainer
                 center={[center.lat, center.lng]}
@@ -582,7 +582,7 @@ const BookstoreExplorer: React.FC = () => {
                 ))}
               </MapContainer>
             ) : (
-              <div className="flex h-[420px] items-center justify-center text-center text-sm text-slate-600 dark:text-slate-300">
+              <div className="flex h-[420px] items-center justify-center text-center text-sm text-slate-600 ">
                 <div className="max-w-md px-6">
                   <FiCompass className="mx-auto mb-3 text-2xl" />
                   Choose a location to view nearby bookstores on the map.
@@ -591,9 +591,9 @@ const BookstoreExplorer: React.FC = () => {
             )}
           </div>
 
-          <aside aria-label="Bookstore results" className="max-h-[420px] overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-900">
+          <aside aria-label="Bookstore results" className="max-h-[420px] overflow-y-auto rounded-[2rem] border border-slate-200 bg-white p-3  ">
             {stores.length === 0 ? (
-              <div className="p-5 text-center text-sm text-slate-500 dark:text-slate-400">
+              <div className="p-5 text-center text-sm text-slate-500 ">
                 <FiCompass className="mx-auto mb-3 text-2xl" />
                 {GEOAPIFY_API_KEY ? 'Geoapify bookstore results will appear here.' : 'OpenStreetMap bookstore results will appear here.'}
               </div>
@@ -604,8 +604,8 @@ const BookstoreExplorer: React.FC = () => {
                     key={store.id}
                     className={`rounded-2xl transition ${
                       selectedId === store.id
-                        ? 'bg-indigo-50 ring-1 ring-indigo-200 dark:bg-indigo-950/40 dark:ring-indigo-800'
-                        : 'hover:bg-slate-50 dark:hover:bg-slate-800'
+                        ? 'bg-indigo-50 ring-1 ring-indigo-200  '
+                        : 'hover:bg-slate-50 '
                     }`}
                   >
                     <button
@@ -613,18 +613,18 @@ const BookstoreExplorer: React.FC = () => {
                       onClick={() => selectStore(store)}
                       className="w-full rounded-2xl p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
                     >
-                      <span className="font-semibold text-slate-900 dark:text-white">{store.name}</span>
-                      <span className="mt-1 flex gap-1 text-sm text-slate-600 dark:text-slate-300">
+                      <span className="font-semibold text-slate-900 ">{store.name}</span>
+                      <span className="mt-1 flex gap-1 text-sm text-slate-600 ">
                         <FiMapPin className="mt-1 shrink-0" />
                         {store.address}
                       </span>
-                      <span className="mt-2 block text-xs text-slate-500 dark:text-slate-400">{store.source}</span>
+                      <span className="mt-2 block text-xs text-slate-500 ">{store.source}</span>
                     </button>
                     <a
                       href={`https://www.openstreetmap.org/directions?engine=fossgis_osrm_car&route=${center?.lat ?? store.location.lat}%2C${center?.lng ?? store.location.lng}%3B${store.location.lat}%2C${store.location.lng}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="mb-4 ml-4 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 dark:text-indigo-300"
+                      className="mb-4 ml-4 inline-flex items-center gap-1 text-sm font-semibold text-indigo-600 hover:text-indigo-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 "
                     >
                       Directions <FiExternalLink />
                     </a>
@@ -640,17 +640,17 @@ const BookstoreExplorer: React.FC = () => {
 };
 
 const ExplorerHeader = () => (
-  <section className="relative overflow-hidden rounded-[2rem] border border-slate-800 bg-slate-950 p-6 shadow-2xl sm:p-8 lg:p-10">
+  <section className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-white p-6 shadow-2xl sm:p-8 lg:p-10">
     <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(99,102,241,0.35),transparent_35%)]" />
     <div className="relative">
-      <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-300">
+      <p className="mb-3 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.25em] text-indigo-900">
         <FiMapPin />
         Bookstore Explorer
       </p>
-      <h1 className="max-w-2xl text-4xl font-black tracking-tight text-white md:text-5xl">
+      <h1 className="max-w-2xl text-4xl font-black tracking-tight text-[#29243A] md:text-5xl">
         Find bookstores mapped in your selected area.
       </h1>
-      <p className="mt-4 max-w-2xl text-slate-300">
+      <p className="mt-4 max-w-2xl text-slate-700">
         Search for bookstores across a selected place or area using Geoapify or OpenStreetMap data.
       </p>
     </div>

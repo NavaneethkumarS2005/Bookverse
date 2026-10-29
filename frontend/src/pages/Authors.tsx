@@ -76,14 +76,14 @@ const Authors: React.FC = () => {
     };
 
     return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen pt-24 pb-12 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="min-h-screen pt-24 pb-12 bg-slate-50  transition-colors duration-300">
             <div className="max-w-7xl mx-auto px-5">
-                <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 p-6 shadow-2xl shadow-slate-200/40 dark:border-slate-800 dark:shadow-none sm:p-8 lg:p-10">
+                <motion.section initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.1 }} className="relative overflow-hidden rounded-[2rem] border border-slate-200 bg-slate-900 p-6 shadow-2xl shadow-slate-200/40   sm:p-8 lg:p-10">
                     <div className="absolute inset-0">
                         <img
-                            src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=80"
+                            src="/images/bookstore-hero-editorial.png"
                             alt="Authors banner"
-                            className="h-full w-full object-cover opacity-30"
+                            className="h-full w-full object-cover opacity-35"
                         />
                         <div className="absolute inset-0 bg-gradient-to-r from-slate-950 via-slate-950/90 to-indigo-950/80" />
                     </div>
@@ -115,15 +115,15 @@ const Authors: React.FC = () => {
                 <div className="mt-8 flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
                     <div>
                         <p className="text-xs font-semibold uppercase tracking-[0.25em] text-indigo-500">Writers</p>
-                        <h2 className="font-outfit text-3xl font-bold text-slate-900 dark:text-white mb-2">Authors</h2>
+                        <h2 className="font-outfit text-3xl font-bold text-slate-900  mb-2">Authors</h2>
                     </div>
-                    <input aria-label="Search authors" type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search authors..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-white placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
+                    <input aria-label="Search authors" type="text" value={searchTerm} onChange={e => setSearchTerm(e.target.value)} placeholder="Search authors..." className="w-full md:w-72 px-4 py-2.5 rounded-xl border border-slate-300  bg-white  text-slate-900  placeholder:text-slate-400 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all text-sm" />
                 </div>
 
                 {genres.length > 1 && (
                     <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="flex flex-wrap gap-2 mb-10">
                         {genres.map(genre => (
-                            <button key={genre} type="button" onClick={() => setSelectedGenre(genre)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${selectedGenre === genre ? 'bg-indigo-500 border-indigo-500 text-white shadow-md' : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-indigo-300 dark:hover:border-indigo-700'}`}>{genre}</button>
+                            <button key={genre} type="button" onClick={() => setSelectedGenre(genre)} className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200 border ${selectedGenre === genre ? 'bg-indigo-500 border-indigo-500 text-white shadow-md' : 'bg-white  border-slate-200  text-slate-600  hover:border-indigo-300 '}`}>{genre}</button>
                         ))}
                     </motion.div>
                 )}
@@ -131,22 +131,22 @@ const Authors: React.FC = () => {
                 {loading && page === 1 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                         {Array.from({ length: 6 }).map((_, index) => (
-                            <div key={index} className="h-[420px] rounded-[1.8rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 flex flex-col animate-pulse">
-                                <div className="w-full h-48 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4"></div>
-                                <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2"></div>
-                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-4"></div>
-                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full mb-2"></div>
-                                <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                            <div key={index} className="h-[420px] rounded-[1.8rem] bg-white  border border-slate-200  p-6 flex flex-col animate-pulse">
+                                <div className="w-full h-48 bg-slate-200  rounded-xl mb-4"></div>
+                                <div className="h-6 bg-slate-200  rounded w-3/4 mb-2"></div>
+                                <div className="h-4 bg-slate-200  rounded w-1/2 mb-4"></div>
+                                <div className="h-4 bg-slate-200  rounded w-full mb-2"></div>
+                                <div className="h-4 bg-slate-200  rounded w-5/6"></div>
                             </div>
                         ))}
                     </div>
                 ) : error ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm text-red-500">{error}</div>
+                    <div className="bg-white  rounded-3xl p-12 text-center border border-slate-200  shadow-sm text-red-500">{error}</div>
                 ) : visibleAuthors.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-3xl p-16 text-center border border-slate-200 dark:border-slate-800 shadow-sm">
-                        <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-4xl mb-6 mx-auto">✍️</div>
-                        <h3 className="font-outfit text-xl font-bold text-slate-900 dark:text-white mb-2">No authors found</h3>
-                        <p className="text-slate-500 dark:text-slate-400">Try a different search term or genre filter.</p>
+                    <div className="bg-white  rounded-3xl p-16 text-center border border-slate-200  shadow-sm">
+                        <div className="w-20 h-20 bg-slate-100  rounded-full flex items-center justify-center text-4xl mb-6 mx-auto">✍️</div>
+                        <h3 className="font-outfit text-xl font-bold text-slate-900  mb-2">No authors found</h3>
+                        <p className="text-slate-500 ">Try a different search term or genre filter.</p>
                     </div>
                 ) : (
                     <>
@@ -171,12 +171,12 @@ const Authors: React.FC = () => {
                         {page * ITEMS_PER_PAGE < (authors.length) && (
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
                                 {Array.from({ length: 3 }).map((_, index) => (
-                                    <div key={`more-${index}`} className="h-[420px] rounded-[1.8rem] bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-6 flex flex-col animate-pulse opacity-50">
-                                        <div className="w-full h-48 bg-slate-200 dark:bg-slate-800 rounded-xl mb-4"></div>
-                                        <div className="h-6 bg-slate-200 dark:bg-slate-800 rounded w-3/4 mb-2"></div>
-                                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-1/2 mb-4"></div>
-                                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-full mb-2"></div>
-                                        <div className="h-4 bg-slate-200 dark:bg-slate-800 rounded w-5/6"></div>
+                                    <div key={`more-${index}`} className="h-[420px] rounded-[1.8rem] bg-white  border border-slate-200  p-6 flex flex-col animate-pulse opacity-50">
+                                        <div className="w-full h-48 bg-slate-200  rounded-xl mb-4"></div>
+                                        <div className="h-6 bg-slate-200  rounded w-3/4 mb-2"></div>
+                                        <div className="h-4 bg-slate-200  rounded w-1/2 mb-4"></div>
+                                        <div className="h-4 bg-slate-200  rounded w-full mb-2"></div>
+                                        <div className="h-4 bg-slate-200  rounded w-5/6"></div>
                                     </div>
                                 ))}
                             </div>

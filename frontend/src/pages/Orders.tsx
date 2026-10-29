@@ -13,9 +13,10 @@ interface OrderItem {
 
 interface Order {
     _id: string;
-    items: OrderItem[];
-    totalAmount: number;
+    orderItems: OrderItem[];
+    totalPrice: number;
     status: string;
+    paymentMethod: string;
     createdAt: string;
 }
 
@@ -44,7 +45,7 @@ const Orders: React.FC = () => {
         doc.text(`Status: ${order.status}`, 14, 60);
 
         // Table
-        const tableBody = order.items.map(item => [
+        const tableBody = order.orderItems.map(item => [
             item.title,
             item.quantity,
             `₹${item.price}`,
@@ -55,7 +56,7 @@ const Orders: React.FC = () => {
             startY: 70,
             head: [['Item', 'Qty', 'Price', 'Total']],
             body: tableBody,
-            foot: [['', '', 'Total Amount', `₹${order.totalAmount}`]],
+            foot: [['', '', 'Total Amount', `₹${order.totalPrice}`]],
             theme: 'grid',
             headStyles: { fillColor: [79, 70, 229] },
             footStyles: { fillColor: [241, 245, 249], textColor: [0, 0, 0], fontStyle: 'bold' }
@@ -93,7 +94,7 @@ const Orders: React.FC = () => {
     }, []);
 
     if (loading) return (
-        <div className="min-h-screen pt-24 flex items-center justify-center text-slate-500 dark:text-slate-400">
+        <div className="min-h-screen pt-24 flex items-center justify-center text-slate-500 ">
             <div className="flex flex-col items-center gap-4">
                 <div className="w-10 h-10 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
                 <p>Loading your orders...</p>
@@ -108,60 +109,65 @@ const Orders: React.FC = () => {
     );
 
     return (
-        <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300">
+        <div className="min-h-screen pt-28 pb-20 bg-slate-50  transition-colors duration-300">
             <div className="max-w-4xl mx-auto px-5">
-                <h1 className="font-outfit text-3xl md:text-4xl font-bold text-slate-900 dark:text-white mb-8">My Orders</h1>
+                <h1 className="font-outfit text-3xl md:text-4xl font-bold text-slate-900  mb-8">My Orders</h1>
 
                 {orders.length === 0 ? (
-                    <div className="bg-white dark:bg-slate-900 rounded-2xl p-12 text-center border border-slate-200 dark:border-slate-800 shadow-sm">
+                    <div className="bg-white  rounded-2xl p-12 text-center border border-slate-200  shadow-sm">
                         <div className="text-6xl mb-6 opacity-20 filter grayscale">📦</div>
-                        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-200 mb-2">No orders found.</h3>
-                        <p className="text-slate-500 dark:text-slate-400">Looks like you haven't purchased any books yet.</p>
+                        <h3 className="text-xl font-bold text-slate-800  mb-2">No orders found.</h3>
+                        <p className="text-slate-500 ">Looks like you haven't purchased any books yet.</p>
                     </div>
                 ) : (
                     <div className="space-y-6">
                         {orders.map(order => (
-                            <div key={order._id} className="bg-white dark:bg-slate-900 rounded-2xl p-6 shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
-                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-slate-100 dark:border-slate-800 pb-4 gap-4">
+                            <div key={order._id} className="bg-white  rounded-2xl p-6 shadow-sm border border-slate-200  overflow-hidden">
+                                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-slate-100  pb-4 gap-4">
                                     <div className="flex gap-8">
                                         <div>
                                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">ORDER PLACED</div>
-                                            <div className="font-medium text-slate-900 dark:text-white">{new Date(order.createdAt).toLocaleDateString()}</div>
+                                            <div className="font-medium text-slate-900 ">{new Date(order.createdAt).toLocaleDateString()}</div>
                                         </div>
                                         <div>
                                             <div className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">TOTAL</div>
-                                            <div className="font-bold text-indigo-600 dark:text-indigo-400">₹{order.totalAmount}</div>
+                                            <div className="font-bold text-indigo-600 ">₹{order.totalPrice}</div>
                                         </div>
                                     </div>
                                     <div className="flex items-center gap-3">
                                         <button
                                             onClick={() => downloadReceipt(order)}
-                                            className="px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                                            className="px-4 py-2 bg-slate-100  hover:bg-slate-200  text-slate-700  rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                                             title="Download Invoice"
                                         >
                                             <span>📄</span> Invoice
                                         </button>
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide ${order.status === 'Paid'
-                                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                                            : 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400'
+                                            ? 'bg-green-100  text-green-700 '
+                                            : 'bg-amber-100  text-amber-700 '
                                             }`}>
                                             {order.status}
                                         </span>
+                                        {order.paymentMethod === 'UPI_QR_DEMO' && (
+                                            <span className="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-yellow-100 text-yellow-800  ">
+                                                Demo UPI
+                                            </span>
+                                        )}
                                     </div>
                                 </div>
                                 <div className="space-y-4">
-                                    {order.items.map((item, idx) => (
+                                    {order.orderItems.map((item, idx) => (
                                         <div key={idx} className="flex justify-between items-center group">
                                             <div className="flex items-center gap-4">
-                                                <div className="w-12 h-16 bg-slate-100 dark:bg-slate-800 rounded-lg flex items-center justify-center text-slate-400 text-xl border border-slate-200 dark:border-slate-700">
+                                                <div className="w-12 h-16 bg-slate-100  rounded-lg flex items-center justify-center text-slate-400 text-xl border border-slate-200 ">
                                                     📖
                                                 </div>
                                                 <div>
-                                                    <div className="font-bold text-slate-900 dark:text-white group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">{item.title}</div>
+                                                    <div className="font-bold text-slate-900  group-hover:text-indigo-600  transition-colors">{item.title}</div>
                                                     <div className="text-sm text-slate-500">Qty: {item.quantity} × ₹{item.price}</div>
                                                 </div>
                                             </div>
-                                            <div className="font-bold text-slate-900 dark:text-white">₹{item.price * item.quantity}</div>
+                                            <div className="font-bold text-slate-900 ">₹{item.price * item.quantity}</div>
                                         </div>
                                     ))}
                                 </div>

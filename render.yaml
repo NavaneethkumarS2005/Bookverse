@@ -16,10 +16,6 @@ services:
         sync: false
       - key: STRIPE_WEBHOOK_SECRET
         sync: false
-      - key: PHONEPE_MERCHANT_ID
-        sync: false
-      - key: PHONEPE_SALT_KEY
-        sync: false
       - key: GEMINI_API_KEY
         sync: false
       - key: RESEND_API_KEY

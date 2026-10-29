@@ -131,14 +131,10 @@ test('environment validation rejects missing critical production variables', () 
         CLIENT_URL: '',
         STRIPE_SECRET_KEY: '',
         STRIPE_WEBHOOK_SECRET: '',
-        PHONEPE_MERCHANT_ID: '',
-        PHONEPE_SALT_KEY: '',
-        PHONEPE_CLIENT_ID: '',
-        PHONEPE_CLIENT_SECRET: ''
     }, () => {
         assert.throws(
             validateEnvironment,
-            /Missing or invalid production environment variables: MONGO_URI, JWT_SECRET, CLIENT_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET, PHONEPE_CLIENT_ID & PHONEPE_CLIENT_SECRET/
+            /Missing or invalid production environment variables: MONGO_URI, JWT_SECRET, CLIENT_URL, STRIPE_SECRET_KEY, STRIPE_WEBHOOK_SECRET/
         );
     });
 
@@ -155,16 +151,25 @@ test('health reports degraded database state and readiness false', async () => {
     assert.equal(body.readiness, false);
 });
 
-test('CORS allows explicit trusted origins and rejects an unrelated origin', async () => {
-    const trusted = await request('/health', {
+test('CORS allows local origins and rejects obsolete or unrelated origins', async () => {
+    const localhost = await request('/health', {
+        headers: { Origin: 'http://localhost:5173' }
+    });
+    const loopback = await request('/health', {
+        headers: { Origin: 'http://127.0.0.1:5173' }
+    });
+    const obsolete = await request('/health', {
         headers: { Origin: 'https://bookverse-neon.vercel.app' }
     });
     const rejected = await request('/health', {
         headers: { Origin: 'https://untrusted.example' }
     });
 
-    assert.equal(trusted.response.status, 503);
-    assert.equal(trusted.response.headers.get('access-control-allow-origin'), 'https://bookverse-neon.vercel.app');
+    assert.equal(localhost.response.status, 503);
+    assert.equal(localhost.response.headers.get('access-control-allow-origin'), 'http://localhost:5173');
+    assert.equal(loopback.response.status, 503);
+    assert.equal(loopback.response.headers.get('access-control-allow-origin'), 'http://127.0.0.1:5173');
+    assert.equal(obsolete.response.headers.get('access-control-allow-origin'), null);
     assert.equal(rejected.response.headers.get('access-control-allow-origin'), null);
 });
 
@@ -186,9 +191,7 @@ test('environment validation accepts complete production configuration', () => {
         JWT_SECRET: 'a'.repeat(32),
         CLIENT_URL: 'https://bookverse.example.com',
         STRIPE_SECRET_KEY: 'stripe-test-key',
-        STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret',
-        PHONEPE_MERCHANT_ID: 'merchant-id',
-        PHONEPE_SALT_KEY: 'phonepe-salt-key'
+        STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret'
     }, () => {
         assert.doesNotThrow(validateEnvironment);
     });
@@ -203,9 +206,7 @@ test('environment validation accepts complete production configuration with v2 c
         JWT_SECRET: 'a'.repeat(32),
         CLIENT_URL: 'https://bookverse.example.com',
         STRIPE_SECRET_KEY: 'stripe-test-key',
-        STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret',
-        PHONEPE_CLIENT_ID: 'client-id-test',
-        PHONEPE_CLIENT_SECRET: 'client-secret-test'
+        STRIPE_WEBHOOK_SECRET: 'stripe-webhook-secret'
     }, () => {
         assert.doesNotThrow(validateEnvironment);
     });
