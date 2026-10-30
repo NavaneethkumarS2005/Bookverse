@@ -65,7 +65,7 @@ const CartDrawer: React.FC = () => {
                             <span className="text-6xl">🛍️</span>
                             <h3 className="text-lg font-semibold text-slate-900 ">Your cart is empty</h3>
                             <p className="text-sm text-slate-500">Looks like you haven't added any books yet.</p>
-                            <button onClick={toggleCart} className="text-indigo-600 font-medium hover:underline">
+                            <button onClick={toggleCart} className="text-[#7d2428] font-medium hover:underline">
                                 Continue Browsing
                             </button>
                         </div>
@@ -81,7 +81,7 @@ const CartDrawer: React.FC = () => {
                                             <h4 className="font-bold text-slate-900  line-clamp-1">{item.book.title}</h4>
                                             <p className="text-xs text-slate-500  mb-1">{item.book.author}</p>
                                             <div className="flex items-center justify-between">
-                                                <span className="text-indigo-600  font-bold">₹{item.book.price}</span>
+                                                <span className="text-[#171713]  font-bold">₹{item.book.price}</span>
                                                 <span className="text-[11px] text-slate-500 ">
                                                     Total: <span className="font-semibold text-slate-800 ">₹{lineTotal}</span>
                                                 </span>
@@ -135,7 +135,7 @@ const CartDrawer: React.FC = () => {
                         <Link
                             to="/cart" // Or /checkout directly
                             onClick={toggleCart} // Close drawer on navigation
-                            className="block w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg hover:-translate-y-1 transition-all text-center shadow-indigo-500/25"
+                            className="block w-full py-4 rounded-[2px] font-bold text-[#fffdf8] bg-[#171713] hover:bg-[#7d2428] transition-colors text-center"
                         >
                             Proceed to Checkout
                         </Link>

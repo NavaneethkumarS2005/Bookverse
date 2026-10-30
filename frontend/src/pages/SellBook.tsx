@@ -330,7 +330,7 @@ const SellBook: React.FC = () => {
                         <button
                             type="submit"
                             disabled={isLoading}
-                            className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-violet-600 hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="btn btn-primary w-full py-4 text-lg active:scale-[0.98]"
                         >
                             {isLoading ? (
                                 <span className="flex items-center justify-center gap-2">

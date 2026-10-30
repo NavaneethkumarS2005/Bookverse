@@ -63,7 +63,7 @@ const LiveRecommendationsSidebar: React.FC = () => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => setIsOpen(true)}
-                className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-indigo-600 text-white shadow-xl shadow-indigo-600/30 transition-colors hover:bg-indigo-700"
+                className="fixed bottom-24 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-[#171713] text-[#fffdf8] shadow-xl shadow-black/20 transition-colors hover:bg-[#7d2428]"
             >
                 <span className="text-2xl">✨</span>
             </motion.button>
@@ -94,8 +94,8 @@ const LiveRecommendationsSidebar: React.FC = () => {
                                 <div>
                                     <div className="flex items-center gap-2">
                                         <span className="relative flex h-3 w-3">
-                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-indigo-400 opacity-75"></span>
-                                            <span className="relative inline-flex h-3 w-3 rounded-full bg-indigo-500"></span>
+                                            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#78806a] opacity-75"></span>
+                                            <span className="relative inline-flex h-3 w-3 rounded-full bg-[#78806a]"></span>
                                         </span>
                                         <h2 className="text-lg font-bold text-slate-900 ">Live Recommendations</h2>
                                     </div>
@@ -113,7 +113,7 @@ const LiveRecommendationsSidebar: React.FC = () => {
                             <div className="flex-1 overflow-y-auto p-6 scrollbar-hide">
                                 {recommendations.length === 0 ? (
                                     <div className="flex h-full flex-col items-center justify-center text-center text-slate-500">
-                                        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-indigo-500 border-t-transparent" />
+                                        <div className="mb-4 h-16 w-16 animate-spin rounded-full border-4 border-[#78806a] border-t-transparent" />
                                         <p>Analyzing your interests...</p>
                                     </div>
                                 ) : (

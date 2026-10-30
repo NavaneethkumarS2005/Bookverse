@@ -158,7 +158,7 @@ const DiscoveryCard: React.FC<DiscoveryCardProps> = ({
 
             <Link 
               to={to} 
-              className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 py-3.5 text-sm font-bold text-white shadow-lg transition-transform hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 active:scale-95"
+              className="btn btn-primary mt-6 w-full py-3.5 text-sm active:scale-95"
             >
               Explore Now <span>→</span>
             </Link>

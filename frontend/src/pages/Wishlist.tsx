@@ -17,7 +17,7 @@ const Wishlist: React.FC = () => {
                     </div>
                     <h1 className="font-outfit text-4xl font-bold text-slate-900 ">Your Wishlist</h1>
                     <p className="mt-3 text-slate-500 ">Sign in to save books and come back to them anytime.</p>
-                    <Link to="/login" className="mt-8 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white shadow-lg shadow-indigo-500/20 transition hover:bg-indigo-700">
+                    <Link to="/login" className="btn btn-primary mt-8 px-6 py-3">
                         Sign in <FiShoppingBag />
                     </Link>
                 </div>
@@ -50,7 +50,7 @@ const Wishlist: React.FC = () => {
                         <FiHeart className="mx-auto mb-5 text-4xl text-slate-300 " />
                         <h2 className="font-outfit text-2xl font-bold text-slate-900 ">Nothing saved yet</h2>
                         <p className="mx-auto mt-2 max-w-md text-slate-500 ">Tap the heart on any marketplace book to build your personal reading shortlist.</p>
-                        <Link to="/marketplace" className="mt-7 inline-flex items-center gap-2 rounded-xl bg-indigo-600 px-6 py-3 font-semibold text-white transition hover:bg-indigo-700">Browse books <FiShoppingBag /></Link>
+                        <Link to="/marketplace" className="btn btn-primary mt-7 px-6 py-3">Browse books <FiShoppingBag /></Link>
                     </div>
                 )}
             </div>

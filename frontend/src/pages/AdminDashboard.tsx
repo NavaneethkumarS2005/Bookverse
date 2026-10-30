@@ -294,7 +294,7 @@ const AdminDashboard: React.FC = () => {
                             <h2 className="font-outfit font-bold text-2xl text-slate-900 ">Book Inventory</h2>
                             <button
                                 onClick={() => setShowBookModal(true)}
-                                className="px-6 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-2 shadow-lg shadow-indigo-500/20 transition-all"
+                                className="btn btn-primary px-6 py-2.5"
                             >
                                 <span>+</span> Add New Book
                             </button>

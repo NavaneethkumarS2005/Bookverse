@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
+import BookCover from '../components/BookCover';
 import InlineAlert from '../components/InlineAlert';
 // @ts-ignore
 import { API_URL } from '../config';
@@ -322,7 +323,7 @@ const Cart: React.FC = () => {
     const displayMessage = checkoutMessage || persistedMessage;
 
     return (
-        <div className="min-h-screen pt-28 pb-20 bg-slate-50 dark:bg-slate-950 transition-colors duration-300 relative">
+        <div className="min-h-screen pt-28 pb-20 bg-slate-50 transition-colors duration-300 relative">
             <div className="max-w-7xl mx-auto px-5">
                 <h1 className="font-outfit text-4xl font-bold bg-gradient-to-r from-indigo-600 to-pink-500 bg-clip-text text-transparent mb-10 w-fit">
                     Your Cart
@@ -343,8 +344,8 @@ const Cart: React.FC = () => {
                 {cart.length === 0 ? (
                     <div className="flex flex-col items-center justify-center py-20 text-center">
                         <div className="text-8xl mb-6 opacity-20 filter grayscale">🛒</div>
-                        <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-200 mb-2">Your cart is empty.</h3>
-                        <p className="text-slate-500 dark:text-slate-400 mb-8">Looks like you haven't added any books yet.</p>
+                        <h3 className="text-2xl font-bold text-slate-800 mb-2">Your cart is empty.</h3>
+                        <p className="text-slate-500 mb-8">Looks like you haven't added any books yet.</p>
                         <Link to="/marketplace" className="px-8 py-3 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all">
                             Browse Books
                         </Link>
@@ -358,42 +359,41 @@ const Cart: React.FC = () => {
                                 const lineTotal = item.book.price * quantity;
                                 const itemId = item.bookId;
                                 return (
-                                    <div key={item.bookId} className="bg-white dark:bg-slate-900 rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 dark:border-slate-800 items-center">
-                                        <img
-                                            src={item.book.image}
-                                            alt={item.book.title}
-                                            className="w-20 h-28 object-cover rounded-xl shadow-md"
+                                    <div key={item.bookId} className="bg-white rounded-2xl p-4 flex gap-6 shadow-sm border border-slate-200 items-center">
+                                        <BookCover
+                                            book={item.book}
+                                            className="w-20 h-28 rounded-[2px] overflow-hidden shadow-sm"
                                         />
                                         <div className="flex-1 space-y-2">
                                             <div>
-                                                <h3 className="font-outfit font-bold text-lg text-slate-900 dark:text-white mb-1 line-clamp-1">{item.book.title}</h3>
+                                                <h3 className="font-outfit font-bold text-lg text-slate-900 mb-1 line-clamp-1">{item.book.title}</h3>
                                                 <p className="text-slate-500 text-sm mb-1">{item.book.author}</p>
                                             </div>
                                             <div className="flex items-center justify-between gap-4">
                                                 <div className="flex items-center gap-3">
-                                                    <span className="font-bold text-indigo-600 dark:text-indigo-400 text-lg">₹{item.book.price}</span>
-                                                    <span className="text-xs text-slate-500 dark:text-slate-400">
-                                                        × {quantity} = <span className="font-semibold text-slate-800 dark:text-slate-100">₹{lineTotal}</span>
+                                                    <span className="font-bold text-indigo-600 text-lg">₹{item.book.price}</span>
+                                                    <span className="text-xs text-slate-500">
+                                                        × {quantity} = <span className="font-semibold text-slate-800">₹{lineTotal}</span>
                                                     </span>
                                                 </div>
                                             </div>
                                             <div className="flex items-center justify-between mt-2">
-                                                <div className="inline-flex items-center rounded-full bg-slate-100 dark:bg-slate-800 px-2 py-1">
+                                                <div className="inline-flex items-center rounded-full bg-slate-100 px-2 py-1">
                                                     <button
                                                         type="button"
                                                         onClick={() => updateQuantity(item, quantity - 1)}
-                                                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm"
+                                                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:bg-slate-200 text-sm"
                                                         aria-label="Decrease quantity"
                                                     >
                                                         −
                                                     </button>
-                                                    <span className="px-3 text-sm font-medium text-slate-800 dark:text-slate-100">
+                                                    <span className="px-3 text-sm font-medium text-slate-800">
                                                         {quantity}
                                                     </span>
                                                     <button
                                                         type="button"
                                                         onClick={() => updateQuantity(item, quantity + 1)}
-                                                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-sm"
+                                                        className="w-6 h-6 flex items-center justify-center rounded-full text-slate-600 hover:bg-slate-200 text-sm"
                                                         aria-label="Increase quantity"
                                                     >
                                                         +
@@ -401,7 +401,7 @@ const Cart: React.FC = () => {
                                                 </div>
                                                 <button
                                                     onClick={() => removeFromCart(itemId)}
-                                                    className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 border border-red-200 dark:border-red-900/50 text-sm font-medium transition-colors"
+                                                    className="px-4 py-2 rounded-lg text-red-500 hover:bg-red-50 border border-red-200 text-sm font-medium transition-colors"
                                                 >
                                                     Remove
                                                 </button>
@@ -413,12 +413,12 @@ const Cart: React.FC = () => {
                         </div>
 
                         {/* Summary */}
-                        <div className="lg:w-96 bg-white dark:bg-slate-900 rounded-2xl p-8 shadow-lg border border-slate-200 dark:border-slate-800 h-fit sticky top-28">
-                            <h3 className="font-outfit font-bold text-xl text-slate-900 dark:text-white mb-6 border-b border-slate-200 dark:border-slate-800 pb-4">
+                        <div className="lg:w-96 bg-white rounded-2xl p-8 shadow-lg border border-slate-200 h-fit sticky top-28">
+                            <h3 className="font-outfit font-bold text-xl text-slate-900 mb-6 border-b border-slate-200 pb-4">
                                 Order Summary
                             </h3>
 
-                            <div className="flex justify-between mb-3 text-slate-500 dark:text-slate-400">
+                            <div className="flex justify-between mb-3 text-slate-500">
                                 <span>
                                     Items (
                                     {cart.reduce(
@@ -429,18 +429,18 @@ const Cart: React.FC = () => {
                                 </span>
                                 <span>₹{getCartTotal()}</span>
                             </div>
-                            <div className="flex justify-between mb-6 text-slate-500 dark:text-slate-400">
+                            <div className="flex justify-between mb-6 text-slate-500">
                                 <span>Shipping</span>
                                 <span className="text-green-500 font-medium">Free</span>
                             </div>
 
-                            <div className="flex justify-between mb-8 text-xl font-bold text-slate-900 dark:text-white border-t border-slate-200 dark:border-slate-800 pt-4">
+                            <div className="flex justify-between mb-8 text-xl font-bold text-slate-900 border-t border-slate-200 pt-4">
                                 <span>Total</span>
-                                <span className="text-indigo-600 dark:text-indigo-400">₹{getCartTotal()}</span>
+                                <span className="text-indigo-600">₹{getCartTotal()}</span>
                             </div>
 
                             <button
-                                className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-pink-600 hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98]"
+                                className="btn btn-primary w-full py-4 text-lg active:scale-[0.98]"
                                 onClick={handleCheckout}
                             >
                                 Proceed to Checkout
@@ -453,23 +453,23 @@ const Cart: React.FC = () => {
                 {isPaymentOpen && (
                     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsPaymentOpen(false)}></div>
-                        <div className="relative bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200 dark:border-slate-800">
+                        <div className="relative bg-white rounded-3xl p-8 shadow-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto border border-slate-200">
                             <button
                                 onClick={() => setIsPaymentOpen(false)}
-                                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                                className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 text-2xl w-8 h-8 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
                             >
                                 &times;
                             </button>
 
-                            <h2 className="font-outfit font-bold text-2xl text-center text-slate-900 dark:text-white mb-8">Checkout</h2>
+                            <h2 className="font-outfit font-bold text-2xl text-center text-slate-900 mb-8">Checkout</h2>
 
                             {/* Select Method */}
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
                                 <button
                                     onClick={() => setPaymentMethod('stripe')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'stripe'
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
+                                        : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">💳</span>
@@ -478,8 +478,8 @@ const Cart: React.FC = () => {
                                 <button
                                     onClick={() => setPaymentMethod('phonepe')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'phonepe'
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
+                                        : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">🟣</span>
@@ -488,8 +488,8 @@ const Cart: React.FC = () => {
                                 <button
                                     onClick={() => setPaymentMethod('demo')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'demo'
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
+                                        : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">▦</span>
@@ -498,8 +498,8 @@ const Cart: React.FC = () => {
                                 <button
                                     onClick={() => setPaymentMethod('cod')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'cod'
-                                        ? 'bg-indigo-50 dark:bg-indigo-900/20 border-indigo-500 text-indigo-700 dark:text-indigo-300 ring-1 ring-indigo-500'
-                                        : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-500 hover:border-indigo-300'
+                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
+                                        : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'
                                         }`}
                                 >
                                     <span className="text-2xl">💵</span>
@@ -527,16 +527,16 @@ const Cart: React.FC = () => {
                                             </Elements>
                                     ) : (
                                         <div>
-                                            <p className="mb-4 text-sm text-slate-500 dark:text-slate-400">
+                                            <p className="mb-4 text-sm text-slate-500">
                                                 Enter your delivery details before continuing to secure card payment.
                                             </p>
                                             <div className="space-y-4 mb-6">
-                                                <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                                 <div className="grid grid-cols-2 gap-4">
-                                                    <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                                    <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                    <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                    <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                                 </div>
-                                                <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                                <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                             </div>
                                             <button
                                                 type="button"
@@ -552,18 +552,18 @@ const Cart: React.FC = () => {
 
                             {paymentMethod === 'phonepe' && (
                                 <div>
-                                    <div className="mb-6 p-6 bg-slate-50 dark:bg-slate-800 rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 text-center">
-                                        <p className="text-slate-900 dark:text-white font-medium mb-2">Secure payment via PhonePe</p>
+                                    <div className="mb-6 p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center">
+                                        <p className="text-slate-900 font-medium mb-2">Secure payment via PhonePe</p>
                                         <p className="text-sm text-slate-500">Supports UPI, Credit/Debit Cards, Wallet, NetBanking</p>
                                     </div>
 
                                     <div className="space-y-4 mb-6">
-                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         </div>
-                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                     </div>
 
                                     <button
@@ -578,9 +578,9 @@ const Cart: React.FC = () => {
 
                             {paymentMethod === 'demo' && (
                                 <div>
-                                    <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center dark:border-amber-800 dark:bg-amber-950/30">
-                                        <p className="mb-2 font-bold text-amber-900 dark:text-amber-200">DEMO PAYMENT — NO REAL MONEY TRANSFER</p>
-                                        <p className="mb-4 text-sm text-amber-800 dark:text-amber-300">
+                                    <div className="mb-6 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-center">
+                                        <p className="mb-2 font-bold text-amber-900">DEMO PAYMENT — NO REAL MONEY TRANSFER</p>
+                                        <p className="mb-4 text-sm text-amber-800">
                                             This decorative QR-style graphic is not scannable and does not initiate a UPI payment.
                                         </p>
                                         <div role="img" aria-label="Decorative demo QR-style graphic, not scannable" className="mx-auto grid h-36 w-36 grid-cols-6 grid-rows-6 gap-1 rounded-lg border-4 border-white bg-white p-2 shadow-sm">
@@ -588,16 +588,16 @@ const Cart: React.FC = () => {
                                                 <span key={index} className={filled ? 'rounded-sm bg-slate-900' : 'rounded-sm bg-white'} />
                                             ))}
                                         </div>
-                                        <p className="mt-4 text-2xl font-bold text-slate-900 dark:text-white">Demo total: ₹{getCartTotal()}</p>
+                                        <p className="mt-4 text-2xl font-bold text-slate-900">Demo total: ₹{getCartTotal()}</p>
                                     </div>
 
                                     <div className="space-y-4 mb-6">
-                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         </div>
-                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                     </div>
                                     <button
                                         type="button"
@@ -612,24 +612,24 @@ const Cart: React.FC = () => {
 
                             {paymentMethod === 'cod' && (
                                 <div>
-                                    <div className="mb-8 p-4 bg-green-50 dark:bg-green-900/20 rounded-xl border border-green-200 dark:border-green-900/50 flex items-center gap-4">
-                                        <div className="text-3xl bg-white dark:bg-green-900 rounded-full w-12 h-12 flex items-center justify-center shadow-sm">💵</div>
+                                    <div className="mb-8 p-4 bg-green-50 rounded-xl border border-green-200 flex items-center gap-4">
+                                        <div className="text-3xl bg-white rounded-full w-12 h-12 flex items-center justify-center shadow-sm">💵</div>
                                         <div>
-                                            <h3 className="font-bold text-green-800 dark:text-green-300">Cash on Delivery</h3>
-                                            <p className="text-sm text-green-700 dark:text-green-400">Pay ₹{getCartTotal()} upon delivery.</p>
+                                            <h3 className="font-bold text-green-800">Cash on Delivery</h3>
+                                            <p className="text-sm text-green-700">Pay ₹{getCartTotal()} upon delivery.</p>
                                         </div>
                                     </div>
 
                                     <div className="space-y-4 mb-6">
-                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         <div className="grid grid-cols-2 gap-4">
-                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                         </div>
-                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-slate-50 dark:bg-slate-950/50 focus:ring-2 focus:ring-indigo-500 outline-none" />
+                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
                                     </div>
                                     <button
-                                        className="w-full py-3 rounded-xl font-bold text-white bg-slate-900 dark:bg-slate-700 hover:bg-indigo-600 transition-colors shadow-lg"
+                                        className="w-full py-3 rounded-xl font-bold text-white bg-slate-900 hover:bg-indigo-600 transition-colors shadow-lg"
                                         onClick={handleProceedToPayment}
                                         disabled={processing}
                                     >

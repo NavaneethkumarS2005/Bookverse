@@ -1,5 +1,4 @@
 import Book from '../models/Book.js';
-import { generateBookCoverSvg } from './coverArt.js';
 
 const GOOGLE_BOOKS_ENDPOINT = 'https://www.googleapis.com/books/v1/volumes';
 const PLACEHOLDER_MARKERS = [
@@ -71,6 +70,8 @@ export const enrichBookCovers = async (): Promise<void> => {
       const targetTitle = normalize(book.title);
       const targetAuthor = normalize(book.author);
 
+      // Only accept a cover when title/author actually match the book.
+      // The previous unchecked fallback could attach an unrelated book's cover.
       const match = (data.items || []).find(item => {
         const info = item.volumeInfo;
         if (!info?.imageLinks) return false;
@@ -83,7 +84,7 @@ export const enrichBookCovers = async (): Promise<void> => {
         ) && (
           !targetAuthor || candidateAuthors.includes(targetAuthor) || targetAuthor.includes(candidateAuthors)
         );
-      }) || (data.items || []).find(item => item.volumeInfo?.imageLinks);
+      });
 
       const image = cleanImageUrl(
         match?.volumeInfo?.imageLinks?.extraLarge
@@ -93,15 +94,19 @@ export const enrichBookCovers = async (): Promise<void> => {
         || match?.volumeInfo?.imageLinks?.thumbnail
       );
 
-      const finalImage = image && !isPlaceholder(image)
-        ? image
-        : generateBookCoverSvg(book.title, book.author, book.genre || 'Featured');
+      // No verified match: leave the record untouched. The frontend BookCover
+      // component renders a neutral placeholder, so nothing is persisted that
+      // would need undoing and no synthetic covers enter the catalogue.
+      if (!image || isPlaceholder(image)) continue;
 
-      await Book.updateOne({ _id: book._id }, { $set: { image: finalImage } });
+      await Book.updateOne({ _id: book._id }, { $set: { image } });
       updated += 1;
     } catch (error) {
       console.warn(`⚠️ Cover lookup skipped for "${book.title}": ${(error as Error).message}`);
     }
+
+    // Stay polite to the Google Books API: no key, no quota — pace the loop.
+    await new Promise(resolve => setTimeout(resolve, 250));
   }
 
   console.log(`🖼️ Book cover enrichment: ${updated}/${books.length} placeholder covers replaced.`);

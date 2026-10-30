@@ -107,7 +107,7 @@ const CheckoutForm: React.FC<CheckoutFormProps> = ({ cartItems, shippingAddress,
                 <button
                     disabled={isLoading || paymentSucceededButUnfinalized || !stripe || !elements}
                     id="submit"
-                    className="flex-[2] py-3 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold shadow-md shadow-indigo-500/20 disabled:opacity-70 disabled:cursor-not-allowed transition-all"
+                    className="btn btn-primary flex-[2] py-3"
                 >
                     {isLoading ? "Processing..." : paymentSucceededButUnfinalized ? "Payment Received — Do Not Retry" : "Pay Now"}
                 </button>

@@ -81,7 +81,7 @@ const Profile: React.FC = () => {
                     <div className="lg:col-span-1">
                         <div className="bg-white  rounded-2xl p-6 shadow-sm border border-slate-200  sticky top-28">
                             <div className="text-center mb-8">
-                                <div className="w-20 h-20 bg-gradient-to-tr from-indigo-500 to-pink-500 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-white shadow-lg">
+                                <div className="w-20 h-20 bg-[#171713] rounded-full mx-auto mb-4 flex items-center justify-center text-3xl font-bold text-[#fffdf8] shadow-sm">
                                     {user.name.charAt(0).toUpperCase()}
                                 </div>
                                 <h3 className="font-bold text-xl text-slate-900  mb-1">{user.name}</h3>
@@ -158,7 +158,7 @@ const Profile: React.FC = () => {
                                         {orders.length === 0 ? (
                                             <div className="bg-white  rounded-2xl p-12 text-center border border-slate-200  shadow-sm">
                                                 <p className="text-slate-500 mb-6">No orders found.</p>
-                                                <Link to="/marketplace" className="inline-block px-6 py-2.5 rounded-full bg-indigo-600 hover:bg-indigo-700 text-white font-semibold shadow-lg shadow-indigo-500/30 transition-all">Start Shopping</Link>
+                                                <Link to="/marketplace" className="btn btn-primary px-6 py-2.5">Start Shopping</Link>
                                             </div>
                                         ) : (
                                             <div className="space-y-6">

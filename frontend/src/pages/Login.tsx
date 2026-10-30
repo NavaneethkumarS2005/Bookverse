@@ -154,7 +154,7 @@ const Login: React.FC = () => {
 
                     <button
                         type="submit"
-                        className="w-full py-3.5 rounded-xl font-bold text-white bg-gradient-to-r from-pink-500 to-indigo-600 hover:shadow-lg hover:-translate-y-0.5 transition-all text-sm shadow-indigo-500/30 disabled:opacity-70 disabled:cursor-not-allowed mt-2"
+                        className="btn btn-primary w-full py-3.5 text-sm mt-2"
                         disabled={loading}
                     >
                         {loading ? 'Processing...' : (isLogin ? 'Login' : 'Sign Up')}

@@ -107,7 +107,7 @@ const Contact: React.FC = () => {
                         </div>
                         <button
                             type="submit"
-                            className="w-full py-4 rounded-xl font-bold text-white bg-gradient-to-r from-indigo-600 to-pink-600 hover:shadow-lg hover:shadow-indigo-500/30 transition-all active:scale-[0.98] disabled:opacity-70 disabled:cursor-not-allowed"
+                            className="btn btn-primary w-full py-4 text-lg active:scale-[0.98]"
                             disabled={isLoading}
                         >
                             {isLoading ? (

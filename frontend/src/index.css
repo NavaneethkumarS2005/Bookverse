@@ -184,6 +184,8 @@ input[type=range]::-webkit-slider-runnable-track { width:100%; height:4px; curso
   --nav-bg: rgba(244, 239, 229, 0.94);
   --radius: 2px;
   --radius-lg: 4px;
+  --ink-hover: #3a3a30;
+  --secondary-hover: #ece6d9;
   --shadow-sm: 0 1px 2px rgba(23, 23, 19, 0.04);
   --shadow-md: 0 12px 30px rgba(23, 23, 19, 0.08);
   --shadow-lg: 0 20px 50px rgba(23, 23, 19, 0.1);
@@ -340,80 +342,174 @@ p {
   box-shadow: none !important;
 }
 
-main > section,
-main > header {
+.app-shell > section,
+.app-shell > header {
   border-radius: 0 !important;
 }
 
-main .rounded-\[2rem\],
-main .rounded-\[1\.75rem\],
-main .rounded-3xl {
+.app-shell .rounded-\[2rem\],
+.app-shell .rounded-\[1\.8rem\],
+.app-shell .rounded-\[1\.75rem\],
+.app-shell .rounded-3xl {
   border-radius: 3px !important;
 }
 
-main .bg-slate-50,
-main .bg-slate-950,
-main .bg-white {
+.app-shell .bg-slate-50,
+.app-shell .bg-slate-950,
+.app-shell .bg-white {
   background-color: var(--bg-main) !important;
 }
 
-main .bg-slate-900 {
+.app-shell .bg-slate-900 {
   background-color: var(--color-plum) !important;
 }
 
-main .text-slate-900,
-main .text-slate-800,
-main .text-slate-700 {
+.app-shell .text-slate-900,
+.app-shell .text-slate-800,
+.app-shell .text-slate-700 {
   color: var(--text-main) !important;
 }
 
-main .text-slate-600,
-main .text-slate-500,
-main .text-slate-400 {
+.app-shell .text-slate-600,
+.app-shell .text-slate-500,
+.app-shell .text-slate-400 {
   color: var(--text-muted) !important;
 }
 
-main .border-slate-200,
-main .border-slate-300 {
+.app-shell .border-slate-200,
+.app-shell .border-slate-300 {
   border-color: var(--border) !important;
 }
 
-main .bg-indigo-600,
-main .bg-indigo-500,
-main .from-indigo-600,
-main .to-indigo-600 {
+.app-shell .bg-indigo-600,
+.app-shell .bg-indigo-500,
+.app-shell .from-indigo-600,
+.app-shell .to-indigo-600 {
   background-color: var(--color-plum) !important;
 }
 
-main .bg-gradient-to-r.from-pink-500,
-main .bg-gradient-to-br.from-pink-500,
-main .bg-gradient-to-r.from-amber-500,
-main .bg-gradient-to-r.from-indigo-500 {
+.app-shell .bg-gradient-to-r.from-pink-500,
+.app-shell .bg-gradient-to-br.from-pink-500,
+.app-shell .bg-gradient-to-r.from-amber-500,
+.app-shell .bg-gradient-to-r.from-indigo-500 {
   background-image: none !important;
   background-color: var(--color-plum) !important;
   color: var(--color-ivory) !important;
   border-radius: 2px !important;
 }
 
-main .text-indigo-600,
-main .text-indigo-500,
-main .text-indigo-400 {
+.app-shell .text-indigo-600,
+.app-shell .text-indigo-500,
+.app-shell .text-indigo-400 {
   color: var(--color-violet) !important;
 }
 
-main input,
-main select,
-main textarea {
+/* Explicit white text (hero panels, dark CTAs) must win over the global
+   heading/p color rules, otherwise it renders dark-on-dark. */
+.app-shell .text-white {
+  color: #fffdf8 !important;
+}
+
+.app-shell .text-indigo-300 {
+  color: var(--color-peach) !important;
+}
+
+.app-shell .to-indigo-950\/80,
+.app-shell .to-indigo-950 {
+  background-image: none !important;
+  background-color: rgba(58, 58, 48, 0.8) !important;
+}
+
+.app-shell input,
+.app-shell select,
+.app-shell textarea {
   border-radius: 0 !important;
   border-color: var(--border) !important;
   background: var(--bg-card) !important;
   color: var(--text-main) !important;
 }
 
-main button,
-main a[class*="rounded-full"][class*="bg-indigo"],
-main a[class*="rounded-full"][class*="bg-pink"] {
+.app-shell button,
+.app-shell a[class*="rounded-full"][class*="bg-indigo"],
+.app-shell a[class*="rounded-full"][class*="bg-pink"] {
   border-radius: 0 !important;
+}
+
+/* ===== SEMANTIC BUTTON VARIANTS =====
+   Primary: solid ink, main action. Secondary: ivory + hairline border.
+   Accent: selected/highlight states. Danger/success: reserved semantics. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background-color 180ms ease, color 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.btn:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.btn:disabled,
+.btn[aria-disabled="true"] {
+  background: var(--bg-secondary) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  cursor: not-allowed;
+  box-shadow: none !important;
+}
+
+.btn-primary {
+  background: var(--color-plum);
+  color: var(--color-ivory);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: var(--ink-hover);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-main);
+  border-color: var(--border);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--secondary-hover);
+  border-color: var(--color-peach);
+}
+
+.btn-accent {
+  background: var(--primary);
+  color: var(--color-ivory);
+}
+
+.btn-accent:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.btn-success {
+  background: var(--success);
+  color: #fffdf8;
+}
+
+.btn-success:hover:not(:disabled) {
+  background: #3a6246;
+}
+
+.btn-danger {
+  background: transparent;
+  color: var(--error);
+  border-color: var(--error);
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: var(--error);
+  color: #fffdf8;
 }
 
 @media (max-width: 768px) {
