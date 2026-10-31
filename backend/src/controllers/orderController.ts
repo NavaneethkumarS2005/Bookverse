@@ -16,11 +16,37 @@ import sendEmail from '../utils/emailService';
 // @ts-ignore
 import { orderTemplate } from '../utils/emailTemplates';
 
-const getStripe = () => {
-    if (!process.env.STRIPE_SECRET_KEY) {
-        throw new Error("Stripe Secret Key is missing in environment variables");
+/**
+ * Test-only Stripe guard. This checkout must never be able to move real money,
+ * so any key that is not a test key is rejected before a Stripe client exists.
+ */
+const validateStripeKey = (key: string): string => {
+    const trimmed = key.trim();
+    if (!trimmed) {
+        throw new Error('Stripe configuration error: STRIPE_SECRET_KEY is missing.');
     }
-    return new Stripe(process.env.STRIPE_SECRET_KEY, {
+    if (trimmed.startsWith('sk_live_')) {
+        // Deliberately vague: never echo the key material back.
+        throw new Error('Stripe configuration error: live credentials are not permitted. Configure a sk_test_ key.');
+    }
+    if (!trimmed.startsWith('sk_test_')) {
+        throw new Error('Stripe configuration error: STRIPE_SECRET_KEY must be a sk_test_ key.');
+    }
+    return trimmed;
+};
+
+const isStripeTestMode = (): boolean => {
+    try {
+        validateStripeKey(process.env.STRIPE_SECRET_KEY || '');
+        return true;
+    } catch {
+        return false;
+    }
+};
+
+const getStripe = () => {
+    const key = validateStripeKey(process.env.STRIPE_SECRET_KEY || '');
+    return new Stripe(key, {
         apiVersion: '2024-12-18.acacia',
     } as any);
 };
@@ -114,7 +140,14 @@ export const createPaymentIntent = async (req: AuthRequest, res: Response) => {
         order.paymentId = paymentIntent.id;
         await order.save();
 
-        res.send({ clientSecret: paymentIntent.client_secret, orderId: order._id.toString(), paymentId: paymentIntent.id });
+        res.send({
+            clientSecret: paymentIntent.client_secret,
+            orderId: order._id.toString(),
+            paymentId: paymentIntent.id,
+            // Derived from the validated server-side key (getStripe() already
+            // rejected anything that is not sk_test_). Never exposes the key.
+            testMode: isStripeTestMode(),
+        });
     } catch (err: any) {
         console.error("Stripe Error:", err);
         res.status(400).json({ message: err.message || 'Payment init failed' });

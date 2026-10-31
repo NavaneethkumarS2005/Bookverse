@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useCart } from '../context/CartContext';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import CheckoutForm from '../components/CheckoutForm';
@@ -24,7 +24,7 @@ type CheckoutMessageType = 'success' | 'error' | 'info';
 const Cart: React.FC = () => {
     const { cart, removeFromCart, getCartTotal, clearCart, updateQuantity } = useCart();
     const [isPaymentOpen, setIsPaymentOpen] = useState(false);
-    const [paymentMethod, setPaymentMethod] = useState('demo'); // 'stripe', 'phonepe', 'cod', 'demo'
+    const [paymentMethod, setPaymentMethod] = useState('demo'); // 'stripe' (TEST MODE), 'demo' (UPI QR simulation), 'cod'
     const [demoRequestId, setDemoRequestId] = useState(() => crypto.randomUUID());
     const [processing, setProcessing] = useState(false);
     const [clientSecret, setClientSecret] = useState('');
@@ -40,21 +40,7 @@ const Cart: React.FC = () => {
         phone: ''
     });
 
-    const location = useLocation();
     const navigate = useNavigate();
-
-    // Handle Payment Redirect Status (PhonePe)
-    useEffect(() => {
-        const query = new URLSearchParams(location.search);
-        const status = query.get('status');
-        if (status === 'failure') {
-            setCheckoutMessage({ type: 'error', text: 'Payment failed. Please try again.' });
-        } else if (status === 'error') {
-            setCheckoutMessage({ type: 'error', text: 'Payment status could not be verified. Your cart has not been cleared.' });
-        } else if (status === 'pending') {
-            setCheckoutMessage({ type: 'info', text: 'Payment is still being confirmed. Your cart has not been cleared.' });
-        }
-    }, [location, clearCart]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setShippingDetails({ ...shippingDetails, [e.target.name]: e.target.value });
@@ -131,8 +117,6 @@ const Cart: React.FC = () => {
 
         if (paymentMethod === 'stripe') {
             fetchPaymentIntent();
-        } else if (paymentMethod === 'phonepe') {
-            handlePhonePe();
         } else if (paymentMethod === 'demo') {
             handleDemoPayment();
         } else {
@@ -257,69 +241,6 @@ const Cart: React.FC = () => {
         }
     };
 
-    const handlePhonePe = async () => {
-        if (!localStorage.getItem('user')) {
-            const msg = { type: 'error' as CheckoutMessageType, text: 'Your session has expired. Please log in again to continue payment.' };
-            setCheckoutMessage(msg);
-            setPersistedMessage(msg);
-            setIsPaymentOpen(false);
-            setTimeout(() => {
-                navigate('/login');
-            }, 800);
-            return;
-        }
-
-        try {
-            setProcessing(true);
-            setCheckoutMessage(null);
-            console.debug('[PhonePe] Initiating payment request for', cart.length, 'item(s)');
-
-            const res = await fetch(`${API_URL}/api/phonepe/pay`, {
-                method: 'POST',
-                credentials: 'include',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    orderItems: cart.map(item => ({
-                        bookId: item.bookId,
-                        quantity: item.quantity
-                    })),
-                    shippingAddress: shippingDetails
-                })
-            });
-
-            if (!res.ok) {
-                if (res.status === 401) {
-                    const msg = { type: 'error' as CheckoutMessageType, text: 'Session expired. Please log in again.' };
-                    setCheckoutMessage(msg);
-                    setPersistedMessage(msg);
-                    setIsPaymentOpen(false);
-                    setTimeout(() => {
-                        navigate('/login');
-                    }, 800);
-                    return;
-                }
-                const errData = await res.json().catch(() => ({}));
-                throw new Error(errData.message || `PhonePe payment initiation failed with status ${res.status}`);
-            }
-
-            const data = await res.json();
-            if (data.success && data.url) {
-                setCheckoutMessage({ type: 'info', text: 'Redirecting to PhonePe payment page...' });
-                window.location.href = data.url; // Redirect to PhonePe
-            } else {
-                setCheckoutMessage({ type: 'error', text: 'PhonePe error: ' + (data.message || 'Unable to initiate payment.') });
-                setProcessing(false);
-            }
-        } catch (error: any) {
-            console.error("PhonePe Payment Error:", error);
-            setCheckoutMessage({ type: 'error', text: 'Payment initiation failed: ' + error.message });
-            setProcessing(false);
-        } finally {
-            setProcessing(false);
-        }
-    };
-
-    // Determine which message to show - prefer checkoutMessage, fallback to persistedMessage
     const displayMessage = checkoutMessage || persistedMessage;
 
     return (
@@ -464,7 +385,10 @@ const Cart: React.FC = () => {
                             <h2 className="font-outfit font-bold text-2xl text-center text-slate-900 mb-8">Checkout</h2>
 
                             {/* Select Method */}
-                            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
+                            <div className="mb-4 rounded-[2px] border border-amber-300 bg-amber-50 px-4 py-2.5 text-center text-xs font-semibold uppercase tracking-[0.14em] text-amber-800">
+                                🧪 Test mode — no real money is charged. Stripe runs on test keys; UPI QR is a simulation.
+                            </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 mb-8">
                                 <button
                                     onClick={() => setPaymentMethod('stripe')}
                                     className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'stripe'
@@ -473,17 +397,7 @@ const Cart: React.FC = () => {
                                         }`}
                                 >
                                     <span className="text-2xl">💳</span>
-                                    <span className="text-xs font-semibold">Card</span>
-                                </button>
-                                <button
-                                    onClick={() => setPaymentMethod('phonepe')}
-                                    className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all ${paymentMethod === 'phonepe'
-                                        ? 'bg-indigo-50 border-indigo-500 text-indigo-700 ring-1 ring-indigo-500'
-                                        : 'bg-white border-slate-200 text-slate-500 hover:border-indigo-300'
-                                        }`}
-                                >
-                                    <span className="text-2xl">🟣</span>
-                                    <span className="text-xs font-semibold">PhonePe</span>
+                                    <span className="text-xs font-semibold">Card (Test)</span>
                                 </button>
                                 <button
                                     onClick={() => setPaymentMethod('demo')}
@@ -493,7 +407,7 @@ const Cart: React.FC = () => {
                                         }`}
                                 >
                                     <span className="text-2xl">▦</span>
-                                    <span className="text-xs font-semibold">UPI QR (Demo)</span>
+                                    <span className="text-xs font-semibold">UPI QR (Test Sim)</span>
                                 </button>
                                 <button
                                     onClick={() => setPaymentMethod('cod')}
@@ -547,32 +461,6 @@ const Cart: React.FC = () => {
                                             </button>
                                         </div>
                                     )}
-                                </div>
-                            )}
-
-                            {paymentMethod === 'phonepe' && (
-                                <div>
-                                    <div className="mb-6 p-6 bg-slate-50 rounded-2xl border border-dashed border-slate-300 text-center">
-                                        <p className="text-slate-900 font-medium mb-2">Secure payment via PhonePe</p>
-                                        <p className="text-sm text-slate-500">Supports UPI, Credit/Debit Cards, Wallet, NetBanking</p>
-                                    </div>
-
-                                    <div className="space-y-4 mb-6">
-                                        <input type="text" name="address" placeholder="Street Address *" value={shippingDetails.address} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                        <div className="grid grid-cols-2 gap-4">
-                                            <input type="text" name="city" placeholder="City" value={shippingDetails.city} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                            <input type="text" name="zip" placeholder="ZIP Code" value={shippingDetails.zip} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                        </div>
-                                        <input type="text" name="phone" placeholder="Phone Number *" value={shippingDetails.phone} onChange={handleInputChange} className="w-full px-4 py-3 rounded-xl border border-slate-300 bg-slate-50 focus:ring-2 focus:ring-indigo-500 outline-none" />
-                                    </div>
-
-                                    <button
-                                        className="w-full py-3 rounded-xl font-bold text-white bg-[#6739b7] hover:bg-[#5a32a3] transition-colors shadow-lg shadow-purple-500/20"
-                                        onClick={handleProceedToPayment}
-                                        disabled={processing}
-                                    >
-                                        {processing ? 'Processing...' : 'Pay with PhonePe'}
-                                    </button>
                                 </div>
                             )}
 
