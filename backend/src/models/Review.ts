@@ -16,7 +16,7 @@ const reviewSchema: Schema = new Schema({
     userName: { type: String, required: true }, // Cache name to avoid massive lookups
     bookId: { type: Number, required: true }, // Linking to Book.id (custom ID)
     rating: { type: Number, required: true, min: 1, max: 5 },
-    comment: { type: String, required: true },
+    comment: { type: String, required: true, maxlength: 2000 },
     isVerified: { type: Boolean, default: false },
     createdAt: { type: Date, default: Date.now }
 });

@@ -47,6 +47,7 @@ export type GeoapifySearchResult = {
 
 export type GeoapifyErrorKind =
   | 'missing-key'
+  | 'not-configured'
   | 'rate-limit'
   | 'quota-exhausted'
   | 'invalid-key'
@@ -73,8 +74,10 @@ export class GeoapifyError extends Error {
   }
 }
 
-const GEOCODING_URL = 'https://api.geoapify.com/v1/geocode/search';
-const PLACES_URL = 'https://api.geoapify.com/v2/places';
+// All Geoapify traffic goes through the backend proxy so the API key stays
+// server-side. The proxy forwards whitelisted params to api.geoapify.com.
+const GEOCODING_URL = `${import.meta.env.VITE_API_URL || ''}/api/geoapify/geocode`;
+const PLACES_URL = `${import.meta.env.VITE_API_URL || ''}/api/geoapify/places`;
 const BOOKSTORE_CATEGORY = 'commercial.books';
 const MAX_RESULTS = 20;
 const MAX_TOTAL_RESULTS = 80;
@@ -339,7 +342,6 @@ const delayWithSignal = (milliseconds: number, signal?: AbortSignal) => new Prom
 });
 
 export const createGeoapifyClient = (
-  apiKey: string,
   fetcher: typeof fetch = fetch,
   minimumIntervalMs = MIN_REQUEST_INTERVAL_MS,
 ) => {
@@ -348,8 +350,8 @@ export const createGeoapifyClient = (
   let nextRequestAt = 0;
 
   const requestJson = <T>(key: string, url: URL, signal: AbortSignal | undefined, parse: (data: unknown) => T) => {
-    if (!apiKey.trim()) {
-      return Promise.reject(new GeoapifyError('missing-key', 'Configure VITE_GEOAPIFY_API_KEY to use Geoapify search.'));
+    if (!GEOCODING_URL.startsWith('http')) {
+      return Promise.reject(new GeoapifyError('missing-key', 'Configure VITE_API_URL to use map search.'));
     }
     const existing = inFlight.get(key);
     if (existing) return existing as Promise<T>;
@@ -394,7 +396,10 @@ export const createGeoapifyClient = (
             throw new GeoapifyError('forbidden', 'Geoapify denied this request. Check API permissions and allowed referrers.', response.status);
           }
           if (response.status === 400) {
-            throw new GeoapifyError('invalid-query', 'Geoapify could not accept this search request.', response.status);
+            throw new GeoapifyError('invalid-query', 'Map search could not accept this request.', response.status);
+          }
+          if (response.status === 503) {
+            throw new GeoapifyError('not-configured', 'Map search is not configured on the server.', response.status);
           }
           throw new GeoapifyError('http', `Geoapify returned HTTP ${response.status}.`, response.status, retryAfter);
         }
@@ -437,7 +442,6 @@ export const createGeoapifyClient = (
     url.searchParams.set('limit', '5');
     url.searchParams.set('lang', 'en');
     url.searchParams.set('bias', 'countrycode:none');
-    url.searchParams.set('apiKey', apiKey);
     return requestJson(`geocode:${normalizedQuery.toLocaleLowerCase()}`, url, options.signal, parseGeoapifyGeocodingResponse);
   };
 
@@ -463,7 +467,6 @@ export const createGeoapifyClient = (
         if (plan.name) url.searchParams.set('name', plan.name);
         url.searchParams.set('limit', String(MAX_RESULTS));
         url.searchParams.set('lang', 'en');
-        url.searchParams.set('apiKey', apiKey);
 
         const requestKey = `places:${plan.filter ?? plan.bias}:${plan.name ?? ''}:${BOOKSTORE_CATEGORY}`;
         const stores = await requestJson(requestKey, url, options.signal, data => (
@@ -513,15 +516,15 @@ export const formatGeoapifyError = (error: unknown) => {
   if (!(error instanceof GeoapifyError)) return 'Geoapify search failed unexpectedly. Please try again.';
   switch (error.kind) {
     case 'missing-key':
-      return 'Add VITE_GEOAPIFY_API_KEY to frontend/.env.local and restart Vite to enable Geoapify search.';
+      return 'Set VITE_API_URL to point at the backend to enable map search.';
     case 'rate-limit':
       return `Geoapify rate limit reached (HTTP 429).${error.retryAfter ? ` Retry after ${error.retryAfter}.` : ' Wait briefly before trying again.'}`;
     case 'quota-exhausted':
       return 'Geoapify daily quota is exhausted. Try again after the quota resets or review your Geoapify plan.';
     case 'invalid-key':
-      return 'Geoapify rejected the API key. Check that it is active and copied to frontend/.env.local.';
+      return 'The map provider rejected its server-side API key. Ask the site administrator to check GEOAPIFY_API_KEY.';
     case 'forbidden':
-      return 'Geoapify denied this request. Check that Geocoding and Places are enabled and this site is an allowed referrer.';
+      return 'The map provider denied this request. Ask the site administrator to check the server API key permissions.';
     case 'invalid-query':
       return error.message;
     case 'area-too-large':
@@ -530,6 +533,8 @@ export const formatGeoapifyError = (error: unknown) => {
       return `Geoapify returned HTTP ${error.status}. Please try again later.`;
     case 'network':
       return error.message;
+    default:
+      return 'Map search failed. Please try again.';
     case 'timeout':
     case 'aborted':
       return error.message;

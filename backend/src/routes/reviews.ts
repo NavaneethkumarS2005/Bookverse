@@ -26,6 +26,22 @@ router.post('/:bookId', auth, async (req: AuthRequest, res: Response) => {
         const { rating, comment } = req.body;
         const bookId = parseInt(req.params.bookId as string);
 
+        // Input validation: rating must be an integer 1-5, comment bounded text.
+        const ratingValue = Number(rating);
+        if (!Number.isInteger(ratingValue) || ratingValue < 1 || ratingValue > 5) {
+            return res.status(400).json({ message: 'Rating must be an integer between 1 and 5.' });
+        }
+        const commentValue = typeof comment === 'string' ? comment.trim() : '';
+        if (!commentValue || commentValue.length > 2000) {
+            return res.status(400).json({ message: 'Review text is required and must be 2000 characters or fewer.' });
+        }
+
+        // Review spam prevention: one review per user per book.
+        const existingReview = await Review.findOne({ user: req.user.id, bookId });
+        if (existingReview) {
+            return res.status(409).json({ message: 'You have already reviewed this book.' });
+        }
+
         // Check if user has bought this book (Paid order)
         const hasPurchased = await Order.findOne({
             user: req.user.id,
@@ -38,8 +54,8 @@ router.post('/:bookId', auth, async (req: AuthRequest, res: Response) => {
             user: req.user.id,
             userName: req.user.name || "Anonymous", // Ideally fetch user name or store it in token
             bookId: bookId,
-            rating,
-            comment,
+            rating: ratingValue,
+            comment: commentValue,
             isVerified: !!hasPurchased
         });
         await newReview.save();

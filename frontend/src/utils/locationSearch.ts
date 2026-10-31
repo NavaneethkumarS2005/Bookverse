@@ -170,5 +170,7 @@ export const formatGeocodingError = (error: unknown) => {
       return 'The place search was cancelled.';
     case 'malformed':
       return 'OpenStreetMap returned an invalid place-search response. Please try again.';
+    default:
+      return 'The place search failed. Please try again.';
   }
 };
