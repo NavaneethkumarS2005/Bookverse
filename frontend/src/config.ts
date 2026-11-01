@@ -5,7 +5,9 @@ const DEV_API_URLS = ['http://localhost:5000', 'http://localhost:5001', 'http://
 const DEV_API_URL = DEV_API_URLS[0];
 const API_URL: string = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? DEV_API_URL : '');
 const APP_URL: string = import.meta.env.VITE_PUBLIC_APP_URL || window.location.origin;
-const GEOAPIFY_API_KEY: string = import.meta.env.VITE_GEOAPIFY_API_KEY || '653a68529cc64f2da559cfdd7d9cbd72';
+// Geoapify access goes through the backend proxy (/api/geoapify/*) so the API
+// key never reaches the browser. No Geoapify credentials belong in VITE_ vars.
+const GEOAPIFY_PROXY_ENABLED = true;
 const configuredAreaRequestBudget = Number(import.meta.env.VITE_GEOAPIFY_MAX_AREA_REQUESTS);
 const GEOAPIFY_MAX_AREA_REQUESTS = Number.isInteger(configuredAreaRequestBudget) && configuredAreaRequestBudget > 0
     ? Math.min(configuredAreaRequestBudget, 32)
@@ -27,4 +29,4 @@ if (!import.meta.env.VITE_API_URL && !import.meta.env.DEV) {
     );
 }
 
-export { API_URL, APP_URL, GEOAPIFY_API_KEY, GEOAPIFY_MAX_AREA_REQUESTS, OVERPASS_ENDPOINTS };
+export { API_URL, APP_URL, GEOAPIFY_PROXY_ENABLED, GEOAPIFY_MAX_AREA_REQUESTS, OVERPASS_ENDPOINTS };

@@ -46,3 +46,6 @@ backend/uploads/
 backend/temp_books_response.json
 backend/backend-build-output.txt
 legacy_backup/
+
+# Cover enrichment rollback backups (local only)
+backend/cover-backup-*.json

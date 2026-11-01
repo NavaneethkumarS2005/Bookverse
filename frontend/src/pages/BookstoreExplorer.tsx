@@ -6,7 +6,7 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png';
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
 import markerShadow from 'leaflet/dist/images/marker-shadow.png';
 import { FiCompass, FiExternalLink, FiLoader, FiMapPin, FiNavigation, FiSearch } from 'react-icons/fi';
-import { GEOAPIFY_API_KEY, OVERPASS_ENDPOINTS } from '../config';
+import { GEOAPIFY_PROXY_ENABLED, OVERPASS_ENDPOINTS } from '../config';
 import { createGeoapifyClient, formatGeoapifyError, type GeoapifyBookstore, type GeoapifyLocation, type GeoBounds } from '../utils/geoapifySearch';
 import { createOverpassSearcher, formatOverpassError, OverpassSearchError, type Coordinates, type Store as OpenStreetMapStore } from '../utils/overpassSearch';
 import { createNominatimGeocoder, formatGeocodingError } from '../utils/locationSearch';
@@ -94,7 +94,7 @@ const BookstoreExplorer: React.FC = () => {
   const placeRequestId = useRef(0);
   const activePlaceSearch = useRef<{ query: string; controller: AbortController } | null>(null);
   const searcher = useRef(createOverpassSearcher(OVERPASS_ENDPOINTS)).current;
-  const geoapify = useRef(createGeoapifyClient(GEOAPIFY_API_KEY)).current;
+  const geoapify = useRef(createGeoapifyClient()).current;
   const geocoder = useRef(createNominatimGeocoder()).current;
   const [center, setCenter] = useState<Coordinates | null>(null);
   const [viewportBounds, setViewportBounds] = useState<GeoBounds | null>(null);
@@ -109,7 +109,7 @@ const BookstoreExplorer: React.FC = () => {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [status, setStatus] = useState<'idle' | 'loading-map' | 'geocoding' | 'searching' | 'error' | 'permission-denied'>('idle');
   const [message, setMessage] = useState(
-    GEOAPIFY_API_KEY
+    GEOAPIFY_PROXY_ENABLED
       ? 'Choose a location to search Geoapify for nearby bookstores.'
       : 'Choose a location to see bookstores mapped in OpenStreetMap for that area.',
   );
@@ -133,7 +133,7 @@ const BookstoreExplorer: React.FC = () => {
     const controller = new AbortController();
     activeSearch.current = { key: searchKey, controller };
     setStatus('searching');
-    setMessage(GEOAPIFY_API_KEY
+    setMessage(GEOAPIFY_PROXY_ENABLED
       ? 'Searching Geoapify for nearby bookstores…'
       : 'Searching OpenStreetMap data for nearby bookstores…');
     setSelectedId(null);
@@ -142,7 +142,7 @@ const BookstoreExplorer: React.FC = () => {
     try {
       let nextStores: ExplorerStore[];
       let nextMessage: string;
-      if (GEOAPIFY_API_KEY) {
+      if (GEOAPIFY_PROXY_ENABLED) {
         const searchLocation = location ?? {
           id: `point:${searchCenter.lat}:${searchCenter.lng}`,
           placeId: null,
@@ -195,7 +195,7 @@ const BookstoreExplorer: React.FC = () => {
       }
       console.error('Nearby bookstore search failed:', error);
       setStatus('error');
-      setMessage(GEOAPIFY_API_KEY ? formatGeoapifyError(error) : formatOverpassError(error));
+      setMessage(GEOAPIFY_PROXY_ENABLED ? formatGeoapifyError(error) : formatOverpassError(error));
     } finally {
       if (activeRequest === requestId.current) activeSearch.current = null;
     }
@@ -244,7 +244,7 @@ const BookstoreExplorer: React.FC = () => {
     setManualLat(String(location.location.lat));
     setManualLng(String(location.location.lng));
     pendingViewportSearch.current = null;
-    if (!location.isArea && !location.isBookstore && GEOAPIFY_API_KEY) {
+    if (!location.isArea && !location.isBookstore && GEOAPIFY_PROXY_ENABLED) {
       searchPointInMapView(location);
       return;
     }
@@ -269,12 +269,12 @@ const BookstoreExplorer: React.FC = () => {
     const controller = new AbortController();
     activePlaceSearch.current = { query, controller };
     setStatus('geocoding');
-    setMessage(GEOAPIFY_API_KEY
+    setMessage(GEOAPIFY_PROXY_ENABLED
       ? 'Finding that place with Geoapify…'
       : 'Finding that place with OpenStreetMap…');
 
     try {
-      if (GEOAPIFY_API_KEY) {
+      if (GEOAPIFY_PROXY_ENABLED) {
         const matches = await geoapify.geocode(query, { signal: controller.signal });
         if (activeRequest !== placeRequestId.current) return;
         if (!matches.length) {
@@ -316,7 +316,7 @@ const BookstoreExplorer: React.FC = () => {
         return;
       }
       setStatus('error');
-      setMessage(GEOAPIFY_API_KEY ? formatGeoapifyError(error) : formatGeocodingError(error));
+      setMessage(GEOAPIFY_PROXY_ENABLED ? formatGeoapifyError(error) : (formatGeocodingError(error) ?? 'Place search failed. Please try again.'));
     } finally {
       if (activeRequest === placeRequestId.current) activePlaceSearch.current = null;
     }
@@ -441,15 +441,15 @@ const BookstoreExplorer: React.FC = () => {
               Search place
             </button>
             <p className="text-xs text-slate-500  sm:col-span-2">
-              {GEOAPIFY_API_KEY
+              {GEOAPIFY_PROXY_ENABLED
                 ? <>Place lookup and bookstores by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline">Geoapify</a>; searches run only when submitted.</>
                 : <>Geoapify is not configured. Place lookup uses <a href="https://nominatim.openstreetmap.org/" target="_blank" rel="noreferrer" className="underline">OpenStreetMap Nominatim</a>, with bookstore results from OpenStreetMap.</>}
             </p>
           </form>
 
-          {!GEOAPIFY_API_KEY && (
+          {!GEOAPIFY_PROXY_ENABLED && (
             <p role="note" className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900   ">
-              Add <code>VITE_GEOAPIFY_API_KEY</code> to <code>frontend/.env.local</code> and restart Vite to enable Geoapify geocoding and Places search. Vite exposes this public key in browser code; restrict it by site referrer and enable only Geocoding and Places APIs. Existing OpenStreetMap search remains available meanwhile.
+              Add <code>VITE_GEOAPIFY_PROXY_ENABLED</code> to <code>frontend/.env.local</code> and restart Vite to enable Geoapify geocoding and Places search. Vite exposes this public key in browser code; restrict it by site referrer and enable only Geocoding and Places APIs. Existing OpenStreetMap search remains available meanwhile.
             </p>
           )}
 
@@ -537,7 +537,7 @@ const BookstoreExplorer: React.FC = () => {
           {(status === 'loading-map' || status === 'geocoding' || status === 'searching') && <FiLoader className="mr-2 inline animate-spin" />}
           {message}
         </p>
-        {GEOAPIFY_API_KEY && (
+        {GEOAPIFY_PROXY_ENABLED && (
           <p className="mt-2 text-right text-xs text-slate-500 ">
             Powered by <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline">Geoapify</a> · Data © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline">OpenStreetMap contributors</a>
           </p>
@@ -595,7 +595,7 @@ const BookstoreExplorer: React.FC = () => {
             {stores.length === 0 ? (
               <div className="p-5 text-center text-sm text-slate-500 ">
                 <FiCompass className="mx-auto mb-3 text-2xl" />
-                {GEOAPIFY_API_KEY ? 'Geoapify bookstore results will appear here.' : 'OpenStreetMap bookstore results will appear here.'}
+                {GEOAPIFY_PROXY_ENABLED ? 'Geoapify bookstore results will appear here.' : 'OpenStreetMap bookstore results will appear here.'}
               </div>
             ) : (
               <ul className="space-y-2">

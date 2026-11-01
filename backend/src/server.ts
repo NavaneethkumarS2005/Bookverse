@@ -34,7 +34,7 @@ import adminBoothBookingRoutes from './routes/adminBoothBookingRoutes.js';
 import wishlistRoutes from './routes/wishlist.js';
 import industryGuideRoutes from './routes/industryGuideRoutes.js';
 import { seedDiscovery } from './data/seedDiscovery.js';
-import { enrichBookCovers } from './utils/enrichBookCovers.js';
+import geoapifyRoutes from './routes/geoapify.js';
 import { requestId } from './middleware/requestId.js';
 import { errorHandler, notFound } from './middleware/errorHandler.js';
 import { validateEnvironment } from './config/env.js';
@@ -130,7 +130,6 @@ export const createApp = (): express.Express => {
     // Do not allow routes backed by Mongoose to buffer and later time out while
     // MongoDB is disconnected. /health remains available to report readiness.
     app.use(/^\/api\/(?:auth|books|orders|payment|contact|reviews|upload|cart|wishlist|admin|ai|discovery|recommendations|industry-guide|authors|publishers|upcoming-books|book-fairs|booth-bookings)(?:\/|$)/, requireDatabase);
-
     app.use('/api/auth', authRoutes);
     app.use('/api/books', bookRoutes);
     app.use('/api/orders', orderRoutes);
@@ -142,6 +141,7 @@ export const createApp = (): express.Express => {
     app.use('/api/wishlist', wishlistRoutes);
     app.use('/api/admin', adminRoutes);
     app.use('/api/ai', aiRoutes);
+    app.use('/api/geoapify', geoapifyRoutes);
     app.use('/api/discovery', discoveryRoutes);
     app.use('/api/recommendations', recommendationRoutes);
     app.use('/api/industry-guide', industryGuideRoutes);
@@ -167,20 +167,6 @@ export const createApp = (): express.Express => {
             database: databaseReady ? 'connected' : 'unavailable',
             readiness: databaseReady
         });
-    });
-
-    app.post('/api/books/enrich-covers', async (_req, res) => {
-        if (process.env.NODE_ENV === 'production') {
-            return res.status(403).json({ message: 'Cover enrichment is disabled in production.' });
-        }
-
-        try {
-            await enrichBookCovers();
-            return res.json({ message: 'Book cover enrichment completed.' });
-        } catch (error) {
-            console.error('❌ Cover enrichment failed:', error);
-            return res.status(500).json({ message: 'Cover enrichment failed.' });
-        }
     });
 
     app.use(notFound);
@@ -219,13 +205,9 @@ if (process.argv[1]?.endsWith(path.join('dist', 'server.js'))) {
                 await seedDiscovery();
                 console.log('🌱 Explicit discovery seed completed.');
             }
-
-            console.log('🖼️ Starting existing-book cover enrichment...');
-            try {
-                await enrichBookCovers();
-            } catch (error) {
-                console.error('❌ Cover enrichment failed during startup:', error);
-            }
+            // Cover enrichment is a manual admin operation (POST /api/books/enrich-covers,
+            // admin-only). It must never run automatically at startup: it makes external
+            // API calls and can write to the catalogue.
         })
         .catch((error) => console.error('❌ Database unavailable:', error.message));
 }
